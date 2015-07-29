@@ -1,0 +1,9 @@
+vendor/**
+composer.lock
+config/config.json
+logs/**
+build/**
+dist/**
+db/connector.s3db
+.idea/**
+config_de.xml
