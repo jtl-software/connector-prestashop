@@ -1,66 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="JTL-Connector-PrestaShop-Endpoint" default="package">
+<project name="JTL-Connector-PrestaShop-Endpoint" default="zip">
     <target name="build">
-        <delete dir="./dist" />
+        <phingcall target="clean" />
         <mkdir dir="./dist" />
         <mkdir dir="./dist/config" />
         <mkdir dir="./dist/db" />
         <mkdir dir="./dist/logs" />
         <mkdir dir="./dist/plugins" />
-
         <copy todir="./dist">
             <fileset dir=".">
                 <include name="jtlconnector.php" />
                 <include name="logo.png" />
                 <include name="controllers/" />
                 <include name="translations/" />
+                <include name="version" />
+                <include name="config/features.json"/>
+                <include name="config/.htaccess"/>
+                <include name="db/connector.s3db" />
+                <include name="db/.htaccess" />
+                <include name="logs/.htaccess" />
+                <include name="plugins/.htaccess" />
             </fileset>
         </copy>
-        <copy todir="./dist/config">
-            <fileset dir="./config">
-                <include name="features.json" />
-                <include name=".htaccess" />
-            </fileset>
-        </copy>
-        <copy todir="./dist/db">
-            <fileset dir="./db">
-                <include name="connector.s3db" />
-                <include name=".htaccess" />
-            </fileset>
-        </copy>
-        <copy todir="./dist/logs">
-            <fileset dir="./logs">
-                <include name=".htaccess" />
-            </fileset>
-        </copy>
-        <copy todir="./dist/plugins">
-            <fileset dir="./plugins">
-                <include name=".htaccess" />
-            </fileset>
-        </copy>
-
         <chmod file="./dist/config" mode="0777" />
         <chmod file="./dist/db" mode="0777" />
         <chmod file="./dist/db/connector.s3db" mode="0777" />
         <chmod file="./dist/logs" mode="0777" />
-
-        <delete dir="./build" />
         <mkdir dir="./build" />
-
         <copy todir="./build">
             <fileset dir=".">
                 <include name="src/" />
                 <include name="vendor/" />
-                <include name="jtlconnector.php" />
                 <include name="version" />
             </fileset>
         </copy>
     </target>
 
     <target name="package" depends="build">
-        <delete file="./dist/jtlconnector.php" />
+        <delete file="./dist/connector.phar" />
         <pharpackage
-                destfile="./dist/jtlconnector.phar"
+                destfile="./dist/connector.phar"
                 basedir="./build"
                 compression="gzip"
                 stub="./stub.php"
@@ -68,25 +47,15 @@
             <fileset dir="./build">
                 <include name="**/**" />
             </fileset>
-            <metadata>
-                <element name="version" value="0.0.1" />
-                <element name="authors">
-                    <element name="Daniel Hoffmann">
-                        <element name="email" value="daniel.hoffmann@jtl-software.com" />
-                    </element>
-                </element>
-            </metadata>
         </pharpackage>
-        <move file="./dist/jtlconnector.phar" tofile="./dist/jtlconnector.php" />
-        <delete dir="./build" />
-        <loadfile property="version" file="version"/>
-        <phingcall target="zip">
-            <property name="version" value="${version}" />
-        </phingcall>
     </target>
 
-    <target name="zip">
-        <zip destfile="./dist/jtl_connector_prestashop_${version}.zip" basedir="./dist" prefix="jtl-connector/"/>
+    <target name="zip" depends="package">
+        <delete dir="./zip" />
+        <mkdir dir="./zip" />
+        <loadfile property="version" file="version"/>
+        <zip destfile="./zip/jtl_connector_prestashop_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+        <phingcall target="clean"/>
     </target>
 
     <target name="clean">
