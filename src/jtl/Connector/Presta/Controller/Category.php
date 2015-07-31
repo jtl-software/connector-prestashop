@@ -34,11 +34,12 @@ class Category extends BaseController
         }
 
 		$category = $this->mapper->toEndpoint($data);
-		
-		$id = $category->save();
-		
+		$category->save();
+
+		$id = $category->id;
+
 		$data->getId()->setEndpoint($id);
-		
+
 		static::$idCache[$data->getId()->getHost()] = $id;
 
 		return $data;
@@ -46,13 +47,12 @@ class Category extends BaseController
 
 	public function deleteData($data)
 	{
-		/*
-		$category = new \oxCategory();
+		$category = new \Category($data->getId()->getEndpoint());
 
-		if (!$category->delete($data->getId()->getEndpoint())) {
+		if (!$category->delete()) {
 			throw new \Exception('Error deleting category with id: '.$data->getId()->getEndpoint());
 		}
-		*/
+
 		return $data;
 	}
 

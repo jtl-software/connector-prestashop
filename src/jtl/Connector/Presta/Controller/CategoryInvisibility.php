@@ -25,4 +25,22 @@ class CategoryInvisibility extends BaseController
 
         return $return;
     }
+
+    public function pushData($data, $model)
+    {
+        $invIncludes = array();
+        $invExcludes = array();
+
+        foreach ($data->getInvisibilities() as $inv) {
+            $invExcludes[] = $inv->getCustomerGroupId()->getEndpoint();
+        }
+
+        foreach (\Group::getGroups(1) as $group) {
+            if (!in_array($group['id_group'], $invExcludes)) {
+                $invIncludes[] = $group['id_group'];
+            }
+        }
+
+        $model->groupBox = $invIncludes;
+    }
 }

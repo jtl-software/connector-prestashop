@@ -21,7 +21,7 @@ class Category extends BaseMapper
         'id_parent' => 'parentCategoryId',
         'active' => 'isActive',
         'position' => 'sort',
-        //'i18ns' => 'CategoryI18n',
-        //'invisibilities' => 'CategoryInvisibility'
+		'CategoryI18n' => 'i18ns',
+        'CategoryInvisibility' => 'invisibilities'
     );
 }
