@@ -19,16 +19,16 @@ class Connector extends Controller
 
         $mainControllers = array(
             'Category',
-            'Customer',
+            /*'Customer',
             'CustomerOrder',
             'Image',
             'Product',
             'Manufacturer',
-            'Payment'
+            'Payment'*/
         );
 
         foreach ($mainControllers as $controller) {
-            $class = "\\jtl\\Connector\\Oxid\\Controller\\{$controller}";
+            $class = "\\jtl\\Connector\\Presta\\Controller\\{$controller}";
 
             if (class_exists($class)) {
                 try {
