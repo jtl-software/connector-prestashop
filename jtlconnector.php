@@ -43,7 +43,7 @@ class JTLConnector extends Module
               hostId int(16) NOT NULL,
               type int(8),
               PRIMARY KEY (endpointId, hostId, type)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
         ');
 
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
