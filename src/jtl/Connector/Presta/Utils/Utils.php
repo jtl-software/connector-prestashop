@@ -58,4 +58,18 @@ class Utils {
 
         return false;
     }
+
+	public function getProductTaxRate($id)
+	{
+		$context = \Context::getContext();
+
+		$address = new \Address();
+		$address->id_country = (int) $context->country->id;
+		$address->id_state = 0;
+		$address->postcode = 0;
+
+		$tax_manager = \TaxManagerFactory::getManager($address, \Product::getIdTaxRulesGroupByIdProduct((int) $id, $context));
+
+		return $tax_manager->getTaxCalculator()->getTotalRate();
+	}
 }

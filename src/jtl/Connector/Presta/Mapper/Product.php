@@ -2,6 +2,7 @@
 namespace jtl\Connector\Presta\Mapper;
 
 use \jtl\Connector\Model\Identity;
+use jtl\Connector\Presta\Utils\Utils;
 
 class Product extends BaseMapper
 {
@@ -23,12 +24,11 @@ class Product extends BaseMapper
 		'stockLevel' => 'ProductStockLevel',
 		'vat' => null,
 		'width' => 'width',
-		//'attributes' => 'ProductAttr',
+		'attributes' => 'ProductAttr',
 		'categories' => 'Product2Category',
 		'i18ns' => 'ProductI18n',
 		'prices' => 'ProductPrice',
-		//'specialPrices' => 'ProductSpecialPrice',
-		//'variations' => 'ProductVariation'
+		'variations' => 'ProductVariation'
 	);
 
 	protected $push = array(
@@ -65,15 +65,6 @@ class Product extends BaseMapper
 
     protected function vat($data)
     {
-        $context = \Context::getContext();
-
-        $address = new \Address();
-        $address->id_country = (int) $context->country->id;
-        $address->id_state = 0;
-        $address->postcode = 0;
-
-        $tax_manager = \TaxManagerFactory::getManager($address, \Product::getIdTaxRulesGroupByIdProduct((int) $data['id_product'], $context));
-
-        return $tax_manager->getTaxCalculator()->getTotalRate();
+        return Utils::getInstance()->getProductTaxRate($data['id_product']);
     }
 }

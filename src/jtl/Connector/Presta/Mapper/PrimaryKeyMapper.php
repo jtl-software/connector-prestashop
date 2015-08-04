@@ -3,6 +3,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Mapper\IPrimaryKeyMapper;
 use jtl\Connector\Core\Logger\Logger;
+use jtl\Connector\Drawing\ImageRelationType;
 
 class PrimaryKeyMapper implements IPrimaryKeyMapper
 {
@@ -24,7 +25,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         return $hostId;
     }
 
-    public function getEndpointId($hostId, $type)
+    public function getEndpointId($hostId, $type, $relationType = null)
     {
         $dbResult = $this->db->getValue('SELECT endpointId FROM jtl_connector_link WHERE hostId = '.$hostId.' AND type = '.$type);
 

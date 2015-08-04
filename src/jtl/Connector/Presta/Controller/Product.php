@@ -25,7 +25,8 @@ class Product extends BaseController
 		}
 
 		$resultVars = $this->db->executeS('
-			SELECT * FROM '._DB_PREFIX_.'product_attribute p
+			SELECT p.*, pr.price AS pPrice FROM '._DB_PREFIX_.'product_attribute p
+			LEFT JOIN '._DB_PREFIX_.'product pr ON pr.id_product = p.id_product
 			LEFT JOIN jtl_connector_link l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpointId AND l.type = 64
             WHERE l.hostId IS NULL
             LIMIT '.$limit
