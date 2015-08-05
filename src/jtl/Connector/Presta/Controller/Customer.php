@@ -31,7 +31,7 @@ class Customer extends BaseController
     {
         $customer = $this->mapper->toEndpoint($data);
 
-        $customer->save();
+		$customer->save();
 
         $id = $customer->id;
 

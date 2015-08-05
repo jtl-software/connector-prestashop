@@ -24,4 +24,14 @@ class Payment extends BaseController
 
         return $return;
     }
+
+    public function getStats()
+    {
+        return $this->db->getValue('
+			SELECT COUNT(*)
+			FROM '._DB_PREFIX_.'order_payment p
+			LEFT JOIN jtl_connector_link l ON p.id_order_payment = l.endpointId AND l.type = 512
+            WHERE l.hostId IS NULL
+        ');
+    }
 }
