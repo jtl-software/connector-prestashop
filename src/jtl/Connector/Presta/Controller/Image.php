@@ -24,6 +24,113 @@ class Image extends BaseController
 
     public function pushData($data)
     {
+        $this->deleteData($data);
+
+        $id = $data->getForeignKey()->getEndpoint();
+
+        if (!empty($id)) {
+            $generate_hight_dpi_images = (bool)\Configuration::get('PS_HIGHT_DPI');
+
+            switch ($data->getRelationType()) {
+                case 'category':
+                    \ImageManager::resize($data->getFilename(), _PS_CAT_IMG_DIR_.$id.'.jpg', null, null, 'jpg');
+
+                    if (file_exists(_PS_CAT_IMG_DIR_.$id.'.jpg')) {
+                        $images_types = \ImageType::getImagesTypes('categories');
+                        foreach ($images_types as $k => $image_type)
+                        {
+                            \ImageManager::resize(
+                                _PS_CAT_IMG_DIR_.$id.'.jpg',
+                                _PS_CAT_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'.jpg',
+                                (int)$image_type['width'], (int)$image_type['height']
+                            );
+
+                            if ($generate_hight_dpi_images)
+                                \ImageManager::resize(
+                                    _PS_CAT_IMG_DIR_.$id.'.jpg',
+                                    _PS_CAT_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'2x.jpg',
+                                    (int)$image_type['width']*2, (int)$image_type['height']*2
+                                );
+                        }
+                    }
+                    break;
+
+                case 'manufacturer':
+                    \ImageManager::resize($data->getFilename(), _PS_MANU_IMG_DIR_.$id.'.jpg', null, null, 'jpg');
+
+                    if (file_exists(_PS_MANU_IMG_DIR_.$id.'.jpg')) {
+                        $images_types = \ImageType::getImagesTypes('manufacturers');
+                        foreach ($images_types as $k => $image_type)
+                        {
+                            $res &= \ImageManager::resize(
+                                _PS_MANU_IMG_DIR_.$id.'.jpg',
+                                _PS_MANU_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'.jpg',
+                                (int)$image_type['width'],
+                                (int)$image_type['height']
+                            );
+
+                            if ($generate_hight_dpi_images)
+                                $res &= \ImageManager::resize(
+                                    _PS_MANU_IMG_DIR_.$id.'.jpg',
+                                    _PS_MANU_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'2x.jpg',
+                                    (int)$image_type['width']*2,
+                                    (int)$image_type['height']*2
+                                );
+                        }
+                    }
+                    break;
+
+                case 'product':
+                    $img = new \Image();
+                    $img->id_product = $id;
+                    $img->position = $data->getSort();
+                    $img->save();
+
+                    $new_path = $img->getPathForCreation();
+                    \ImageManager::resize($data->getFilename(), $new_path.'.jpg');
+
+                    if (file_exists($new_path.'.jpg')) {
+                        $imagesTypes = \ImageType::getImagesTypes('products');
+                        foreach ($imagesTypes as $k => $image_type) {
+                            \ImageManager::resize($data->getFilename(), $new_path . '-' . stripslashes($image_type['name']) . '.jpg', $image_type['width'], $image_type['height'], null);
+                        }
+                    }
+
+                    $data->getId()->setEndpoint($img->id);
+
+                    break;
+            }
+        }
+
+        return $data;
+    }
+
+    public function deleteData($data)
+    {
+        $id = $data->getForeignKey()->getEndpoint();
+
+        if (!empty($id)) {
+            switch ($data->getRelationType()) {
+                case 'category':
+                    $cat = new \Category($id);
+                    $cat->deleteImage();
+                    break;
+
+                case 'manufacturer':
+                    $manufacturer = new \Manufacturer($id);
+                    $manufacturer->deleteImage();
+                    break;
+
+                case 'product':
+                    $id = $data->getId()->getEndpoint();
+                    if (!empty($id)) {
+                        $img = new \Image($id);
+                        $img->delete();
+                    }
+                    break;
+            }
+        }
+
         return $data;
     }
 
