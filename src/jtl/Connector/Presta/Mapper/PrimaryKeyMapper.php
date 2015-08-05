@@ -27,7 +27,18 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
 
     public function getEndpointId($hostId, $type, $relationType = null)
     {
-        $dbResult = $this->db->getValue('SELECT endpointId FROM jtl_connector_link WHERE hostId = '.$hostId.' AND type = '.$type);
+        $relation = '';
+
+        switch ($relationType) {
+            case ImageRelationType::TYPE_CATEGORY:
+                $relation = ' AND endpointId LIKE "c%"';
+                break;
+            case ImageRelationType::TYPE_MANUFACTURER:
+                $relation = ' AND endpointId LIKE "m%"';
+                break;
+        }
+
+        $dbResult = $this->db->getValue('SELECT endpointId FROM jtl_connector_link WHERE hostId = '.$hostId.' AND type = '.$type.$relation);
 
         $endpointId = $dbResult ? $dbResult : null;
 

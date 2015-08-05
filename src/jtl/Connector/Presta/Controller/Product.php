@@ -7,7 +7,7 @@ class Product extends BaseController
 {	
 	public function pullData($data, $model, $limit = null)
 	{
-		$limit = 25;
+		$limit = $limit < 25 ? $limit : 25;
 
 		$return = array();
 
@@ -18,24 +18,30 @@ class Product extends BaseController
             LIMIT '.$limit
         );
 
+		$count = 0;
+
         foreach ($result as $data) {
 			$model = $this->mapper->toHost($data);
 
 			$return[] = $model;
+
+			$count++;
 		}
 
-		$resultVars = $this->db->executeS('
-			SELECT p.*, pr.price AS pPrice FROM '._DB_PREFIX_.'product_attribute p
-			LEFT JOIN '._DB_PREFIX_.'product pr ON pr.id_product = p.id_product
-			LEFT JOIN jtl_connector_link l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpointId AND l.type = 64
-            WHERE l.hostId IS NULL
-            LIMIT '.$limit
-		);
+		if ($count < $limit) {
+			$resultVars = $this->db->executeS('
+                SELECT p.*, pr.price AS pPrice FROM ' . _DB_PREFIX_ . 'product_attribute p
+                LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
+                LEFT JOIN jtl_connector_link l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpointId AND l.type = 64
+                WHERE l.hostId IS NULL
+                LIMIT ' . ($limit - $count)
+			);
 
-		foreach ($resultVars as $data) {
-			$model = $this->mapper->toHost($data);
+			foreach ($resultVars as $data) {
+				$model = $this->mapper->toHost($data);
 
-			$return[] = $model;
+				$return[] = $model;
+			}
 		}
 
 		return $return;

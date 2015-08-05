@@ -19,12 +19,12 @@ class Connector extends Controller
 
         $mainControllers = array(
             'Category',
-            /*'Customer',
+            'Customer',
             'CustomerOrder',
             'Image',
             'Product',
             'Manufacturer',
-            'Payment'*/
+            'Payment'
         );
 
         foreach ($mainControllers as $controller) {
