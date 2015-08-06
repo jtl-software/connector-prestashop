@@ -10,7 +10,7 @@ class Payment extends BaseController
 			FROM '._DB_PREFIX_.'order_payment p
 			LEFT JOIN '._DB_PREFIX_.'orders o ON o.reference = p.order_reference
 			LEFT JOIN jtl_connector_link l ON p.id_order_payment = l.endpointId AND l.type = 512
-            WHERE l.hostId IS NULL
+            WHERE l.hostId IS NULL AND p.transaction_id != ""
             LIMIT '.$limit
         );
 
@@ -31,7 +31,7 @@ class Payment extends BaseController
 			SELECT COUNT(*)
 			FROM '._DB_PREFIX_.'order_payment p
 			LEFT JOIN jtl_connector_link l ON p.id_order_payment = l.endpointId AND l.type = 512
-            WHERE l.hostId IS NULL
+            WHERE l.hostId IS NULL AND p.transaction_id != ""
         ');
     }
 }

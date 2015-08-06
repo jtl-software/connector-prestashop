@@ -6,19 +6,20 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class Product extends BaseMapper
 {
-	protected $endpointModel = '\Article';
+	protected $endpointModel = '\Product';
+    protected $identity = 'id|id_product';
 
 	protected $pull = array(
 		'id' => null,
 		'manufacturerId' => 'id_manufacturer',
 		'masterProductId' => null,
-		'creationDate' => 'dat_add',
+		'creationDate' => 'date_add',
 		'ean' => 'ean13',
 		'height' => 'height',
 		'isMasterProduct' => null,
-		'length' => 'length',
+		'length' => 'depth',
 		'modified' => 'date_upd',
-		'productWeight' => 'weight',
+		'shippingWeight' => 'weight',
 		'sku' => 'reference',
 		'upc' => 'upc',
 		'stockLevel' => 'ProductStockLevel',
@@ -28,11 +29,37 @@ class Product extends BaseMapper
 		'categories' => 'Product2Category',
 		'i18ns' => 'ProductI18n',
 		'prices' => 'ProductPrice',
-		'variations' => 'ProductVariation'
+		'variations' => 'ProductVariation',
+        'availableFrom' => 'available_date',
+        'basePriceUnitName' => 'unity',
+        'considerStock' => null,
+        'isActive' => 'active',
+        'minimumOrderQuantity' => 'minimal_quantity'
 	);
 
 	protected $push = array(
-	);
+        'id_product' => 'id',
+        'id_manufacturer' => 'manufacturerId',
+        'date_add' => 'creationDate',
+        'ean13' => 'ean',
+        'height' => 'height',
+        'depth' => 'length',
+        'date_upd' => 'modified',
+        'weight' => 'shippingWeight',
+        'reference' => 'sku',
+        'upc' => 'upc',
+        'id_tax_rules_group' => null,
+        'width' => 'width',
+        'unity' => 'basePriceUnitName',
+        'available_date' => 'availableFrom',
+        'active' => 'isActive',
+        'minimal_quantity' => 'minimumOrderQuantity',
+        'ProductAttr' => 'attributes',
+        'Product2Category' => 'categories',
+        'ProductI18n' => 'i18ns',
+        //'prices' => 'ProductPrice',
+        //'variations' => 'ProductVariation'
+    );
 
     protected function id($data)
     {
@@ -66,5 +93,23 @@ class Product extends BaseMapper
     protected function vat($data)
     {
         return Utils::getInstance()->getProductTaxRate($data['id_product']);
+    }
+
+    protected function considerStock($data)
+    {
+        return true;
+    }
+
+    protected function id_tax_rules_group($data)
+    {
+        $group = $this->db->getValue('
+            SELECT r.id_tax_rules_group
+            FROM ps_tax t
+            LEFT JOIN ps_tax_rule r ON r.id_tax = t.id_tax
+            WHERE t.rate = '.$data->getVat().' && id_country = '.\Context::getContext()->country->id.'
+            GROUP BY r.id_tax
+        ');
+
+        return $group;
     }
 }

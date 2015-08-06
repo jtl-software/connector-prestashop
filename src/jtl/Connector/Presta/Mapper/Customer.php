@@ -6,6 +6,7 @@ use jtl\Connector\Presta\Utils\Utils;
 class Customer extends BaseMapper
 {
 	protected $endpointModel = '\Customer';
+    protected $identity = 'id|id_customer';
 
 	protected $pull = array(
 		'id' => 'id_customer',

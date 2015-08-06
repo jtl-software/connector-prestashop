@@ -21,4 +21,19 @@ class Product2Category extends BaseController
 
         return $return;
     }
+
+    public function pushData($data, $model)
+    {
+        $cats = array();
+
+        foreach ($data->getCategories() as $category) {
+            $catId = $category->getCategoryId()->getEndpoint();
+
+            if (!empty($catId)) {
+                $cats[] = $catId;
+            }
+        }
+
+        $model->updateCategories($cats);
+    }
 }

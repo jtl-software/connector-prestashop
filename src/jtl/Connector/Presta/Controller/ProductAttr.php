@@ -1,6 +1,8 @@
 <?php
 namespace jtl\Connector\Presta\Controller;
 
+use jtl\Connector\Presta\Utils\Utils;
+
 class ProductAttr extends BaseController
 {
     public function pullData($data, $model, $limit = null)
@@ -23,5 +25,48 @@ class ProductAttr extends BaseController
         }
 
         return $return;
+    }
+
+    public function pushData($data, $model)
+    {
+        $model->deleteFeatures();
+
+        foreach ($data->getAttributes() as $attr) {
+            $featureData = array();
+
+            foreach ($attr->getI18ns() as $i18n) {
+                $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
+
+                $featureData['names'][$id] = $i18n->getName();
+                $featureData['values'][$id] = $i18n->getValue();
+
+                if ($id == \Context::getContext()->country->id) {
+                    $fId = $this->db->getValue('
+                        SELECT id_feature
+                        FROM '._DB_PREFIX_.'feature_lang
+                        WHERE name = "'.$i18n->getName().'"
+                        GROUP BY id_feature
+                    ');
+                }
+            }
+
+            $feature = new \Feature($fId);
+
+            foreach ($featureData['names'] as $lang => $fName) {
+                $feature->name[$lang] = $fName;
+            }
+
+            $feature->save();
+
+            if (!empty($feature->id)) {
+                $valueId = $model->addFeaturesToDB($feature->id, null, true);
+
+                if (!empty($valueId)) {
+                    foreach ($featureData['values'] as $lang => $fValue) {
+                        $model->addFeaturesCustomToDB($valueId, $lang, $fValue);
+                    }
+                }
+            }
+        }
     }
 }

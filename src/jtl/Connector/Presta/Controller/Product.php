@@ -4,8 +4,10 @@ namespace jtl\Connector\Presta\Controller;
 use jtl\Connector\Presta\Mapper\ProductVarCombi;
 
 class Product extends BaseController
-{	
-	public function pullData($data, $model, $limit = null)
+{
+    private static $idCache = array();
+
+    public function pullData($data, $model, $limit = null)
 	{
 		$limit = $limit < 25 ? $limit : 25;
 
@@ -45,6 +47,36 @@ class Product extends BaseController
 		}
 
 		return $return;
+	}
+
+	public function pushData($data)
+	{
+        if (isset(static::$idCache[$data->getMasterProductId()->getHost()])) {
+            $data->getMasterProductId()->setEndpoint(static::$idCache[$data->getMasterProductId()->getHost()]);
+        }
+
+        $masterId = $data->getMasterProductId()->getEndpoint();
+
+        if (empty($masterId)) {
+            $product = $this->mapper->toEndpoint($data);
+            $product->save();
+
+            $id = $product->id_product;
+        } else {
+            die('varcombi');
+        }
+
+		$data->getId()->setEndpoint($id);
+
+        if($id) {
+            $data->getStockLevel()->getProductId()->setEndpoint($id);
+            $stock = new ProductStockLevel();
+            $stock->pushData($data->getStockLevel());
+        }
+
+        static::$idCache[$data->getId()->getHost()] = $id;
+
+		return $data;
 	}
 
 	public function getStats()
