@@ -56,9 +56,7 @@ class Product extends BaseMapper
         'minimal_quantity' => 'minimumOrderQuantity',
         'ProductAttr' => 'attributes',
         'Product2Category' => 'categories',
-        'ProductI18n' => 'i18ns',
-        //'prices' => 'ProductPrice',
-        //'variations' => 'ProductVariation'
+        'ProductI18n' => 'i18ns'
     );
 
     protected function id($data)

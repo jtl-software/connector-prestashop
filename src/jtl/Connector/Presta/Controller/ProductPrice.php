@@ -39,6 +39,7 @@ class ProductPrice extends BaseController
 			    AND p.id_product = '.$data['id_product'].'
 			    AND p.id_country = 0
 			    AND p.id_currency = 0
+			    AND id_customer = 0
         ');
 
         $varResult = array();
@@ -52,24 +53,28 @@ class ProductPrice extends BaseController
                     p.id_product_attribute = '.$data['id_product_attribute'].'
                     AND p.id_country = 0
 			        AND p.id_currency = 0
+			        AND id_customer = 0
             ');
         }
 
         $result = array_merge($pResult, $varResult);
 
-        $customerPrices = array();
+        //$customerPrices = array();
         $groupPrices = array();
 
         foreach ($result as $pData) {
             if ($pData['id_customer'] !== '0') {
-                $customerPrices[$pData['id_customer']][] = $pData;
+                //$customerPrices[$pData['id_customer']][] = $pData;
             } elseif ($pData['id_group'] !== '0') {
                 $groupPrices[$pData['id_group']][] = $pData;
             } else {
-                $groupPrices[0][] = $pData;
+                foreach (\Group::getGroups(1) as $gData) {
+                    $groupPrices[$gData['id_group']][] = $pData;
+                }
             }
         }
 
+        /*
         foreach ($customerPrices as $cId => $cPriceData) {
             $cPrice = new ProductpriceModel();
             $cPrice->setId(new Identity($model->getId()->getEndpoint().'_c'.$cId));
@@ -87,6 +92,7 @@ class ProductPrice extends BaseController
 
             $return[] = $cPrice;
         }
+        */
 
         foreach ($groupPrices as $gId => $gPriceData) {
             if ($gId === 0) $gId = '';
@@ -108,6 +114,60 @@ class ProductPrice extends BaseController
         }
 
         return $return;
+    }
+
+    public function pushData($data, $model = null)
+    {
+        $pricesCleared = false;
+
+        foreach($data as $price) {
+            $id = $price->getProductId()->getEndpoint();
+
+            if (!empty($id)) {
+                list($productId, $combiId) = explode('_', $id);
+
+                if (is_null($combiId)) $combiId = 0;
+
+                if (!empty($productId) && !is_null($combiId)) {
+                    if (!$pricesCleared) {
+                        $this->db->execute('DELETE FROM '._DB_PREFIX_.'specific_price WHERE id_product='.$productId.' AND id_product_attribute='.$combiId);
+                        $pricesCleared = true;
+                    }
+
+                    $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
+
+                    foreach ($price->getItems() as $item) {
+                        if (empty($customerGroupId)) {
+                            $product = new \Product($productId);
+                            $product->price = $item->getNetprice();
+                            $product->update();
+                        } else {
+                            $priceObj = new \SpecificPrice();
+                            $priceObj->id_product = $productId;
+                            $priceObj->id_product_attribute = $combiId;
+                            $priceObj->id_group = $customerGroupId;
+                            $priceObj->price = $item->getNetPrice();
+                            $priceObj->from_quantity = $item->getQuantity();
+                            $priceObj->id_shop = 0;
+                            $priceObj->id_currency = 0;
+                            $priceObj->id_country = 0;
+                            $priceObj->id_customer = 0;
+                            $priceObj->reduction = 0;
+                            $priceObj->reduction_type = 'amount';
+                            $priceObj->from = '0000-00-00 00:00:00';
+                            $priceObj->to = '0000-00-00 00:00:00';
+
+                            $priceObj->save();
+                        }
+                    }
+                }
+            }
+        }
+
+        \Configuration::updateGlobalValue('PS_SPECIFIC_PRICE_FEATURE_ACTIVE', \SpecificPrice::isCurrentlyUsed('specific_price'));
+        \Product::flushPriceCache();
+
+        return $data;
     }
 
     private function calculateNetPrice($data, $taxRate)

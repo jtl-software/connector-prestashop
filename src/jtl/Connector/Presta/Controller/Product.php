@@ -1,7 +1,7 @@
 <?php
 namespace jtl\Connector\Presta\Controller;
 
-use jtl\Connector\Presta\Mapper\ProductVarCombi;
+use jtl\Connector\Presta\Utils\Utils;
 
 class Product extends BaseController
 {
@@ -63,7 +63,104 @@ class Product extends BaseController
 
             $id = $product->id_product;
         } else {
-            die('varcombi');
+            list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
+
+            $product = new \Product($masterId);
+
+            if(!empty($combiId)) {
+                $product->updateAttribute(
+                    $combiId,
+                    null,
+                    $price, // TO DO
+                    $data->getShippingWeight(),
+                    null,
+                    null,
+                    null,
+                    $data->getSku(),
+                    $data->getEan(),
+                    null,
+                    null,
+                    $data->getUpc(),
+                    $data->getMinimumOrderQuantity()
+                );
+
+                $id = $data->getId()->getEndpoint();
+            } else {
+                $combiId = $product->addAttribute(
+                    $price, //TO DO
+                    $data->getShippingWeight(),
+                    null,
+                    null,
+                    null,
+                    $data->getSku(),
+                    $data->getEan(),
+                    null,
+                    null,
+                    $data->getUpc(),
+                    $data->getMinimumOrderQuantity()
+                );
+
+                $id = $data->getMasterProductId()->getEndpoint().'_'.$combiId;
+            }
+
+            $combi = new \Combination($combiId);
+
+            $valIds = array();
+
+            foreach ($data->getVariations() as $variation) {
+                $attrNames = array();
+                foreach ($variation->getI18ns() as $varI18n) {
+                    $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
+
+                    $attrNames[$langId] = $varI18n->getName();
+
+                    if ($langId == \Context::getContext()->country->id) {
+                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM '._DB_PREFIX_.'attribute_group_lang WHERE name="'.$varI18n->getName().'"');
+                    }
+                }
+
+                $attrGrp = new \AttributeGroup($attrGrpId);
+                $attrGrp->name = $attrNames;
+                $attrGrp->public_name = $attrNames;
+                $attrGrp->group_type = 'select';
+
+                $attrGrp->save();
+
+                $attrGrpId = $attrGrp->id;
+
+                foreach ($variation->getValues() as $value) {
+                    $valNames = array();
+                    foreach ($value->getI18ns() as $valI18n) {
+                        $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
+
+                        $valNames[$langId] = $valI18n->getName();
+
+                        if ($langId == \Context::getContext()->country->id) {
+                            $valId = $this->db->getValue('
+                              SELECT l.id_attribute
+                              FROM '._DB_PREFIX_.'attribute_lang l
+                              LEFT JOIN '._DB_PREFIX_.'attribute a ON a.id_attribute = l.id_attribute
+                              WHERE l.name="'.$valI18n->getName().'" && a.id_attribute_group = '.$attrGrpId
+                            );
+                            //$valId = $this->db->getValue('SELECT id_attribute FROM '._DB_PREFIX_.'attribute_lang WHERE name="'.$valI18n->getName().'"');
+                        }
+                    }
+
+                    $val = new \Attribute($valId);
+                    $val->name = $valNames;
+                    $val->id_attribute_group = $attrGrpId;
+
+                    $val->save();
+
+                    $valId = $val->id;
+
+                    $valIds[] = $valId;
+                }
+            }
+
+            $combi->setAttributes($valIds);
+
+            $combi->save();
         }
 
 		$data->getId()->setEndpoint($id);
@@ -72,12 +169,31 @@ class Product extends BaseController
             $data->getStockLevel()->getProductId()->setEndpoint($id);
             $stock = new ProductStockLevel();
             $stock->pushData($data->getStockLevel());
+
+            foreach ($data->getPrices() as $price) {
+                $price->getProductId()->setEndpoint($id);
+            }
+
+            $price = new ProductPrice();
+            $price->pushData($data->getPrices());
         }
 
         static::$idCache[$data->getId()->getHost()] = $id;
 
 		return $data;
 	}
+
+    public function deleteData($data)
+    {
+        /*
+        $category = new \Category($data->getId()->getEndpoint());
+
+        if (!$category->delete()) {
+            throw new \Exception('Error deleting category with id: '.$data->getId()->getEndpoint());
+        }
+        */
+        return $data;
+    }
 
 	public function getStats()
 	{
