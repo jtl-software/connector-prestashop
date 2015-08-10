@@ -8,6 +8,12 @@ class Currency extends BaseMapper
 		'factor' => 'conversion_rate',
 		'nameHtml' => 'name',
 		'name' => 'name',
-		'iso' => 'iso_code'
+		'iso' => 'iso_code',
+		'isDefault' => null
 	);
+
+	protected function isDefault($data)
+	{
+		return $data['id_currency'] === '1' ? true : false;
+	}
 }
