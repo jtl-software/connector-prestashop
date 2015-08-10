@@ -71,7 +71,7 @@ class Product extends BaseController
                 $product->updateAttribute(
                     $combiId,
                     null,
-                    $price, // TO DO
+                    null,
                     $data->getShippingWeight(),
                     null,
                     null,
@@ -87,7 +87,7 @@ class Product extends BaseController
                 $id = $data->getId()->getEndpoint();
             } else {
                 $combiId = $product->addAttribute(
-                    $price, //TO DO
+                    null,
                     $data->getShippingWeight(),
                     null,
                     null,
@@ -142,7 +142,6 @@ class Product extends BaseController
                               LEFT JOIN '._DB_PREFIX_.'attribute a ON a.id_attribute = l.id_attribute
                               WHERE l.name="'.$valI18n->getName().'" && a.id_attribute_group = '.$attrGrpId
                             );
-                            //$valId = $this->db->getValue('SELECT id_attribute FROM '._DB_PREFIX_.'attribute_lang WHERE name="'.$valI18n->getName().'"');
                         }
                     }
 
@@ -159,7 +158,6 @@ class Product extends BaseController
             }
 
             $combi->setAttributes($valIds);
-
             $combi->save();
         }
 
@@ -185,13 +183,20 @@ class Product extends BaseController
 
     public function deleteData($data)
     {
-        /*
-        $category = new \Category($data->getId()->getEndpoint());
+        $isCombi = (strpos($data->getId()->getEndpoint(), '_') === false) ? false : true;
 
-        if (!$category->delete()) {
-            throw new \Exception('Error deleting category with id: '.$data->getId()->getEndpoint());
+        if (!$isCombi) {
+            $obj = new \Product($data->getId()->getEndpoint());
+        } else {
+            list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
+
+            $obj = new \Combination($combiId);
         }
-        */
+
+        if (!$obj->delete()) {
+            throw new \Exception('Error deleting product with id: '.$data->getId()->getEndpoint());
+        }
+
         return $data;
     }
 

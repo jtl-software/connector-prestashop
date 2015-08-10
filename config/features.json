@@ -6,13 +6,13 @@
             "delete": true
         },
         "CategoryAttr": {
-            "pull": true,
-            "push": true,
+            "pull": false,
+            "push": false,
             "delete": false
         },
         "CategoryAttrI18n": {
-            "pull": true,
-            "push": true,
+            "pull": false,
+            "push": false,
             "delete": false
         },
         "CategoryCustomerGroup": {
@@ -26,8 +26,8 @@
             "delete": false
         },
         "CategoryInvisibility": {
-            "pull": false,
-            "push": false,
+            "pull": true,
+            "push": true,
             "delete": false
         },
         "ConfigGroup": {
@@ -56,9 +56,9 @@
             "delete": false
         },
         "CrossSelling": {
-            "pull": true,
-            "push": true,
-            "delete": true
+            "pull": false,
+            "push": false,
+            "delete": false
         },
         "CrossSellingGroup": {
             "pull": false,
@@ -71,8 +71,8 @@
             "delete": false
         },
         "CrossSellingItem": {
-            "pull": true,
-            "push": true,
+            "pull": false,
+            "push": false,
             "delete": false
         },
         "Currency": {
@@ -160,6 +160,11 @@
             "push": false,
             "delete": false
         },
+        "DeliveryNoteTrackingList": {
+            "pull": false,
+            "push": false,
+            "delete": false
+        },
         "FileUpload": {
             "pull": false,
             "push": false,
@@ -191,12 +196,12 @@
             "delete": false
         },
         "MeasurementUnit": {
-            "pull": true,
+            "pull": false,
             "push": false,
             "delete": false
         },
         "MeasurementUnitI18n": {
-            "pull": true,
+            "pull": false,
             "push": false,
             "delete": false
         },
@@ -291,13 +296,13 @@
             "delete": false
         },
         "ProductSpecialPrice": {
-            "pull": true,
-            "push": true,
+            "pull": false,
+            "push": false,
             "delete": false
         },
         "ProductSpecialPriceItem": {
-            "pull": true,
-            "push": true,
+            "pull": false,
+            "push": false,
             "delete": false
         },
         "ProductSpecific": {
@@ -317,7 +322,7 @@
         },
         "ProductVarCombination": {
             "pull": false,
-            "push": true,
+            "push": false,
             "delete": false
         },
         "ProductVariation": {

@@ -139,8 +139,15 @@ class ProductPrice extends BaseController
                     foreach ($price->getItems() as $item) {
                         if (empty($customerGroupId)) {
                             $product = new \Product($productId);
-                            $product->price = $item->getNetprice();
-                            $product->update();
+                            if (empty($combiId)) {
+                                $product->price = $item->getNetprice();
+                                $product->update();
+                            } else {
+                                $combiPriceDiff = $item->getNetPrice() - $product->price;
+                                $combi = new \Combination($combiId);
+                                $combi->price = $combiPriceDiff;
+                                $combi->save();
+                            }
                         } else {
                             $priceObj = new \SpecificPrice();
                             $priceObj->id_product = $productId;
