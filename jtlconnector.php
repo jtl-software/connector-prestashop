@@ -6,9 +6,6 @@ class JTLConnector extends Module
 {
     public function __construct()
     {
-        error_reporting(E_ALL);
-        ini_set('display_errors', 1);
-
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
         $this->version = file_get_contents(__DIR__.'/version');

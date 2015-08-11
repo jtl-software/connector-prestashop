@@ -27,6 +27,9 @@ class Manufacturer extends BaseController
     public function pushData($data)
     {
         $manufacturer = $this->mapper->toEndpoint($data);
+
+        $manufacturer->name = str_replace('#', '', $manufacturer->name);
+
         $manufacturer->save();
 
         $id = $manufacturer->id;
