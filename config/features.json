@@ -178,7 +178,7 @@
         "Image": {
             "pull": true,
             "push": true,
-            "delete": false
+            "delete": true
         },
         "Language": {
             "pull": true,

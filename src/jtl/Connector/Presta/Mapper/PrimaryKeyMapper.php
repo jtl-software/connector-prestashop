@@ -42,7 +42,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
 
         $endpointId = $dbResult ? $dbResult : null;
 
-        Logger::write(sprintf('Trying to get endpointId with hostId (%s) and type (%s) ... endpointId: (%s)', $hostId, $type, $endpointId), Logger::DEBUG, 'linker');
+        Logger::write(sprintf('Trying to get endpointId with hostId (%s) and type (%s) and relation type (%s) ... endpointId: (%s)', $hostId, $type, $relationType, $endpointId), Logger::DEBUG, 'linker');
 
         return $endpointId;
     }

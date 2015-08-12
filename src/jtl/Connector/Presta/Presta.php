@@ -127,12 +127,17 @@ class Presta extends BaseConnector
     {
         $types = array(
             E_ERROR => array(Logger::ERROR, 'E_ERROR'),
+            E_WARNING => array(Logger::WARNING, 'E_WARNING'),
             E_PARSE => array(Logger::WARNING, 'E_PARSE'),
+            E_NOTICE => array(Logger::NOTICE, 'E_NOTICE'),
             E_CORE_ERROR => array(Logger::ERROR, 'E_CORE_ERROR'),
             E_CORE_WARNING => array(Logger::WARNING, 'E_CORE_WARNING'),
             E_CORE_ERROR => array(Logger::ERROR, 'E_COMPILE_ERROR'),
             E_CORE_WARNING => array(Logger::WARNING, 'E_COMPILE_WARNING'),
             E_USER_ERROR => array(Logger::ERROR, 'E_USER_ERROR'),
+            E_USER_WARNING => array(Logger::WARNING, 'E_USER_WARNING'),
+            E_USER_NOTICE => array(Logger::NOTICE, 'E_USER_NOTICE'),
+            E_STRICT => array(Logger::NOTICE, 'E_STRICT'),
             E_RECOVERABLE_ERROR => array(Logger::ERROR, 'E_RECOVERABLE_ERROR'),
             E_DEPRECATED => array(Logger::INFO, 'E_DEPRECATED'),
             E_USER_DEPRECATED => array(Logger::INFO, 'E_USER_DEPRECATED')
@@ -141,6 +146,8 @@ class Presta extends BaseConnector
         if (isset($types[$errno])) {
             $err = "(" . $types[$errno][1] . ") File ({$errfile}, {$errline}): {$errstr}";
             Logger::write($err, $types[$errno][0], 'global');
+        } else {
+            Logger::write("File ({$errfile}, {$errline}): {$errstr}", Logger::ERROR, 'global');
         }
     }
 

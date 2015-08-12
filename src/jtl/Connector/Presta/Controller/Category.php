@@ -50,7 +50,7 @@ class Category extends BaseController
 		$category = new \Category($data->getId()->getEndpoint());
 
 		if (!$category->delete()) {
-			throw new \Exception('Error deleting category with id: '.$data->getId()->getEndpoint());
+			//throw new \Exception('Error deleting category with id: '.$data->getId()->getEndpoint());
 		}
 
 		return $data;
