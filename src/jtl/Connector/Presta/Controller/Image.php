@@ -53,6 +53,9 @@ class Image extends BaseController
                                 );
                         }
                     }
+
+                    $data->getId()->setEndpoint('c'.$id);
+
                     break;
 
                 case 'manufacturer':
@@ -78,12 +81,18 @@ class Image extends BaseController
                                 );
                         }
                     }
+
+                    $data->getId()->setEndpoint('m'.$id);
+
                     break;
 
                 case 'product':
+                    list($productId, $combiId) = explode('_', $id);
+
                     $img = new \Image();
-                    $img->id_product = $id;
+                    $img->id_product = $productId;
                     $img->position = $data->getSort();
+                    $img->cover = $img->position == 1 ? 1 : 0;
                     $img->save();
 
                     $new_path = $img->getPathForCreation();
@@ -97,6 +106,10 @@ class Image extends BaseController
                     }
 
                     $data->getId()->setEndpoint($img->id);
+
+                    if (!is_null($combiId)) {
+                        $this->db->execute('INSERT INTO '._DB_PREFIX_.'product_attribute_image SET id_product_attribute='.$combiId.', id_image='.$img->id);
+                    }
 
                     break;
             }

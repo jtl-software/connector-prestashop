@@ -49,6 +49,19 @@ class Product extends BaseController
 		return $return;
 	}
 
+    public function postPush($data)
+    {
+        $masterId = $data->getMasterProductId()->getEndpoint();
+
+        if (empty($masterId)) {
+            $this->db->execute('UPDATE '._DB_PREFIX_.'product SET unit_price_ratio='.$data->getBasePriceDivisor().' WHERE id_product='.$data->getId()->getEndpoint());
+            $this->db->execute('UPDATE '._DB_PREFIX_.'product_shop SET unit_price_ratio='.$data->getBasePriceDivisor().' WHERE id_product='.$data->getId()->getEndpoint());
+        }
+
+        \Configuration::updateGlobalValue('PS_SPECIFIC_PRICE_FEATURE_ACTIVE', \SpecificPrice::isCurrentlyUsed('specific_price'));
+        \Product::flushPriceCache();
+    }
+
 	public function pushData($data)
 	{
         if (isset(static::$idCache[$data->getMasterProductId()->getHost()])) {
@@ -59,6 +72,7 @@ class Product extends BaseController
 
         if (empty($masterId)) {
             $product = $this->mapper->toEndpoint($data);
+
             $product->save();
 
             $id = $product->id;
@@ -173,7 +187,10 @@ class Product extends BaseController
             }
 
             $price = new ProductPrice();
-            $price->pushData($data->getPrices());
+            $price->initPush($data->getPrices());
+            foreach ($data->getPrices() as $priceData) {
+                $price->pushData($priceData);
+            }
 
             $categories = new Product2Category();
             $categories->pushData($data);

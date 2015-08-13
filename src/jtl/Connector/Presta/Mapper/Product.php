@@ -34,6 +34,7 @@ class Product extends BaseMapper
         'basePriceUnitName' => 'unity',
         'considerStock' => null,
         'isActive' => null,
+        'isTopProduct' => 'on_sale',
         'minimumOrderQuantity' => 'minimal_quantity'
 	);
 
@@ -50,13 +51,19 @@ class Product extends BaseMapper
         'upc' => 'upc',
         'id_tax_rules_group' => null,
         'width' => 'width',
-        'unity' => 'basePriceUnitName',
+        'unity' => null,
         'available_date' => 'availableFrom',
         'active' => 'isActive',
+        'on_sale' => 'isTopProduct',
         'minimal_quantity' => 'minimumOrderQuantity',
         'ProductAttr' => 'attributes',
         'ProductI18n' => 'i18ns'
     );
+
+    protected function unity($data)
+    {
+        return $data->getBasePriceQuantity().' '.$data->getBasePriceUnitName();
+    }
 
     protected function isActive($data)
     {

@@ -116,65 +116,70 @@ class ProductPrice extends BaseController
         return $return;
     }
 
-    public function pushData($data, $model = null)
+    public function initPush($data)
     {
-        $pricesCleared = false;
+        $price = $data[0];
 
-        foreach($data as $price) {
-            $id = $price->getProductId()->getEndpoint();
+        $id = $price->getProductId()->getEndpoint();
 
-            if (!empty($id)) {
-                list($productId, $combiId) = explode('_', $id);
+        if (!empty($id)) {
+            list($productId, $combiId) = explode('_', $id);
 
-                if (is_null($combiId)) $combiId = 0;
+            if (is_null($combiId)) $combiId = 0;
 
-                if (!empty($productId) && !is_null($combiId)) {
-                    if (!$pricesCleared) {
-                        $this->db->execute('DELETE FROM '._DB_PREFIX_.'specific_price WHERE id_product='.$productId.' AND id_product_attribute='.$combiId);
-                        $pricesCleared = true;
-                    }
+            if (!empty($productId) && !is_null($combiId)) {
+                $this->db->execute('DELETE FROM '._DB_PREFIX_.'specific_price WHERE id_product='.$productId.' AND id_product_attribute='.$combiId);
+            }
+        }
+    }
 
-                    $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
+    public function pushData($price, $model = null)
+    {
+        $id = $price->getProductId()->getEndpoint();
 
-                    foreach ($price->getItems() as $item) {
-                        if (empty($customerGroupId)) {
-                            $product = new \Product($productId);
-                            if (empty($combiId)) {
-                                $product->price = $item->getNetprice();
-                                $product->update();
-                            } else {
-                                $combiPriceDiff = $item->getNetPrice() - $product->price;
-                                $combi = new \Combination($combiId);
-                                $combi->price = $combiPriceDiff;
-                                $combi->save();
-                            }
+        if (!empty($id)) {
+            list($productId, $combiId) = explode('_', $id);
+
+            if (is_null($combiId)) $combiId = 0;
+
+            if (!empty($productId) && !is_null($combiId)) {
+                $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
+
+                foreach ($price->getItems() as $item) {
+                    if (empty($customerGroupId)) {
+                        $product = new \Product($productId);
+                        if (empty($combiId)) {
+                            $product->price = $item->getNetprice();
+                            $product->update();
                         } else {
-                            $priceObj = new \SpecificPrice();
-                            $priceObj->id_product = $productId;
-                            $priceObj->id_product_attribute = $combiId;
-                            $priceObj->id_group = $customerGroupId;
-                            $priceObj->price = $item->getNetPrice();
-                            $priceObj->from_quantity = $item->getQuantity();
-                            $priceObj->id_shop = 0;
-                            $priceObj->id_currency = 0;
-                            $priceObj->id_country = 0;
-                            $priceObj->id_customer = 0;
-                            $priceObj->reduction = 0;
-                            $priceObj->reduction_type = 'amount';
-                            $priceObj->from = '0000-00-00 00:00:00';
-                            $priceObj->to = '0000-00-00 00:00:00';
-
-                            $priceObj->save();
+                            $combiPriceDiff = $item->getNetPrice() - $product->price;
+                            $combi = new \Combination($combiId);
+                            $combi->price = $combiPriceDiff;
+                            $combi->save();
                         }
+                    } else {
+                        $priceObj = new \SpecificPrice();
+                        $priceObj->id_product = $productId;
+                        $priceObj->id_product_attribute = $combiId;
+                        $priceObj->id_group = $customerGroupId;
+                        $priceObj->price = $item->getNetPrice();
+                        $priceObj->from_quantity = $item->getQuantity();
+                        $priceObj->id_shop = 0;
+                        $priceObj->id_currency = 0;
+                        $priceObj->id_country = 0;
+                        $priceObj->id_customer = 0;
+                        $priceObj->reduction = 0;
+                        $priceObj->reduction_type = 'amount';
+                        $priceObj->from = '0000-00-00 00:00:00';
+                        $priceObj->to = '0000-00-00 00:00:00';
+
+                        $priceObj->save();
                     }
                 }
             }
         }
 
-        \Configuration::updateGlobalValue('PS_SPECIFIC_PRICE_FEATURE_ACTIVE', \SpecificPrice::isCurrentlyUsed('specific_price'));
-        \Product::flushPriceCache();
-
-        return $data;
+        return $price;
     }
 
     private function calculateNetPrice($data, $taxRate)

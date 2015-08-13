@@ -29,13 +29,15 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
     {
         $relation = '';
 
-        switch ($relationType) {
-            case ImageRelationType::TYPE_CATEGORY:
-                $relation = ' AND endpointId LIKE "c%"';
-                break;
-            case ImageRelationType::TYPE_MANUFACTURER:
-                $relation = ' AND endpointId LIKE "m%"';
-                break;
+        if ($type == 16) {
+            switch ($relationType) {
+                case ImageRelationType::TYPE_CATEGORY:
+                    $relation = ' AND endpointId LIKE "c%"';
+                    break;
+                case ImageRelationType::TYPE_MANUFACTURER:
+                    $relation = ' AND endpointId LIKE "m%"';
+                    break;
+            }
         }
 
         $dbResult = $this->db->getValue('SELECT endpointId FROM jtl_connector_link WHERE hostId = '.$hostId.' AND type = '.$type.$relation);
