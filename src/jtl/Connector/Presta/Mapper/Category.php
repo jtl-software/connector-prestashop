@@ -1,6 +1,8 @@
 <?php
 namespace jtl\Connector\Presta\Mapper;
 
+use jtl\Connector\Model\Identity;
+
 class Category extends BaseMapper
 {
 	protected $endpointModel = '\Category';
@@ -8,7 +10,7 @@ class Category extends BaseMapper
 
 	protected $pull = array(
 		'id' => 'id_category',
-		'parentCategoryId' => 'id_parent',
+		'parentCategoryId' => null,
 		'isActive' => 'active',
 		'sort' => 'position',
 		'level' => 'level_depth',
@@ -18,10 +20,20 @@ class Category extends BaseMapper
 
     protected $push = array(
         'id_category' => 'id',
-        'id_parent' => 'parentCategoryId',
+        'id_parent' => null,
         'active' => 'isActive',
         'position' => 'sort',
 		'CategoryI18n' => 'i18ns',
         'CategoryInvisibility' => 'invisibilities'
     );
+
+	protected function parentCategoryId($data)
+	{
+		return new Identity($data['id_parent'] == \Category::getRootCategory()->id ? 0 : $data['id_parent']);
+	}
+
+    protected function id_parent($data)
+    {
+        return $data->getParentcategoryId()->getEndpoint() == 0 ? \Category::getRootCategory()->id : $data->getParentcategoryId()->getEndpoint();
+    }
 }

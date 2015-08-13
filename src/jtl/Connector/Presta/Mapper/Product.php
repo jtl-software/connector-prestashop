@@ -33,7 +33,7 @@ class Product extends BaseMapper
         'availableFrom' => 'available_date',
         'basePriceUnitName' => 'unity',
         'considerStock' => null,
-        'isActive' => 'active',
+        'isActive' => null,
         'minimumOrderQuantity' => 'minimal_quantity'
 	);
 
@@ -55,9 +55,13 @@ class Product extends BaseMapper
         'active' => 'isActive',
         'minimal_quantity' => 'minimumOrderQuantity',
         'ProductAttr' => 'attributes',
-        'Product2Category' => 'categories',
         'ProductI18n' => 'i18ns'
     );
+
+    protected function isActive($data)
+    {
+        return true;
+    }
 
     protected function id($data)
     {

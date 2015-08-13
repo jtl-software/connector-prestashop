@@ -11,7 +11,7 @@ class Category extends BaseController
 			SELECT c.* 
 			FROM '._DB_PREFIX_.'category c
 			LEFT JOIN jtl_connector_link l ON c.id_category = l.endpointId AND l.type = 1
-            WHERE l.hostId IS NULL 
+            WHERE l.hostId IS NULL AND c.id_parent != 0 AND c.is_root_category = 0
             ORDER BY c.nleft
             LIMIT '.$limit
         );
@@ -71,7 +71,7 @@ class Category extends BaseController
 			SELECT COUNT(*) 
 			FROM '._DB_PREFIX_.'category c
 			LEFT JOIN jtl_connector_link l ON c.id_category = l.endpointId AND l.type = 1
-            WHERE l.hostId IS NULL
+            WHERE l.hostId IS NULL AND c.id_category > 2
         ');
 	}
 }

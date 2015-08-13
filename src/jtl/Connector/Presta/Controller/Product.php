@@ -61,7 +61,7 @@ class Product extends BaseController
             $product = $this->mapper->toEndpoint($data);
             $product->save();
 
-            $id = $product->id_product;
+            $id = $product->id;
         } else {
             list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
 
@@ -174,6 +174,9 @@ class Product extends BaseController
 
             $price = new ProductPrice();
             $price->pushData($data->getPrices());
+
+            $categories = new Product2Category();
+            $categories->pushData($data);
         }
 
         static::$idCache[$data->getId()->getHost()] = $id;
