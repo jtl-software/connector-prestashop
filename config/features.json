@@ -82,8 +82,8 @@
         },
         "Customer": {
             "pull": true,
-            "push": true,
-            "delete": true
+            "push": false,
+            "delete": false
         },
         "CustomerAttr": {
             "pull": false,
