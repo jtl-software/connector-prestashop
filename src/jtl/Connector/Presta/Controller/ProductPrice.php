@@ -149,12 +149,12 @@ class ProductPrice extends BaseController
                     if (empty($customerGroupId)) {
                         $product = new \Product($productId);
                         if (empty($combiId)) {
-                            $product->price = $item->getNetprice();
+                            $product->price = round($item->getNetprice(), 6);
                             $product->update();
                         } else {
                             $combiPriceDiff = $item->getNetPrice() - $product->price;
                             $combi = new \Combination($combiId);
-                            $combi->price = $combiPriceDiff;
+                            $combi->price = round($combiPriceDiff, 6);
                             $combi->save();
                         }
                     } else {
@@ -162,7 +162,7 @@ class ProductPrice extends BaseController
                         $priceObj->id_product = $productId;
                         $priceObj->id_product_attribute = $combiId;
                         $priceObj->id_group = $customerGroupId;
-                        $priceObj->price = $item->getNetPrice();
+                        $priceObj->price = round($item->getNetPrice(), 6);
                         $priceObj->from_quantity = $item->getQuantity();
                         $priceObj->id_shop = 0;
                         $priceObj->id_currency = 0;

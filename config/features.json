@@ -380,6 +380,11 @@
             "push": false,
             "delete": false
         },
+        "ShippingMethod": {
+            "pull": true,
+            "push": false,
+            "delete": false
+        },
         "Specific": {
             "pull": false,
             "push": false,

@@ -55,10 +55,15 @@ class Product extends BaseMapper
         'available_date' => 'availableFrom',
         'active' => 'isActive',
         'on_sale' => 'isTopProduct',
-        'minimal_quantity' => 'minimumOrderQuantity',
+        'minimal_quantity' => null,
         'ProductAttr' => 'attributes',
         'ProductI18n' => 'i18ns'
     );
+
+    protected function minimal_quantity($data)
+    {
+        return ceil($data->getMinimumOrderQuantity());
+    }
 
     protected function unity($data)
     {
