@@ -11,7 +11,7 @@ class Manufacturer extends BaseController
 			LEFT JOIN jtl_connector_link l ON m.id_manufacturer = l.endpointId AND l.type = 32
             WHERE l.hostId IS NULL
             LIMIT '.$limit
-    );
+        );
 
 		$return = array();
 
