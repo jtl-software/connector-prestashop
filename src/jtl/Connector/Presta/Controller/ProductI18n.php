@@ -27,16 +27,18 @@ class ProductI18n extends BaseController
     public function pushData($data, $model)
     {
         foreach ($data->getI18ns() as $i18n) {
-            $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
+            if (!empty($i18n->getName())) {
+                $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
 
-            $model->name[$id] = $i18n->getName();
-            $model->description[$id] = $i18n->getDescription();
-            $model->link_rewrite[$id] = \Tools::str2url(empty($i18n->getUrlPath()) ? $i18n->getName() : $i18n->getUrlPath());;
-            $model->meta_title[$id] = $i18n->getTitleTag();
-            $model->meta_keywords[$id] = $i18n->getMetaKeywords();
-            $model->meta_description[$id] = $i18n->getMetaDescription();
-            $model->available_now[$id] =$i18n->getDeliveryStatus();
-            $model->description_short[$id] = $i18n->getShortDescription();
+                $model->name[$id] = str_replace('#', '', $i18n->getName());
+                $model->description[$id] = \Tools::htmlentitiesUTF8($i18n->getDescription());
+                $model->link_rewrite[$id] = \Tools::str2url(empty($i18n->getUrlPath()) ? $i18n->getName() : $i18n->getUrlPath());;
+                $model->meta_title[$id] = $i18n->getTitleTag();
+                $model->meta_keywords[$id] = $i18n->getMetaKeywords();
+                $model->meta_description[$id] = $i18n->getMetaDescription();
+                $model->available_now[$id] = $i18n->getDeliveryStatus();
+                $model->description_short[$id] = $i18n->getShortDescription();
+            }
         }
     }
 }

@@ -37,8 +37,10 @@ class ProductAttr extends BaseController
             foreach ($attr->getI18ns() as $i18n) {
                 $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
 
-                $featureData['names'][$id] = $i18n->getName();
-                $featureData['values'][$id] = $i18n->getValue();
+                if (!empty($i18n->getName())) {
+                    $featureData['names'][$id] = $i18n->getName();
+                    $featureData['values'][$id] = $i18n->getValue();
+                }
 
                 if ($id == \Context::getContext()->country->id) {
                     $fId = $this->db->getValue('

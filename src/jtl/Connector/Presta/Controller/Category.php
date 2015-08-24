@@ -56,15 +56,6 @@ class Category extends BaseController
 		return $data;
 	}
 
-	public function prePush($data)
-	{
-		$id = $data->getId()->getEndpoint();
-
-		if (!empty($id)) {
-			$this->db->execute('DELETE FROM oxcategory2attribute where OXOBJECTID="'.$id.'"');
-		}		
-	}
-
 	public function getStats()
 	{
 		return $this->db->getValue('

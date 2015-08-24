@@ -126,7 +126,9 @@ class Product extends BaseController
                 foreach ($variation->getI18ns() as $varI18n) {
                     $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
 
-                    $attrNames[$langId] = $varI18n->getName();
+                    if (!empty($varI18n->getName())) {
+                        $attrNames[$langId] = $varI18n->getName();
+                    }
 
                     if ($langId == \Context::getContext()->country->id) {
                         $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM '._DB_PREFIX_.'attribute_group_lang WHERE name="'.$varI18n->getName().'"');
@@ -147,7 +149,9 @@ class Product extends BaseController
                     foreach ($value->getI18ns() as $valI18n) {
                         $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
 
-                        $valNames[$langId] = $valI18n->getName();
+                        if (!empty($valI18n->getName())) {
+                            $valNames[$langId] = $valI18n->getName();
+                        }
 
                         if ($langId == \Context::getContext()->country->id) {
                             $valId = $this->db->getValue('

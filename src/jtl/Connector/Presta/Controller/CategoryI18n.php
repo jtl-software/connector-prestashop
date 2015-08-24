@@ -30,7 +30,7 @@ class CategoryI18n extends BaseController
 			$id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
 
 			$model->name[$id] = $i18n->getName();
-			$model->description[$id] = $i18n->getDescription();
+			$model->description[$id] = \Tools::htmlentitiesUTF8($i18n->getDescription());
 			$model->link_rewrite[$id] = \Tools::str2url(empty($i18n->getUrlPath()) ? $i18n->getName() : $i18n->getUrlPath());
 			$model->meta_title[$id] = $i18n->getTitleTag();
 			$model->meta_keywords[$id] = $i18n->getMetaKeywords();

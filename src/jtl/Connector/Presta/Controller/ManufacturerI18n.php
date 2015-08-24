@@ -33,7 +33,7 @@ class ManufacturerI18n extends BaseController
         foreach ($data->getI18ns() as $i18n) {
             $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
 
-            $model->description[$id] = $i18n->getDescription();
+            $model->description[$id] = \Tools::htmlentitiesUTF8($i18n->getDescription());
             $model->meta_title[$id] = $i18n->getTitleTag();
             $model->meta_keywords[$id] = $i18n->getMetaKeywords();
             $model->meta_description[$id] = $i18n->getMetaDescription();
