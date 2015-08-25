@@ -175,6 +175,7 @@ class Product extends BaseController
                 }
             }
 
+            $combi->price = 0;
             $combi->setAttributes($valIds);
             $combi->save();
         }

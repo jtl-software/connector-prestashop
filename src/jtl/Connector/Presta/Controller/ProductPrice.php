@@ -152,7 +152,7 @@ class ProductPrice extends BaseController
                             $product->price = round($item->getNetprice(), 6);
                             $product->update();
                         } else {
-                            $combiPriceDiff = $item->getNetPrice() - $product->price;
+                            $combiPriceDiff = $item->getNetPrice() - floatval($product->price);
                             $combi = new \Combination($combiId);
                             $combi->price = round($combiPriceDiff, 6);
                             $combi->save();
