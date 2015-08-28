@@ -89,7 +89,7 @@ class Presta extends BaseConnector
         );
 
         $callExceptions = array(
-            'image.push'
+            //'image.push'
         );
 
         if (!in_array($this->action, $actionExceptions) && !in_array($requestpacket->getMethod(), $callExceptions)) {

@@ -1,6 +1,7 @@
 <?php
 namespace jtl\Connector\Presta\Controller;
 
+use jtl\Connector\Model\ConnectorServerInfo;
 use \jtl\Connector\Result\Action;
 use \jtl\Connector\Model\Statistic;
 use \jtl\Connector\Core\Controller\Controller;
@@ -59,11 +60,33 @@ class Connector extends Controller
         $action = new Action();
         $action->setHandled(true);
 
+        $returnBytes = function($value) {
+            $value = trim($value);
+            $unit = strtolower($value[strlen($value) - 1]);
+            switch ($unit) {
+                case 'g':
+                    $value *= 1024;
+                case 'm':
+                    $value *= 1024;
+                case 'k':
+                    $value *= 1024;
+            }
+
+            return $value;
+        };
+
+        $serverInfo = new ConnectorServerInfo();
+        $serverInfo->setMemoryLimit($returnBytes(ini_get('memory_limit')))
+            ->setExecutionTime((int) ini_get('max_execution_time'))
+            ->setPostMaxSize($returnBytes(ini_get('post_max_size')))
+            ->setUploadMaxFilesize($returnBytes(ini_get('upload_max_filesize')));
+
         $connector = new ConnectorIdentification();
-        $connector->setEndpointVersion(file_get_contents(CONNECTOR_DIR.'/version'));
-        $connector->setPlatformName('PrestaShop');
-        $connector->setPlatformVersion(_PS_VERSION_);
-        $connector->setProtocolVersion(Application()->getProtocolVersion());
+        $connector->setEndpointVersion(file_get_contents(CONNECTOR_DIR.'/version'))
+            ->setPlatformName('PrestaShop')
+            ->setPlatformVersion(_PS_VERSION_)
+            ->setProtocolVersion(Application()->getProtocolVersion())
+            ->setServerInfo($serverInfo);
 
         $action->setResult($connector);
 
