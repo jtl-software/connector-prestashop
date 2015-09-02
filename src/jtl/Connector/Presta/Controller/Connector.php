@@ -60,26 +60,22 @@ class Connector extends Controller
         $action = new Action();
         $action->setHandled(true);
 
-        $returnBytes = function($value) {
+        $returnMegaBytes = function($value) {
             $value = trim($value);
             $unit = strtolower($value[strlen($value) - 1]);
             switch ($unit) {
                 case 'g':
                     $value *= 1024;
-                case 'm':
-                    $value *= 1024;
-                case 'k':
-                    $value *= 1024;
             }
 
-            return $value;
+            return (int) $value;
         };
 
         $serverInfo = new ConnectorServerInfo();
-        $serverInfo->setMemoryLimit($returnBytes(ini_get('memory_limit')))
+        $serverInfo->setMemoryLimit($returnMegaBytes(ini_get('memory_limit')))
             ->setExecutionTime((int) ini_get('max_execution_time'))
-            ->setPostMaxSize($returnBytes(ini_get('post_max_size')))
-            ->setUploadMaxFilesize($returnBytes(ini_get('upload_max_filesize')));
+            ->setPostMaxSize($returnMegaBytes(ini_get('post_max_size')))
+            ->setUploadMaxFilesize($returnMegaBytes(ini_get('upload_max_filesize')));
 
         $connector = new ConnectorIdentification();
         $connector->setEndpointVersion(file_get_contents(CONNECTOR_DIR.'/version'))
