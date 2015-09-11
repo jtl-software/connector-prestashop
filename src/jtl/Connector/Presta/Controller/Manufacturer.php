@@ -44,7 +44,7 @@ class Manufacturer extends BaseController
         $manufacturer = new \Manufacturer($data->getId()->getEndpoint());
 
         if (!$manufacturer->delete()) {
-            throw new \Exception('Error deleting manufacturer with id: '.$data->getId()->getEndpoint());
+            //throw new \Exception('Error deleting manufacturer with id: '.$data->getId()->getEndpoint());
         }
 
         return $data;
