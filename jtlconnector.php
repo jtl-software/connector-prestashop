@@ -22,6 +22,22 @@ class JTLConnector extends Module
 
     public function install()
     {
+        $dbFile = __DIR__.DIRECTORY_SEPARATOR.'db'.DIRECTORY_SEPARATOR.'connector.s3db';
+        chmod($dbFile, 0777);
+        if (!is_writable($dbFile)) {
+            $this->_errors[] = sprintf($this->l('The file "%s" must be writable.') , $dbFile);
+        }
+
+        $logDir = __DIR__.DIRECTORY_SEPARATOR.'logs';
+        chmod($logDir, 0777);
+        if (!is_writable($logDir)) {
+            $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.') , $logDir);
+        }
+
+        if (count($this->_errors) != 0) {
+            return false;
+        }
+
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
         }
@@ -31,6 +47,7 @@ class JTLConnector extends Module
         $meta->page = 'module-jtlconnector-api';
         $meta->url_rewrite = array(1 => 'jtlconnector');
         $meta->configurable = '0';
+        $meta->multilang = false;
 
         $meta->save();
 
