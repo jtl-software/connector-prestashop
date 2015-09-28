@@ -41,8 +41,9 @@ class ProductAttr extends BaseController
                     $id = \Context::getContext()->language->id;
                 }
 
-                if (!empty($i18n->getName())) {
-                    $featureData['names'][$id] = $i18n->getName();
+                $name = $i18n->getName();
+                if (!empty($name)) {
+                    $featureData['names'][$id] = $name;
                     $featureData['values'][$id] = $i18n->getValue();
                 }
 
@@ -50,7 +51,7 @@ class ProductAttr extends BaseController
                     $fId = $this->db->getValue('
                         SELECT id_feature
                         FROM '._DB_PREFIX_.'feature_lang
-                        WHERE name = "'.$i18n->getName().'"
+                        WHERE name = "'.$name.'"
                         GROUP BY id_feature
                     ');
                 }

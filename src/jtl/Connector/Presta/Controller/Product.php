@@ -126,12 +126,14 @@ class Product extends BaseController
                 foreach ($variation->getI18ns() as $varI18n) {
                     $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
 
-                    if (!empty($varI18n->getName())) {
-                        $attrNames[$langId] = $varI18n->getName();
+                    $varName = $varI18n->getName();
+
+                    if (!empty($varName)) {
+                        $attrNames[$langId] = $varName;
                     }
 
                     if ($langId == \Context::getContext()->country->id) {
-                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM '._DB_PREFIX_.'attribute_group_lang WHERE name="'.$varI18n->getName().'"');
+                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM '._DB_PREFIX_.'attribute_group_lang WHERE name="'.$varName.'"');
                     }
                 }
 
@@ -149,8 +151,10 @@ class Product extends BaseController
                     foreach ($value->getI18ns() as $valI18n) {
                         $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
 
-                        if (!empty($valI18n->getName())) {
-                            $valNames[$langId] = $valI18n->getName();
+                        $valName = $valI18n->getName();
+
+                        if (!empty($valName)) {
+                            $valNames[$langId] = $valName;
                         }
 
                         if ($langId == \Context::getContext()->country->id) {
@@ -158,7 +162,7 @@ class Product extends BaseController
                               SELECT l.id_attribute
                               FROM '._DB_PREFIX_.'attribute_lang l
                               LEFT JOIN '._DB_PREFIX_.'attribute a ON a.id_attribute = l.id_attribute
-                              WHERE l.name="'.$valI18n->getName().'" && a.id_attribute_group = '.$attrGrpId
+                              WHERE l.name="'.$valName.'" && a.id_attribute_group = '.$attrGrpId
                             );
                         }
                     }

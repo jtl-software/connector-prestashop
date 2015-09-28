@@ -31,7 +31,8 @@ class CategoryI18n extends BaseController
 
 			$model->name[$id] = $i18n->getName();
 			$model->description[$id] = \Tools::htmlentitiesUTF8($i18n->getDescription());
-			$model->link_rewrite[$id] = \Tools::str2url(empty($i18n->getUrlPath()) ? $i18n->getName() : $i18n->getUrlPath());
+			$path = $i18n->getUrlPath();
+			$model->link_rewrite[$id] = \Tools::str2url(empty($path) ? $i18n->getName() : $path);
 			$model->meta_title[$id] = $i18n->getTitleTag();
 			$model->meta_keywords[$id] = $i18n->getMetaKeywords();
 			$model->meta_description[$id] = $i18n->getMetaDescription();
