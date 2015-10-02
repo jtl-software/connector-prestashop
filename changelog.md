@@ -1,8 +1,13 @@
-1.0.7
+1.0.8
 ------
+- [2c0ddfc]
+  raised connector version
+
 - [e66193c]
   changelog update
 
+1.0.7
+------
 - [5f24bc6]
   removed direct function calls on getters
   fixed method definitions
