@@ -1,5 +1,8 @@
 1.0.7
 ------
+- [e66193c]
+  changelog update
+
 - [5f24bc6]
   removed direct function calls on getters
   fixed method definitions
