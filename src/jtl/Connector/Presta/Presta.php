@@ -4,13 +4,10 @@ namespace jtl\Connector\Presta;
 use \jtl\Connector\Core\Rpc\RequestPacket;
 use \jtl\Connector\Core\Utilities\RpcMethod;
 use \jtl\Connector\Core\Rpc\ResponsePacket;
-use \jtl\Connector\Session\SessionHelper;
 use \jtl\Connector\Base\Connector as BaseConnector;
 use \jtl\Connector\Core\Rpc\Error as Error;
 use \jtl\Connector\Core\Http\Response;
 use \jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
-use \jtl\Connector\Core\Config\Config;
-use \jtl\Connector\Core\Config\Loader\System as ConfigSystem;
 use \jtl\Connector\Result\Action;
 use \jtl\Connector\Presta\Auth\TokenLoader;
 use \jtl\Connector\Presta\Checksum\ChecksumLoader;
@@ -23,40 +20,9 @@ class Presta extends BaseConnector
 
     public function initialize()
     {
-        $this->initConnectorConfig();
-
         $this->setPrimaryKeyMapper(new PrimaryKeyMapper());
         $this->setTokenLoader(new TokenLoader());
         $this->setChecksumLoader(new ChecksumLoader());
-    }
-
-    protected function initConnectorConfig()
-    {
-        $session = new SessionHelper("prestaConnector");
-
-        $config = null;
-
-        if (isset($session->config)) {
-            $config = $session->config;
-        }
-
-        if (empty($config)) {
-            if (!is_null($this->config)) {
-                $config = $this->getConfig();
-            }
-
-            if (empty($config)) {
-                $config = new Config(array(
-                    new ConfigSystem()
-                ));
-
-                $this->setConfig($config);
-            }
-        }
-
-        if (!isset($session->config)) {
-            $session->config = $config;
-        }
     }
 
     public function canHandle()
