@@ -1,8 +1,15 @@
-1.0.8
+1.0.9
 ------
+- [edd0881]
+  fixed product attr i18ns
+  fixed shipping price quantity
+  cleaned up old code
+
 - [7ab567f]
   updated changelog
 
+1.0.8
+------
 - [2c0ddfc]
   raised connector version
 
