@@ -47,7 +47,7 @@ class ProductAttr extends BaseController
                     $featureData['values'][$id] = $i18n->getValue();
                 }
 
-                if ($id == \Context::getContext()->country->id) {
+                if ($id == \Context::getContext()->language->id) {
                     $fId = $this->db->getValue('
                         SELECT id_feature
                         FROM '._DB_PREFIX_.'feature_lang

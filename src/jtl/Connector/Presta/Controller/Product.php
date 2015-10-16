@@ -203,6 +203,11 @@ class Product extends BaseController
 
             $categories = new Product2Category();
             $categories->pushData($data);
+
+            if (isset($product)) {
+                $attributes = new ProductAttr();
+                $attributes->pushData($data, $product);
+            }
         }
 
         static::$idCache[$data->getId()->getHost()] = $id;

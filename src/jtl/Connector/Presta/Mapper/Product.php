@@ -56,7 +56,7 @@ class Product extends BaseMapper
         'active' => 'isActive',
         'on_sale' => 'isTopProduct',
         'minimal_quantity' => null,
-        'ProductAttr' => 'attributes',
+        //'ProductAttr' => 'attributes',
         'ProductI18n' => 'i18ns'
     );
 
