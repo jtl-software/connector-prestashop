@@ -1,3 +1,11 @@
+1.1
+------
+- [841f053]
+  fixed product attributes
+
+- [a31ef49]
+  updated changelog.md
+
 1.0.9
 ------
 - [edd0881]

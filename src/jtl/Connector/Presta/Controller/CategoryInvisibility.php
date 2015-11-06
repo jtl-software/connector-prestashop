@@ -7,10 +7,10 @@ class CategoryInvisibility extends BaseController
     {
         $result = $this->db->executeS('
             SELECT g.id_group
-            FROM ps_group g
+            FROM ' . _DB_PREFIX_ . 'group g
             WHERE NOT EXISTS(
               SELECT *
-              FROM ps_category_group i
+              FROM '._DB_PREFIX_.'category_group i
               WHERE g.id_group = i.id_group AND i.id_category = '.$data['id_category'].'
             )');
 
