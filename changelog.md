@@ -1,5 +1,8 @@
 1.2
 ------
+- [098537b]
+  updated changelog
+
 - [c34590e]
   fixed db prefixes
 

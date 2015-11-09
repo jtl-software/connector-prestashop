@@ -41,7 +41,7 @@ class Product extends BaseMapper
 	protected $push = array(
         'id_product' => 'id',
         'id_manufacturer' => 'manufacturerId',
-        'date_add' => 'creationDate',
+        'date_add' => null,
         'ean13' => 'ean',
         'height' => 'height',
         'depth' => 'length',
@@ -56,9 +56,18 @@ class Product extends BaseMapper
         'active' => 'isActive',
         'on_sale' => 'isTopProduct',
         'minimal_quantity' => null,
-        //'ProductAttr' => 'attributes',
         'ProductI18n' => 'i18ns'
     );
+
+    protected function date_add($data)
+    {
+        if (is_null($data->getCreationDate())) {
+            $current = new \DateTime();
+            return $current->format('Y-m-d H:i:s');
+        }
+
+        return $data->getCreationDate()->format('Y-m-d H:i:s');
+    }
 
     protected function minimal_quantity($data)
     {
