@@ -1,5 +1,8 @@
 1.2
 ------
+- [9014a86]
+  workaround for invalid creationDate
+
 - [098537b]
   updated changelog
 

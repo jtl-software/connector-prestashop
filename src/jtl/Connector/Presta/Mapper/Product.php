@@ -127,7 +127,7 @@ class Product extends BaseMapper
     {
         $group = $this->db->getValue('
             SELECT r.id_tax_rules_group
-            FROM ' . _DB_PREFIX_ . '.tax t
+            FROM ' . _DB_PREFIX_ . 'tax t
             LEFT JOIN ' . _DB_PREFIX_ . 'tax_rule r ON r.id_tax = t.id_tax
             WHERE t.rate = '.$data->getVat().' && id_country = '.\Context::getContext()->country->id.'
             GROUP BY r.id_tax
