@@ -1,5 +1,8 @@
 1.2
 ------
+- [899b727]
+  fixed tax group query
+
 - [9014a86]
   workaround for invalid creationDate
 

@@ -189,7 +189,7 @@ class Product extends BaseController
         if($id) {
             $data->getStockLevel()->getProductId()->setEndpoint($id);
             $stock = new ProductStockLevel();
-            $stock->pushData($data->getStockLevel());
+            $stock->pushData($data->getStockLevel(), $product);
 
             foreach ($data->getPrices() as $price) {
                 $price->getProductId()->setEndpoint($id);

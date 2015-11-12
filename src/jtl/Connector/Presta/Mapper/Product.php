@@ -33,6 +33,7 @@ class Product extends BaseMapper
         'availableFrom' => 'available_date',
         'basePriceUnitName' => 'unity',
         'considerStock' => null,
+        'permitNegativeStock' => null,
         'isActive' => null,
         'isTopProduct' => 'on_sale',
         'minimumOrderQuantity' => 'minimal_quantity'
@@ -49,6 +50,7 @@ class Product extends BaseMapper
         'weight' => 'shippingWeight',
         'reference' => 'sku',
         'upc' => 'upc',
+        'out_of_stock' => null,
         'id_tax_rules_group' => null,
         'width' => 'width',
         'unity' => null,
@@ -58,6 +60,11 @@ class Product extends BaseMapper
         'minimal_quantity' => null,
         'ProductI18n' => 'i18ns'
     );
+
+    protected function out_of_stock($data)
+    {
+        return $data->getPermitNegativeStock() === true ? 1 : 0;
+    }
 
     protected function date_add($data)
     {
@@ -71,7 +78,8 @@ class Product extends BaseMapper
 
     protected function minimal_quantity($data)
     {
-        return ceil($data->getMinimumOrderQuantity());
+        $value = ceil($data->getMinimumOrderQuantity());
+        return $value < 1 ? 1 : $value;
     }
 
     protected function unity($data)
@@ -116,6 +124,21 @@ class Product extends BaseMapper
     protected function vat($data)
     {
         return Utils::getInstance()->getProductTaxRate($data['id_product']);
+    }
+
+    protected function permitNegativeStock($data)
+    {
+        $query = 'SELECT out_of_stock FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$data['id_product'];
+
+        if (!empty($data['id_product_attribute'])) {
+            $query .= ' AND id_product_attribute = '.$data['id_product_attribute'];
+        } else {
+            $query .= ' AND id_product_attribute = 0';
+        }
+
+        $option = $this->db->getValue($query);
+
+        return ($option === false || $option == '0' || $option == '2') ? false : true;
     }
 
     protected function considerStock($data)
