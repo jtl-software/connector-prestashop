@@ -1,5 +1,8 @@
 1.2
 ------
+- [81b51e0]
+  fixed permitNegativeStock
+
 - [899b727]
   fixed tax group query
 

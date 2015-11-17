@@ -58,7 +58,6 @@ class Product extends BaseController
             $this->db->execute('UPDATE '._DB_PREFIX_.'product_shop SET unit_price_ratio='.$data->getBasePriceDivisor().' WHERE id_product='.$data->getId()->getEndpoint());
         }
 
-        \Configuration::updateGlobalValue('PS_SPECIFIC_PRICE_FEATURE_ACTIVE', \SpecificPrice::isCurrentlyUsed('specific_price'));
         \Product::flushPriceCache();
     }
 
@@ -81,6 +80,9 @@ class Product extends BaseController
 
             $product = new \Product($masterId);
 
+            $minOrder = ceil($data->getMinimumOrderQuantity());
+            $minOrder = $minOrder < 1 ? 1 : $minOrder;
+
             if(!empty($combiId)) {
                 $product->updateAttribute(
                     $combiId,
@@ -95,7 +97,7 @@ class Product extends BaseController
                     null,
                     null,
                     $data->getUpc(),
-                    $data->getMinimumOrderQuantity()
+                    $minOrder
                 );
 
                 $id = $data->getId()->getEndpoint();
@@ -111,7 +113,7 @@ class Product extends BaseController
                     null,
                     null,
                     $data->getUpc(),
-                    $data->getMinimumOrderQuantity()
+                    $minOrder
                 );
 
                 $id = $data->getMasterProductId()->getEndpoint().'_'.$combiId;
@@ -182,6 +184,8 @@ class Product extends BaseController
             $combi->price = 0;
             $combi->setAttributes($valIds);
             $combi->save();
+
+            $product->checkDefaultAttributes();
         }
 
 		$data->getId()->setEndpoint($id);
