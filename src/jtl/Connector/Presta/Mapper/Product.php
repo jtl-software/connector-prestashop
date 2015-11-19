@@ -149,11 +149,11 @@ class Product extends BaseMapper
     protected function id_tax_rules_group($data)
     {
         $group = $this->db->getValue('
-            SELECT r.id_tax_rules_group
-            FROM ' . _DB_PREFIX_ . 'tax t
-            LEFT JOIN ' . _DB_PREFIX_ . 'tax_rule r ON r.id_tax = t.id_tax
-            WHERE t.rate = '.$data->getVat().' && id_country = '.\Context::getContext()->country->id.'
-            GROUP BY r.id_tax
+            SELECT rg.id_tax_rules_group
+            FROM ' . _DB_PREFIX_ . 'tax_rule r
+            LEFT JOIN ' . _DB_PREFIX_ . 'tax_rules_group rg ON rg.id_tax_rules_group = r.id_tax_rules_group
+            LEFT JOIN ' . _DB_PREFIX_ . 'tax t ON t.id_tax = r.id_tax
+            WHERE t.rate = '.$data->getVat().' && r.id_country = 1 && rg.deleted = 0 && t.active = 1 && rg.active = 1
         ');
 
         return $group;

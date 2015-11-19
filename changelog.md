@@ -1,5 +1,9 @@
 1.2
 ------
+- [d28c9f3]
+  check and set default varcombi on push
+  set min quantity to 1 instead of 0
+
 - [81b51e0]
   fixed permitNegativeStock
 
