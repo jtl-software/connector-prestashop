@@ -3,15 +3,11 @@ namespace jtl\Connector\Presta;
 
 use \jtl\Connector\Core\Rpc\RequestPacket;
 use \jtl\Connector\Core\Utilities\RpcMethod;
-use \jtl\Connector\Core\Rpc\ResponsePacket;
 use \jtl\Connector\Base\Connector as BaseConnector;
-use \jtl\Connector\Core\Rpc\Error as Error;
-use \jtl\Connector\Core\Http\Response;
 use \jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use \jtl\Connector\Result\Action;
 use \jtl\Connector\Presta\Auth\TokenLoader;
 use \jtl\Connector\Presta\Checksum\ChecksumLoader;
-use \jtl\Connector\Core\Logger\Logger;
 
 class Presta extends BaseConnector
 {

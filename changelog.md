@@ -1,5 +1,8 @@
-1.2
+1.3
 ------
+- [d86b933]
+  fixed tax rule selection on push
+
 - [d28c9f3]
   check and set default varcombi on push
   set min quantity to 1 instead of 0
@@ -18,6 +21,9 @@
 
 - [c34590e]
   fixed db prefixes
+
+1.2
+------
 
 1.1
 ------

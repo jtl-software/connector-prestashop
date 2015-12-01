@@ -22,19 +22,28 @@ class JTLConnector extends Module
 
     public function install()
     {
+        if (version_compare(PHP_VERSION, '5.4') < 0) {
+            $this->_errors[] = sprintf($this->l('The Connector requires PHP 5.4. Your system is running PHP %s.'), PHP_VERSION);
+        }
+
+        if (!extension_loaded('sqlite3')) {
+            $this->_errors[] = $this->l('The required SQLite3 php extension is not installed.');
+        }
+
         $dbFile = __DIR__.DIRECTORY_SEPARATOR.'db'.DIRECTORY_SEPARATOR.'connector.s3db';
         chmod($dbFile, 0777);
         if (!is_writable($dbFile)) {
-            $this->_errors[] = sprintf($this->l('The file "%s" must be writable.') , $dbFile);
+            $this->_errors[] = sprintf($this->l('The file "%s" must be writable.'), $dbFile);
         }
 
         $logDir = __DIR__.DIRECTORY_SEPARATOR.'logs';
         chmod($logDir, 0777);
         if (!is_writable($logDir)) {
-            $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.') , $logDir);
+            $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $logDir);
         }
 
         if (count($this->_errors) != 0) {
+            $this->_errors[] = '<b>'.sprintf($this->l('Please read the %s for requirements and setup instructions.'), '<a href="http://guide.jtl-software.de/jtl/JTL-Connector">Connector Guide</a>').'</b>';
             return false;
         }
 

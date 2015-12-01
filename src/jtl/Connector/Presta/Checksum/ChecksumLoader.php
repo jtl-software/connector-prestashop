@@ -2,7 +2,6 @@
 namespace jtl\Connector\Presta\Checksum;
 
 use \jtl\Connector\Checksum\IChecksumLoader;
-use \jtl\Connector\Core\Database\Mysql;
 
 class ChecksumLoader implements IChecksumLoader
 {
