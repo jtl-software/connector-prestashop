@@ -1,5 +1,8 @@
 1.3
 ------
+- [9f15251]
+  added additional requirement checks on module install
+
 - [d86b933]
   fixed tax rule selection on push
 

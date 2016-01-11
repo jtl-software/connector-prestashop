@@ -2,33 +2,18 @@
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\Identity;
-use jtl\Connector\Model\ProductPrice as ProductPriceModel;
-use jtl\Connector\Model\ProductPriceItem as ProductPriceItemModel;
+use jtl\Connector\Model\ProductSpecialPrice as ProductSpecialPriceModel;
+use jtl\Connector\Model\ProductSpecialPriceItem as ProductSpecialPriceItemModel;
 use jtl\Connector\Presta\Utils\Utils;
 
-class ProductPrice extends BaseController
+class ProductSpecialPrice extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
+        /*
         $return = array();
 
         $productTaxRate = Utils::getInstance()->getProductTaxRate($data['id_product']);
-
-        $default = new ProductpriceModel();
-        $default->setId(new Identity($model->getId()->getEndpoint().'_default'));
-        $default->setProductId($model->getId());
-        $defaultItem = new ProductPriceItemModel();
-        $defaultItem->setProductPriceId($default->getId());
-
-        if (isset($data['id_product_attribute'])) {
-            $defaultItem->setNetPrice(floatval($data['pPrice'] - $data['price']));
-        } else {
-            $defaultItem->setNetPrice(floatval($data['price']));
-        }
-
-        $default->addItem($defaultItem);
-
-        $return[] = $default;
 
         $pResult = $this->db->executeS('
 			SELECT p.*, pr.price AS pPrice
@@ -40,7 +25,8 @@ class ProductPrice extends BaseController
 			    AND p.id_country = 0
 			    AND p.id_currency = 0
 			    AND id_customer = 0
-			    AND p.from = "0000-00-00 00:00:00"
+			    AND p.from != "0000-00-00 00:00:00"
+                AND p.from_quantity = 1
         ');
 
         $varResult = array();
@@ -55,13 +41,13 @@ class ProductPrice extends BaseController
                     AND p.id_country = 0
 			        AND p.id_currency = 0
 			        AND id_customer = 0
-			        AND p.from = "0000-00-00 00:00:00"
+			        AND p.from != "0000-00-00 00:00:00"
+                    AND p.from_quantity = 1
             ');
         }
 
         $result = array_merge($pResult, $varResult);
 
-        //$customerPrices = array();
         $groupPrices = array();
 
         foreach ($result as $pData) {
@@ -76,38 +62,19 @@ class ProductPrice extends BaseController
             }
         }
 
-        /*
-        foreach ($customerPrices as $cId => $cPriceData) {
-            $cPrice = new ProductpriceModel();
-            $cPrice->setId(new Identity($model->getId()->getEndpoint().'_c'.$cId));
-            $cPrice->setProductId($model->getId());
-            $cPrice->setCustomerId(new Identity($cId));
-
-            foreach ($cPriceData as $cItemData) {
-                $cItem = new ProductPriceItemModel();
-                $cItem->setProductPriceId($cPrice->getId());
-                $cItem->setQuantity(intval($cItemData['from_quantity']));
-                $cItem->setNetPrice($this->calculateNetPrice($cItemData, $productTaxRate));
-
-                $cPrice->addItem($cItem);
-            }
-
-            $return[] = $cPrice;
-        }
-        */
-
         foreach ($groupPrices as $gId => $gPriceData) {
             if ($gId === 0) $gId = '';
-            $gPrice = new ProductpriceModel();
+            $gPrice = new ProductSpecialPriceModel();
             $gPrice->setId(new Identity($model->getId()->getEndpoint().'_g'.$gId));
             $gPrice->setProductId($model->getId());
-            $gPrice->setCustomerGroupId(new Identity($gId));
 
             foreach ($gPriceData as $gItemData) {
-                $gItem = new ProductPriceItemModel();
-                $gItem->setProductPriceId($gPrice->getId());
-                $gItem->setQuantity(intval($gItemData['from_quantity']));
-                $gItem->setNetPrice($this->calculateNetPrice($gItemData, $productTaxRate));
+                $gPrice->setActiveFromDate(new \DateTime($gItemData['from']));
+
+                $gItem = new ProductSpecialPriceItemModel();
+                $gItem->setProductSpecialPriceId($gPrice->getId());
+                $gItem->setCustomerGroupId(new Identity($gId));
+                $gItem->setPriceNet($this->calculateNetPrice($gItemData, $productTaxRate));
 
                 $gPrice->addItem($gItem);
             }
@@ -116,13 +83,12 @@ class ProductPrice extends BaseController
         }
 
         return $return;
+        */
     }
 
-    public function initPush($data)
+    public function pushData($data, $model = null)
     {
-        $price = $data[0];
-
-        $id = $price->getProductId()->getEndpoint();
+        $id = $data->getId()->getEndpoint();
 
         if (!empty($id)) {
             list($productId, $combiId) = explode('_', $id);
@@ -134,51 +100,25 @@ class ProductPrice extends BaseController
                     DELETE p FROM '._DB_PREFIX_.'specific_price p
                     WHERE p.id_product = '.$productId.'
                     AND p.id_product_attribute = '.$combiId.'
-                    AND p.from = "0000-00-00 00:00:00"
+                    AND p.from != "0000-00-00 00:00:00"
                 ');
-            }
-        }
-    }
 
-    public function pushData($price, $model = null)
-    {
-        $id = $price->getProductId()->getEndpoint();
-
-        if (!empty($id)) {
-            list($productId, $combiId) = explode('_', $id);
-
-            if (is_null($combiId)) $combiId = 0;
-
-            if (!empty($productId) && !is_null($combiId)) {
-                $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
-
-                foreach ($price->getItems() as $item) {
-                    if (empty($customerGroupId)) {
-                        $product = new \Product($productId);
-                        if (empty($combiId)) {
-                            $product->price = round($item->getNetprice(), 6);
-                            $product->update();
-                        } else {
-                            $combiPriceDiff = $item->getNetPrice() - floatval($product->price);
-                            $combi = new \Combination($combiId);
-                            $combi->price = round($combiPriceDiff, 6);
-                            $combi->save();
-                        }
-                    } else {
+                foreach ($data->getSpecialPrices() as $specialPrice) {
+                    foreach ($specialPrice->getItems() as $item) {
                         $priceObj = new \SpecificPrice();
                         $priceObj->id_product = $productId;
                         $priceObj->id_product_attribute = $combiId;
-                        $priceObj->id_group = $customerGroupId;
-                        $priceObj->price = round($item->getNetPrice(), 6);
-                        $priceObj->from_quantity = $item->getQuantity();
+                        $priceObj->id_group = $item->getCustomerGroupId()->getEndpoint();
+                        $priceObj->price = round($item->getPriceNet(), 6);
+                        $priceObj->from_quantity = 0;
                         $priceObj->id_shop = 0;
                         $priceObj->id_currency = 0;
                         $priceObj->id_country = 0;
                         $priceObj->id_customer = 0;
                         $priceObj->reduction = 0;
                         $priceObj->reduction_type = 'amount';
-                        $priceObj->from = '0000-00-00 00:00:00';
-                        $priceObj->to = '0000-00-00 00:00:00';
+                        $priceObj->from = $specialPrice->getActiveFromDate()->format('Y-m-d H:i:s');
+                        $priceObj->to = $specialPrice->getActiveUntilDate()->format('Y-m-d H:i:s');
 
                         $priceObj->save();
                     }
@@ -189,6 +129,7 @@ class ProductPrice extends BaseController
         return $price;
     }
 
+    /*
     private function calculateNetPrice($data, $taxRate)
     {
         if ($data['price'] === '-1.000000') {
@@ -202,4 +143,5 @@ class ProductPrice extends BaseController
             return floatval($data['price']);
         }
     }
+    */
 }

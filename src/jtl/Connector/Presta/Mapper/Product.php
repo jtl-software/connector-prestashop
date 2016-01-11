@@ -58,7 +58,8 @@ class Product extends BaseMapper
         'active' => 'isActive',
         'on_sale' => 'isTopProduct',
         'minimal_quantity' => null,
-        'ProductI18n' => 'i18ns'
+        'ProductI18n' => 'i18ns',
+        'ProductSpecialPrice' => 'specialPrices'
     );
 
     protected function out_of_stock($data)

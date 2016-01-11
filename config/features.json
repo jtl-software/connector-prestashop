@@ -297,12 +297,12 @@
         },
         "ProductSpecialPrice": {
             "pull": false,
-            "push": false,
+            "push": true,
             "delete": false
         },
         "ProductSpecialPriceItem": {
             "pull": false,
-            "push": false,
+            "push": true,
             "delete": false
         },
         "ProductSpecific": {
