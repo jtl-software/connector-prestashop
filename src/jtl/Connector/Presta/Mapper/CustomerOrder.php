@@ -20,7 +20,8 @@ class CustomerOrder extends BaseMapper
         'shippingInfo' => 'shipping_number',
         'shippingMethodName' => 'shippingMethod',
         'totalSum' => 'total_paid',
-        'items' => 'CustomerOrderItem'
+        'items' => 'CustomerOrderItem',
+        'attributes' => 'CustomerOrderAttr'
     );
 
     protected function languageISO($data)

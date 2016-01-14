@@ -116,7 +116,7 @@
             "delete": false
         },
         "CustomerOrderAttr": {
-            "pull": false,
+            "pull": true,
             "push": false,
             "delete": false
         },
@@ -126,17 +126,17 @@
             "delete": false
         },
         "CustomerOrderItem": {
-            "pull": false,
+            "pull": true,
             "push": false,
             "delete": false
         },
         "CustomerOrderItemVariation": {
-            "pull": false,
+            "pull": true,
             "push": false,
             "delete": false
         },
         "CustomerOrderPaymentInfo": {
-            "pull": false,
+            "pull": true,
             "push": false,
             "delete": false
         },

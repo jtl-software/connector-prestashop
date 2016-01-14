@@ -1,8 +1,13 @@
-1.3
+1.4
 ------
+- [5bc2177]
+  added special price push
+
 - [9f15251]
   added additional requirement checks on module install
 
+1.3
+------
 - [d86b933]
   fixed tax rule selection on push
 
