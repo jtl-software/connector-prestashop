@@ -1,5 +1,8 @@
 1.4
 ------
+- [f610bd0]
+  added order attribute for gift and gift message
+
 - [5bc2177]
   added special price push
 

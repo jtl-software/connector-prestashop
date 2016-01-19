@@ -69,6 +69,21 @@ class JTLConnector extends Module
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
         ');
 
+        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "PRIMARY"')) > 0) {
+            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link DROP PRIMARY KEY');
+        }
+
+        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "endpointId"')) == 0) {
+            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(endpointId)');
+        }
+
+        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "hostId"')) == 0) {
+            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(hostId)');
+        }
+        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "type"')) == 0) {
+            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(type)');
+        }
+
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
     }
 

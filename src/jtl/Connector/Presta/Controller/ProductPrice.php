@@ -21,7 +21,7 @@ class ProductPrice extends BaseController
         $defaultItem->setProductPriceId($default->getId());
 
         if (isset($data['id_product_attribute'])) {
-            $defaultItem->setNetPrice(floatval($data['pPrice'] - $data['price']));
+            $defaultItem->setNetPrice(floatval($data['pPrice'] + $data['price']));
         } else {
             $defaultItem->setNetPrice(floatval($data['price']));
         }
