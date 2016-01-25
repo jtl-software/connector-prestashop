@@ -18,6 +18,7 @@ class JTLConnector extends Module
         $this->displayName = 'JTL Wawi Connector';
         $this->description = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
+        $this->module_key = '488cd335118c56baab7259d5459cf3a3';
     }
 
     public function install()

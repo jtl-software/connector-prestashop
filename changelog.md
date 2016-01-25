@@ -1,5 +1,9 @@
 1.4
 ------
+- [24b843a]
+  bugfix for variation price
+  add link table index checks
+
 - [f610bd0]
   added order attribute for gift and gift message
 
