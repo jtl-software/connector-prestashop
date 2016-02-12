@@ -1,6 +1,21 @@
 <?php
-if (!defined('_PS_VERSION_'))
-    exit;
+/**
+ * JTL Connector Module
+ *
+ * Copyright (c) 2015-2016 JTL Software GmbH
+ *
+ * @author    JTL Software GmbH
+ * @copyright 2015-2016 JTL Software GmbH
+ * @license   http://opensource.org/licenses/LGPL-3.0 GNU Lesser General Public License, version 3.0 (LGPL-3.0)
+ *
+ * Description:
+ *
+ * JTL Connector Module
+ */
+
+if (!defined('CONNECTOR_DIR')) {
+    define("CONNECTOR_DIR", _PS_MODULE_DIR_.'jtlconnector/');
+}
 
 class JTLConnector extends Module
 {
@@ -8,7 +23,8 @@ class JTLConnector extends Module
     {
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
-        $this->version = file_get_contents(__DIR__.'/version');
+        //$this->version = \Tools::file_get_contents(CONNECTOR_DIR.'version');
+        $this->version = '1.4.0';
         $this->author = 'JTL Software GmbH';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -24,27 +40,31 @@ class JTLConnector extends Module
     public function install()
     {
         if (version_compare(PHP_VERSION, '5.4') < 0) {
-            $this->_errors[] = sprintf($this->l('The Connector requires PHP 5.4. Your system is running PHP %s.'), PHP_VERSION);
+            $this->_errors[] =
+                sprintf($this->l('The Connector requires PHP 5.4. Your system is running PHP %s.'), PHP_VERSION);
         }
 
         if (!extension_loaded('sqlite3')) {
             $this->_errors[] = $this->l('The required SQLite3 php extension is not installed.');
         }
 
-        $dbFile = __DIR__.DIRECTORY_SEPARATOR.'db'.DIRECTORY_SEPARATOR.'connector.s3db';
+        $dbFile = CONNECTOR_DIR.'db'.DIRECTORY_SEPARATOR.'connector.s3db';
         chmod($dbFile, 0777);
         if (!is_writable($dbFile)) {
             $this->_errors[] = sprintf($this->l('The file "%s" must be writable.'), $dbFile);
         }
 
-        $logDir = __DIR__.DIRECTORY_SEPARATOR.'logs';
+        $logDir = CONNECTOR_DIR.'logs';
         chmod($logDir, 0777);
         if (!is_writable($logDir)) {
             $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $logDir);
         }
 
         if (count($this->_errors) != 0) {
-            $this->_errors[] = '<b>'.sprintf($this->l('Please read the %s for requirements and setup instructions.'), '<a href="http://guide.jtl-software.de/jtl/JTL-Connector">Connector Guide</a>').'</b>';
+            $this->_errors[] = '<b>'.sprintf($this->l(
+                'Please read the %s for requirements and setup instructions.'
+            ), '<a href="http://guide.jtl-software.de/jtl/JTL-Connector">Connector Guide</a>').'</b>';
+
             return false;
         }
 
@@ -74,7 +94,9 @@ class JTLConnector extends Module
             Db::getInstance()->Execute('ALTER TABLE jtl_connector_link DROP PRIMARY KEY');
         }
 
-        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "endpointId"')) == 0) {
+        if (count(Db::getInstance()->ExecuteS('
+                SHOW INDEX FROM jtl_connector_link WHERE Key_name = "endpointId"
+            ')) == 0) {
             Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(endpointId)');
         }
 
@@ -104,13 +126,11 @@ class JTLConnector extends Module
     {
         $output = null;
 
-        if (Tools::isSubmit('submit'.$this->name))
-        {
-            $pass = strval(Tools::getValue('jtlconnector_pass'));
-            if (!$pass  || empty($pass) || !Validate::isPasswd($pass, 8))
+        if (Tools::isSubmit('submit'.$this->name)) {
+            $pass = (string) Tools::getValue('jtlconnector_pass');
+            if (!$pass  || empty($pass) || !Validate::isPasswd($pass, 8)) {
                 $output .= $this->displayError($this->l('Password must have a minimum length of 8 chars!'));
-            else
-            {
+            } else {
                 Configuration::updateValue('jtlconnector_pass', $pass);
                 $output .= $this->displayConfirmation($this->l('Settings saved.'));
             }
@@ -123,12 +143,14 @@ class JTLConnector extends Module
     {
         $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
+        $fields_form = array();
         $fields_form[0]['form'] = array(
             'legend' => array(
                 'title' => $this->l('Connector Settings'),
                 'icon' => 'icon-cogs'
             ),
-            'description' => $this->l('Please enter the following URL in your Wawi connector setup:').'<br/><b>'.$this->context->link->getModuleLink('jtlconnector', 'api').'</b><br/>',
+            'description' => $this->l('Please enter the following URL in your Wawi connector setup:').
+                '<br/><b>'.$this->context->link->getModuleLink('jtlconnector', 'api').'</b><br/>',
             'input' => array(
                 array(
                     'type' => 'text',

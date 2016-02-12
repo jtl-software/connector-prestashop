@@ -1,5 +1,8 @@
 1.4
 ------
+- [0edc6f9]
+  added module key for presta market
+
 - [24b843a]
   bugfix for variation price
   add link table index checks

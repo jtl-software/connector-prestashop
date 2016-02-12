@@ -10,16 +10,21 @@
         <copy todir="./dist">
             <fileset dir=".">
                 <include name="jtlconnector.php" />
+                <include name="index.php" />
                 <include name="logo.png" />
                 <include name="controllers/" />
                 <include name="translations/" />
                 <include name="version" />
                 <include name="config/features.json"/>
                 <include name="config/.htaccess"/>
+                <include name="config/index.php"/>
                 <include name="db/connector.s3db" />
                 <include name="db/.htaccess" />
+                <include name="db/index.php" />
                 <include name="logs/.htaccess" />
+                <include name="logs/index.php" />
                 <include name="plugins/.htaccess" />
+                <include name="plugins/index.php" />
             </fileset>
         </copy>
         <chmod file="./dist/config" mode="0777" />
