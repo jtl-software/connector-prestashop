@@ -20,6 +20,7 @@ class CustomerOrder extends BaseMapper
         'shippingInfo' => 'shipping_number',
         'shippingMethodName' => 'shippingMethod',
         'totalSum' => 'total_paid',
+        'totalSumGross' => 'total_paid_tax_incl',
         'items' => 'CustomerOrderItem',
         'attributes' => 'CustomerOrderAttr'
     );

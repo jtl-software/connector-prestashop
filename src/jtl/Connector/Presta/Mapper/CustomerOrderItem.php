@@ -12,6 +12,7 @@ class CustomerOrderItem extends BaseMapper
         'customerOrderId' => 'id_order',
         'name' => 'product_name',
         'price' => 'product_price',
+        'priceGross' => 'unit_price_tax_incl',
         'quantity' => 'product_quantity',
         'sku' => 'product_reference',
         'vat' => null

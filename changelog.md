@@ -1,5 +1,8 @@
 1.4
 ------
+- [54eda2d]
+  changes to comply presta module validation requirements
+
 - [0edc6f9]
   added module key for presta market
 
