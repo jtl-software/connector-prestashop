@@ -1,5 +1,8 @@
-1.4
+1.4.1
 ------
+- [da36d83]
+  added gross prices
+
 - [54eda2d]
   changes to comply presta module validation requirements
 
@@ -13,6 +16,8 @@
 - [f610bd0]
   added order attribute for gift and gift message
 
+1.4
+------
 - [5bc2177]
   added special price push
 

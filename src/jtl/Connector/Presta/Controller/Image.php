@@ -92,7 +92,11 @@ class Image extends BaseController
                     $img = new \Image();
                     $img->id_product = $productId;
                     $img->position = $data->getSort();
-                    $img->cover = $img->position == 1 ? 1 : 0;
+
+                    if (empty($combiId) && $img->position == 1) {
+                        $img->cover =  1;
+                    }
+
                     $img->save();
 
                     $new_path = $img->getPathForCreation();
@@ -120,17 +124,17 @@ class Image extends BaseController
 
     public function deleteData($data)
     {
-        $id = $data->getForeignKey()->getEndpoint();
+        $fId = $data->getForeignKey()->getEndpoint();
 
-        if (!empty($id)) {
+        if (!empty($fId)) {
             switch ($data->getRelationType()) {
                 case 'category':
-                    $cat = new \Category($id);
+                    $cat = new \Category($fId);
                     $cat->deleteImage();
                     break;
 
                 case 'manufacturer':
-                    $manufacturer = new \Manufacturer($id);
+                    $manufacturer = new \Manufacturer($fId);
                     $manufacturer->deleteImage();
                     break;
 
