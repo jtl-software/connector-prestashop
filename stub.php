@@ -2,6 +2,7 @@
 Phar::mapPhar('connector.phar');
 Phar::interceptFileFuncs();
 
-include_once 'phar://connector.phar/vendor/autoload.php';
+$loader = include_once 'phar://connector.phar/vendor/autoload.php';
+$loader->add('', CONNECTOR_DIR . '/plugins');
 
 __HALT_COMPILER();

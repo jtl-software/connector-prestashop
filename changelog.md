@@ -1,5 +1,8 @@
 1.4.1
 ------
+- [fb8bc5b]
+  bugfix for presta cover images
+
 - [da36d83]
   added gross prices
 
