@@ -19,8 +19,8 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
     {
         defined('CONNECTOR_DIR') || define("CONNECTOR_DIR", _PS_MODULE_DIR_.'/jtlconnector/');
 
-        if (file_exists(CONNECTOR_DIR.'/vendor/autoload.php')) {
-            require_once CONNECTOR_DIR.'/vendor/autoload.php';
+        if (file_exists(CONNECTOR_DIR.'/library/autoload.php')) {
+            require_once CONNECTOR_DIR.'/library/autoload.php';
         } else {
             include_once 'phar://'.CONNECTOR_DIR.'/connector.phar';
         }

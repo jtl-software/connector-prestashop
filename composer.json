@@ -13,6 +13,9 @@
             "role": "Founder"
         }
     ],
+    "config": {
+        "vendor-dir": "library"
+    },
     "repositories": [
         {
             "type": "git",

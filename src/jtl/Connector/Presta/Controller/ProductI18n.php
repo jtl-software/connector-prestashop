@@ -9,7 +9,7 @@ class ProductI18n extends BaseController
     {
         $varNames = array();
 
-        if (count($model->getVariations()) > 0) {
+        if ($model->getIsMasterProduct() !== true && count($model->getVariations()) > 0) {
             foreach($model->getVariations() as $variation) {
                 foreach ($variation->getValues() as $value) {
                     foreach ($value->getI18ns() as $i18n) {

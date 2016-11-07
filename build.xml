@@ -35,7 +35,7 @@
         <copy todir="./build">
             <fileset dir=".">
                 <include name="src/" />
-                <include name="vendor/" />
+                <include name="library/" />
                 <include name="version" />
             </fileset>
         </copy>

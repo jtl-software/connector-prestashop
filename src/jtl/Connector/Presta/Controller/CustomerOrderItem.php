@@ -22,6 +22,24 @@ class CustomerOrderItem extends BaseController
             $return[] = $model;
         }
 
+        $cartRules = $this->db->executeS('
+			SELECT r.*
+			FROM '._DB_PREFIX_.'order_cart_rule r
+			WHERE r.id_order = '.$data['id_order']
+        );
+
+        foreach ($cartRules as $rule) {
+            $item = new CustomerorderItemModel();
+            $item->setId(new Identity('rule_'.$rule['id_order_cart_rule']));
+            $item->setCustomerOrderId(new Identity($data['id_order']));
+            $item->setName($rule['name']);
+            $item->setPrice(floatval(-$rule['value_tax_excl']));
+            $item->setPriceGross(floatval(-$rule['value']));
+            $item->setQuantity(1);
+
+            $return[] = $item;
+        }
+
         $shipping = new CustomerOrderItemModel();
         $shipping->setId(new Identity('shipping_'.$data['id_order']));
         $shipping->setCustomerOrderId(new Identity($data['id_order']));
