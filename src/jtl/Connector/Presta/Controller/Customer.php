@@ -6,7 +6,7 @@ class Customer extends BaseController
 	public function pullData($data, $model, $limit = null)
 	{
         $result = $this->db->executeS('
-			SELECT c.*, a.*, co.iso_code
+			SELECT c.*, c.id_customer AS cid, a.*, co.iso_code
 			FROM '._DB_PREFIX_.'customer c
 			LEFT JOIN '._DB_PREFIX_.'address a ON a.id_customer=c.id_customer
 			LEFT JOIN '._DB_PREFIX_.'country co ON co.id_country=a.id_country

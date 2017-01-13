@@ -9,7 +9,7 @@ class Customer extends BaseMapper
     protected $identity = 'id|id_customer';
 
 	protected $pull = array(
-		'id' => 'id_customer',
+		'id' => 'cid',
 		'customerGroupId' => 'id_default_group',
         'birthday' => 'birthday',
         'city' => 'city',

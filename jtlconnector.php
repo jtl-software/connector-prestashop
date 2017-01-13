@@ -23,7 +23,7 @@ class JTLConnector extends Module
     {
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
-        $this->version = '1.4.5';
+        $this->version = '1.4.6';
         $this->author = 'JTL Software GmbH';
         $this->need_instance = 0;
         $this->bootstrap = true;
