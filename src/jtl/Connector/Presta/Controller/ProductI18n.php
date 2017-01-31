@@ -46,6 +46,15 @@ class ProductI18n extends BaseController
 
     public function pushData($data, $model)
     {
+        $limit = null;
+
+        if (\Configuration::get('jtlconnector_truncate_desc')) {
+            $limit = (int) \Configuration::get('PS_PRODUCT_SHORT_DESC_LIMIT');
+            if ($limit <= 0) {
+                $limit = 800;
+            }
+        }
+
         foreach ($data->getI18ns() as $i18n) {
             $name = $i18n->getName();
             if (!empty($name)) {
@@ -59,7 +68,12 @@ class ProductI18n extends BaseController
                 $model->meta_keywords[$id] = $i18n->getMetaKeywords();
                 $model->meta_description[$id] = $i18n->getMetaDescription();
                 $model->available_now[$id] = $i18n->getDeliveryStatus();
-                $model->description_short[$id] = $i18n->getShortDescription();
+
+                if (is_null($limit)) {
+                    $model->description_short[$id] = $i18n->getShortDescription();
+                } else {
+                    $model->description_short[$id] = substr($i18n->getShortDescription(), 0, $limit);
+                }
             }
         }
     }

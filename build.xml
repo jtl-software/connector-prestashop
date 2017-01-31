@@ -18,6 +18,7 @@
                 <include name="config/features.json"/>
                 <include name="config/.htaccess"/>
                 <include name="config/index.php"/>
+                <include name="config/config.json"/>
                 <include name="db/connector.s3db" />
                 <include name="db/.htaccess" />
                 <include name="db/index.php" />
