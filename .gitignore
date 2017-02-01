@@ -1,4 +1,5 @@
 vendor/**
+library/**
 composer.lock
 config/config.json
 build/**
