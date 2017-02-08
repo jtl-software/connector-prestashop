@@ -8,6 +8,7 @@ zip/**
 db/connector.s3db
 .idea/**
 config_de.xml
+config.xml
 logs/**
 !logs/.htaccess
 plugins/**
