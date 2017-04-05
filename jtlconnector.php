@@ -23,7 +23,7 @@ class JTLConnector extends Module
     {
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
-        $this->version = '1.4.7';
+        $this->version = '1.4.8';
         $this->author = 'JTL Software GmbH';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -132,6 +132,7 @@ class JTLConnector extends Module
             } else {
                 Configuration::updateValue('jtlconnector_pass', $pass);
                 Configuration::updateValue('jtlconnector_truncate_desc', Tools::getValue('jtlconnector_truncate_desc'));
+                Configuration::updateValue('jtlconnector_custom_fields', Tools::getValue('jtlconnector_custom_fields'));
                 $output .= $this->displayConfirmation($this->l('Settings saved.'));
             }
         }
@@ -182,6 +183,25 @@ class JTLConnector extends Module
                             'label' => $this->l('Disabled')
                         )
                     ),
+                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Add custom fields as attributes'),
+                    'name' => 'jtlconnector_custom_fields',
+                    'is_bool' => true,
+                    'desc' => sprintf($this->l('Enable this option to add the custom fields as product attributes.'), $limit),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
                 )
             ),
             'submit' => array(
@@ -217,6 +237,7 @@ class JTLConnector extends Module
 
         $helper->fields_value['jtlconnector_pass'] = Configuration::get('jtlconnector_pass');
         $helper->fields_value['jtlconnector_truncate_desc'] = Configuration::get('jtlconnector_truncate_desc');
+        $helper->fields_value['jtlconnector_custom_fields'] = Configuration::get('jtlconnector_custom_fields');
 
         return $helper->generateForm($fields_form);
     }

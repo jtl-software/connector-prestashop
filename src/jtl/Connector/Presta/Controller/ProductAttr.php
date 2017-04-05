@@ -32,7 +32,7 @@ class ProductAttr extends BaseController
         $model->deleteFeatures();
 
         foreach ($data->getAttributes() as $attr) {
-            //if ($attr->getIsCustomProperty() === false) {
+            if ($attr->getIsCustomProperty() === false || \Configuration::get('jtlconnector_custom_fields')) {
                 $featureData = array();
 
                 foreach ($attr->getI18ns() as $i18n) {
@@ -75,7 +75,7 @@ class ProductAttr extends BaseController
                         }
                     }
                 }
-            //}
+            }
         }
     }
 }
