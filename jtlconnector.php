@@ -23,7 +23,7 @@ class JTLConnector extends Module
     {
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
-        $this->version = '1.4.8';
+        $this->version = '1.5.0';
         $this->author = 'JTL Software GmbH';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -38,9 +38,9 @@ class JTLConnector extends Module
 
     public function install()
     {
-        if (version_compare(PHP_VERSION, '5.4') < 0) {
+        if (version_compare(PHP_VERSION, '5.6') < 0) {
             $this->_errors[] =
-                sprintf($this->l('The Connector requires PHP 5.4. Your system is running PHP %s.'), PHP_VERSION);
+                sprintf($this->l('The Connector requires PHP 5.6. Your system is running PHP %s.'), PHP_VERSION);
         }
 
         if (!extension_loaded('sqlite3')) {
@@ -133,6 +133,7 @@ class JTLConnector extends Module
                 Configuration::updateValue('jtlconnector_pass', $pass);
                 Configuration::updateValue('jtlconnector_truncate_desc', Tools::getValue('jtlconnector_truncate_desc'));
                 Configuration::updateValue('jtlconnector_custom_fields', Tools::getValue('jtlconnector_custom_fields'));
+                Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
                 $output .= $this->displayConfirmation($this->l('Settings saved.'));
             }
         }
@@ -202,6 +203,14 @@ class JTLConnector extends Module
                             'label' => $this->l('Disabled')
                         )
                     ),
+                ),
+                array(
+                    'type' => 'date',
+                    'label' => $this->l('Date treshold'),
+                    'name' => 'jtlconnector_from_date',
+                    'desc' => $this->l('If this option is set, only orders are pulled that are newer then this date.'),
+                    'size' => 5,
+                    'required' => false
                 )
             ),
             'submit' => array(
@@ -238,6 +247,7 @@ class JTLConnector extends Module
         $helper->fields_value['jtlconnector_pass'] = Configuration::get('jtlconnector_pass');
         $helper->fields_value['jtlconnector_truncate_desc'] = Configuration::get('jtlconnector_truncate_desc');
         $helper->fields_value['jtlconnector_custom_fields'] = Configuration::get('jtlconnector_custom_fields');
+        $helper->fields_value['jtlconnector_from_date'] = Configuration::get('jtlconnector_from_date');
 
         return $helper->generateForm($fields_form);
     }

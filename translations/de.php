@@ -18,5 +18,7 @@ $_MODULE['<{jtlconnector}prestashop>jtlconnector_a8ea1c85b7a6ce30c0e1e7d69aca02c
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_1fdf55ef931f89a2be6b72391bfb60b9'] = 'Aktivieren um zu lange Kurz-Beschreibungen abzuschneiden. Ihr Shop lässt derzeit %s Zeichen zu. Sie können die Länge in den Produkt-Voreinstellungen anpassen.';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_0f3c8e45e363273b91db83ef8017155d'] = 'Eigene Felder als Eigenschaften anlegen';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_7ffd92fa7c5f750c33e16991fa9b5e09'] = 'Aktivieren um die eigenen Felder aus der Wawi als Produkt-Eigenschaften im Shop anzulegen.';
+$_MODULE['<{jtlconnector}prestashop>jtlconnector_2bb9d095186c8a85bc6963c57b1d12b8'] = 'Datums-Grenze';
+$_MODULE['<{jtlconnector}prestashop>jtlconnector_31ae1c16b5591f199dc43763fe331a74'] = 'Legen Sie hier bei Bedarf eine Datums-Grenze für Bestellungen fest. Wenn diese Einstellung gesetzt ist, werden nur Bestellungen abgeglichen die nach diesem Datum erfolgten.';
 
 return $_MODULE;
