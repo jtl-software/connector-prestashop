@@ -117,8 +117,18 @@ class ProductSpecialPrice extends BaseController
                         $priceObj->id_customer = 0;
                         $priceObj->reduction = 0;
                         $priceObj->reduction_type = 'amount';
-                        $priceObj->from = $specialPrice->getActiveFromDate()->format('Y-m-d H:i:s');
-                        $priceObj->to = $specialPrice->getActiveUntilDate()->format('Y-m-d H:i:s');
+
+                        if ($specialPrice->getActiveFromDate() !== null) {
+                            $priceObj->from = $specialPrice->getActiveFromDate()->format('Y-m-d H:i:s');
+                        } else {
+                            $priceObj->from = '0000-00-00 00:00:00';
+                        }
+
+                        if ($specialPrice->getActiveUntilDate() !== null) {
+                            $priceObj->to = $specialPrice->getActiveUntilDate()->format('Y-m-d H:i:s');
+                        } else {
+                            $priceObj->to = '0000-00-00 00:00:00';
+                        }
 
                         $priceObj->save();
                     }

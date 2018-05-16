@@ -31,7 +31,7 @@ class BaseMapper
 			if (method_exists($this, $fnName)) {
 				$value = $this->$fnName($data);
 			} else {
-				$value = $data[$endpoint];		
+				$value = isset($data[$endpoint]) ? $data[$endpoint] : null;
 				$property = $this->type->getProperty($host);
 
 				if ($property->isNavigation()) {
