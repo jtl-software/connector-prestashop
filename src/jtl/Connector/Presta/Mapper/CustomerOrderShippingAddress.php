@@ -23,6 +23,10 @@ class CustomerOrderShippingAddress extends BaseMapper
 
     protected function salutation($data)
     {
-        return $data['id_gender'] === '1' ? 'm' : 'w';
+        $mappings = ['1' => 'm', '2' => 'w'];
+        if(isset($mappings[$data['id_gender']])) {
+            return $mappings[$data['id_gender']];
+        }
+        return '';
     }
 }

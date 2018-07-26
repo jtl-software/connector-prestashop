@@ -1,3 +1,7 @@
+1.5.1
+------
+- Set salutation only in case a known id_gender value exists
+
 1.4.1
 ------
 - [fb8bc5b]
