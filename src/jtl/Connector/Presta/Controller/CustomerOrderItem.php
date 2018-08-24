@@ -46,6 +46,7 @@ class CustomerOrderItem extends BaseController
         $shipping->setType('shipping');
         $shipping->setName($data['shippingMethod']);
         $shipping->setPrice(floatval($data['total_shipping_tax_excl']));
+        $shipping->setPriceGross(floatval($data['total_shipping_tax_incl']));
         $shipping->setVat(floatval($data['carrier_tax_rate']));
         $shipping->setQuantity(1);
 
