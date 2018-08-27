@@ -31,7 +31,9 @@ class ProductStockLevel extends BaseController
         if (!empty($id)) {
             if (strpos($id, '_') === false) {
                 \StockAvailable::setQuantity($id, null, $data->getStockLevel());
-                \StockAvailable::setProductOutOfStock($id, $model->out_of_stock == 1 ? true : false);
+                if(is_object($model) && property_exists($model, 'out_of_stock')) {
+                    \StockAvailable::setProductOutOfStock($id, $model->out_of_stock == 1);
+                }
             } else {
                 list($productId, $combiId) = explode('_',$id);
 
