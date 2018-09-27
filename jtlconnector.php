@@ -42,9 +42,9 @@ class JTLConnector extends Module
 
     public function install()
     {
-        if (version_compare(PHP_VERSION, '5.6') < 0) {
+        if (version_compare(PHP_VERSION, '5.6.4') < 0) {
             $this->_errors[] =
-                sprintf($this->l('The Connector requires PHP 5.6. Your system is running PHP %s.'), PHP_VERSION);
+                sprintf($this->l('The Connector requires PHP 5.6.4. Your system is running PHP %s.'), PHP_VERSION);
         }
 
         if (!extension_loaded('sqlite3')) {
