@@ -23,7 +23,11 @@ class JTLConnector extends Module
     {
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
-        $this->version = '1.5.0';
+        try {
+            $this->version = file_get_contents(__DIR__ . '/version');
+        } catch (\Exception $e) {
+            $this->version = 'Unknown';
+        }
         $this->author = 'JTL Software GmbH';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -38,9 +42,9 @@ class JTLConnector extends Module
 
     public function install()
     {
-        if (version_compare(PHP_VERSION, '5.6') < 0) {
+        if (version_compare(PHP_VERSION, '5.6.4') < 0) {
             $this->_errors[] =
-                sprintf($this->l('The Connector requires PHP 5.6. Your system is running PHP %s.'), PHP_VERSION);
+                sprintf($this->l('The Connector requires PHP 5.6.4. Your system is running PHP %s.'), PHP_VERSION);
         }
 
         if (!extension_loaded('sqlite3')) {
