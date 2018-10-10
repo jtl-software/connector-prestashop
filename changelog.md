@@ -1,3 +1,16 @@
+1.5.3
+------
+- Fixed out of stock feature 
+- CO-311 - Filled id_category_default with the first category that is sent.
+- Added new build mechanism
+- Extend build.xml
+
+1.5.2
+------
+- Changed to new version management
+- Added PriceGross on ShippingOrderItem
+- Removed unnecessary exceptions
+
 1.5.1
 ------
 - Set salutation only in case a known id_gender value exists
