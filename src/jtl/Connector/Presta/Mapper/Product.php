@@ -42,6 +42,7 @@ class Product extends BaseMapper
 	protected $push = array(
         'id_product' => 'id',
         'id_manufacturer' => 'manufacturerId',
+        'id_category_default' => null,
         'date_add' => null,
         'ean13' => 'ean',
         'height' => 'height',
@@ -107,6 +108,17 @@ class Product extends BaseMapper
         if (isset($data['id_product_attribute'])) {
             return new Identity($data['id_product']);
         }
+    }
+    
+    protected function id_category_default($data)
+    {
+        $firstCategory = reset($data->getCategories());
+        
+        if (!empty($firstCategory)) {
+            return $firstCategory->getCategoryId()->getEndpoint();
+        }
+        
+        return null;
     }
 
     protected function isMasterProduct($data)
