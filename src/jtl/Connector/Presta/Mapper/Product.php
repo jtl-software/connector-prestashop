@@ -108,8 +108,6 @@ class Product extends BaseMapper
         if (isset($data['id_product_attribute'])) {
             return new Identity($data['id_product']);
         }
-        
-        return null;
     }
     
     protected function id_category_default($data)

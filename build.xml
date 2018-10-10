@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="JTL-Connector-PrestaShop-Endpoint" default="release">
+<project name="JTL-Connector-PrestaShop-Endpoint" default="zip">
     <target name="build">
         <phingcall target="clean" />
         <mkdir dir="./dist" />
@@ -59,16 +59,18 @@
         </pharpackage>
     </target>
 
-    <target name="release" depends="package">
+    <target name="zip" depends="package">
+        <delete dir="./zip" />
+        <mkdir dir="./zip" />
         <loadfile property="version" file="version"/>
-        <zip destfile="./jtl_connector_prestashop_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+        <zip destfile="./zip/jtl_connector_prestashop_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
         <delete file="./dist/connector.phar" />
         <copy todir="./dist">
             <fileset dir="./build">
                 <include name="**"></include>
             </fileset>
         </copy>
-        <zip destfile="./jtl_connector_prestashop_store_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+        <zip destfile="./zip/jtl_connector_prestashop_store_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
         <phingcall target="clean"/>
     </target>
 
