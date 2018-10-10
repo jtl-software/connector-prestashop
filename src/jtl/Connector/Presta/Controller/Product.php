@@ -208,7 +208,7 @@ class Product extends BaseController
             $categories = new Product2Category();
             $categories->pushData($data);
 
-            if (isset($product)) {
+            if (isset($product) && $data->getMasterProductId()->getHost() === 0) {
                 $attributes = new ProductAttr();
                 $attributes->pushData($data, $product);
             }

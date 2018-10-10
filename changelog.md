@@ -1,3 +1,8 @@
+1.5.4
+------
+- Added support for product specifics 
+- Varcombi child attributes are now ignored because they are not supported. (And are now no longer removing varcombi father attributes)
+
 1.5.3
 ------
 - Fixed out of stock feature 
