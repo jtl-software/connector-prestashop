@@ -64,6 +64,7 @@
 
     <target name="release" depends="package">
         <loadfile property="version" file="version"/>
+        <delete file="./jtl_connector_prestashop_${version}.zip"></delete>
         <zip destfile="./jtl_connector_prestashop_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
         <delete file="./dist/connector.phar"/>
         <copy todir="./dist">
@@ -71,6 +72,7 @@
                 <include name="**"></include>
             </fileset>
         </copy>
+        <delete file="./jtl_connector_prestashop_store_${version}.zip"></delete>
         <zip destfile="./jtl_connector_prestashop_store_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
         <phingcall target="clean"/>
     </target>
