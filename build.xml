@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="JTL-Connector-PrestaShop-Endpoint" default="release">
+    <property file="./build-config.yaml" />
     <target name="build">
         <phingcall target="clean"/>
         <mkdir dir="./dist"/>
@@ -63,15 +64,23 @@
     </target>
 
     <target name="release" depends="package">
+<<<<<<< HEAD
         <loadfile property="version" file="version"/>
         <zip destfile="./jtl_connector_prestashop_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+=======
+        <zip destfile="./${zipname}${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+>>>>>>> 80e8ef0... optimize build procedure
         <delete file="./dist/connector.phar"/>
         <copy todir="./dist">
             <fileset dir="./build">
                 <include name="**"></include>
             </fileset>
         </copy>
+<<<<<<< HEAD
         <zip destfile="./jtl_connector_prestashop_store_${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+=======
+        <zip destfile="./${zipname}${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+>>>>>>> 80e8ef0... optimize build procedure
         <phingcall target="clean"/>
     </target>
 
