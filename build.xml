@@ -71,7 +71,6 @@
                 <include name="**"></include>
             </fileset>
         </copy>
-        <zip destfile="./${zipname}${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
         <phingcall target="clean"/>
     </target>
 
