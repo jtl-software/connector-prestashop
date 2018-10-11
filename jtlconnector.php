@@ -24,7 +24,7 @@ class JTLConnector extends Module
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
         try {
-            $this->version = \Symfony\Component\Yaml\Yaml::parse(__DIR__ . '/build-config.yaml')['version'];
+            $this->version = \Symfony\Component\Yaml\Yaml::parseFile(__DIR__ . '/build-config.yaml')['version'];
         } catch (\Exception $e) {
             $this->version = 'Unknown';
         }
