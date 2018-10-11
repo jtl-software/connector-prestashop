@@ -29,8 +29,8 @@ class ProductAttr extends BaseController
 
     public function pushData($data, $model)
     {
-        $model->deleteFeatures();
-
+        $this->removeCurrentAttributes($model);
+        
         foreach ($data->getAttributes() as $attr) {
             if ($attr->getIsCustomProperty() === false || \Configuration::get('jtlconnector_custom_fields')) {
                 $featureData = array();
@@ -75,6 +75,30 @@ class ProductAttr extends BaseController
                         }
                     }
                 }
+            }
+        }
+    }
+    
+    protected function removeCurrentAttributes($model)
+    {
+        $attributes = $this->db->ExecuteS('
+        SELECT p.*, f.*
+		FROM `'._DB_PREFIX_.'feature_product` as p
+		LEFT JOIN `'._DB_PREFIX_.'feature_value` as f ON (f.`id_feature_value` = p.`id_feature_value`)
+		WHERE `id_product` = '.intval($model->id).' AND `custom` = 1;
+        ');
+        
+        if (!empty($attributes)) {
+            foreach ($attributes as $attr) {
+                $this->db->Execute('
+                DELETE FROM `'._DB_PREFIX_.'feature_value`
+                WHERE `id_feature_value` = '.intval($attr['id_feature_value']));
+                $this->db->Execute('
+                DELETE FROM `'._DB_PREFIX_.'feature_value_lang`
+                WHERE `id_feature_value` = '.intval($attr['id_feature_value']));
+                $this->db->Execute('
+                DELETE FROM `'._DB_PREFIX_.'feature_product`
+                WHERE `id_product` = '.intval($model->id).' AND `id_feature_value` = '.intval($attr['id_feature_value']));
             }
         }
     }
