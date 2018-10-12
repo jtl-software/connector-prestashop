@@ -44,7 +44,7 @@
             <fileset dir=".">
                 <include name="src/"/>
                 <include name="library/"/>
-                <include name="version"/>
+                <include name="build-config.yaml"/>
             </fileset>
         </copy>
     </target>
