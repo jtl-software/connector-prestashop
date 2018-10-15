@@ -112,9 +112,9 @@ class Product extends BaseMapper
     
     protected function id_category_default($data)
     {
-        $firstCategory = reset($data->getCategories());
-        
-        if (!empty($firstCategory)) {
+        $categories = $data->getCategories();
+        if (count($categories) > 0) {
+            $firstCategory = reset($categories);
             return $firstCategory->getCategoryId()->getEndpoint();
         }
         
