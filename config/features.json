@@ -306,8 +306,8 @@
             "delete": false
         },
         "ProductSpecific": {
-            "pull": false,
-            "push": false,
+            "pull": true,
+            "push": true,
             "delete": false
         },
         "ProductStockLevel": {
@@ -386,24 +386,24 @@
             "delete": false
         },
         "Specific": {
-            "pull": false,
-            "push": false,
-            "delete": false
+            "pull": true,
+            "push": true,
+            "delete": true
         },
         "SpecificI18n": {
-            "pull": false,
-            "push": false,
-            "delete": false
+            "pull": true,
+            "push": true,
+            "delete": true
         },
         "SpecificValue": {
-            "pull": false,
-            "push": false,
-            "delete": false
+            "pull": true,
+            "push": true,
+            "delete": true
         },
         "SpecificValueI18n": {
-            "pull": false,
-            "push": false,
-            "delete": false
+            "pull": true,
+            "push": true,
+            "delete": true
         },
         "StatusChange": {
             "pull": false,
