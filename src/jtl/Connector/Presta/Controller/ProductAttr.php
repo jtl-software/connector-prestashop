@@ -81,25 +81,51 @@ class ProductAttr extends BaseController
     
     protected function removeCurrentAttributes($model)
     {
-        $attributes = $this->db->ExecuteS('
-        SELECT p.*, f.*
-		FROM `'._DB_PREFIX_.'feature_product` as p
-		LEFT JOIN `'._DB_PREFIX_.'feature_value` as f ON (f.`id_feature_value` = p.`id_feature_value`)
-		WHERE `id_product` = '.intval($model->id).' AND `custom` = 1;
+        $attributeIds = $this->db->executeS('
+			SELECT id_feature
+			FROM ' . _DB_PREFIX_ . 'feature_value
+            WHERE custom = 1 AND id_feature IN (
+                SELECT id_feature
+                FROM ' . _DB_PREFIX_ . 'feature_product
+                WHERE id_product = ' . $model->id . '
+                GROUP BY id_feature
+            )
+            GROUP BY id_feature
         ');
-        
-        if (!empty($attributes)) {
-            foreach ($attributes as $attr) {
-                $this->db->Execute('
-                DELETE FROM `'._DB_PREFIX_.'feature_value`
-                WHERE `id_feature_value` = '.intval($attr['id_feature_value']));
-                $this->db->Execute('
-                DELETE FROM `'._DB_PREFIX_.'feature_value_lang`
-                WHERE `id_feature_value` = '.intval($attr['id_feature_value']));
-                $this->db->Execute('
-                DELETE FROM `'._DB_PREFIX_.'feature_product`
-                WHERE `id_product` = '.intval($model->id).' AND `id_feature_value` = '.intval($attr['id_feature_value']));
+
+        foreach ($attributeIds as $attributeId) {
+            if ($this->isSpecific($attributeId['id_feature'])) {
+                $attributeValues = $this->db->executeS('
+                    SELECT id_feature_value
+                    FROM ' . _DB_PREFIX_ . 'feature_value
+                    WHERE custom = 1 AND id_feature = ' . $attributeId['id_feature']
+                );
+                foreach ($attributeValues as $attributeValue) {
+                    $this->db->Execute('
+                        DELETE FROM `'._DB_PREFIX_.'feature_value`
+                        WHERE `id_feature_value` = '.intval($attributeValue['id_feature_value']));
+                    $this->db->Execute('
+                        DELETE FROM `'._DB_PREFIX_.'feature_value_lang`
+                        WHERE `id_feature_value` = '.intval($attributeValue['id_feature_value']));
+                    $this->db->Execute('
+                        DELETE FROM `'._DB_PREFIX_.'feature_product`
+                        WHERE `id_product` = '.intval($model->id).' AND `id_feature_value` = '.intval($attributeValue['id_feature_value']));
+                }
+            } else {
+                $feature = new \Feature($attributeId['id_feature']);
+                if (!$feature->delete()) {
+                    throw new \Exception('Error deleting attribute with id: ' . $attributeId['id_feature']);
+                }
             }
         }
+    }
+    
+    protected function isSpecific($attributeId)
+    {
+        return (bool)$this->db->getValue('
+            SELECT COUNT(*)
+            FROM ' . _DB_PREFIX_ . 'feature_value
+            WHERE custom = 0 AND id_feature = ' . $attributeId
+        );
     }
 }
