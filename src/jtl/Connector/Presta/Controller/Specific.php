@@ -119,15 +119,22 @@ class Specific extends BaseController
                     $featureValue->value[$langId] = $specificValueI18n->getValue();
                 }
             }
-            
-            if (!$featureValue->save()) {
-                throw new \Exception('Error saving SpecificValue with id: ' . $specificValue->getId()->getHost());
+            try {
+                if (!$featureValue->save()) {
+                    throw new \Exception('Error saving SpecificValue with id: ' . $specificValue->getId()->getHost());
+                }
+            } catch (\Exception $e) {
+                throw new \Exception(sprintf('
+                Error saving SpecificValue with the id: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics',
+                    $specificValue->getId()->getHost(),
+                    reset($specific->getI18ns())->getName()
+                ));
             }
             $existingSpecificValues[] = $featureValue->id;
             $specificValue->getId()->setEndpoint($featureValue->id);
             $specificValue->getSpecificId()->setEndpoint($feature->id);
         }
-
+        
         $this->removeOldSpecificValues($specific, $existingSpecificValues);
         
         return $specific;
