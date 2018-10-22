@@ -109,7 +109,7 @@ class Specific extends BaseController
             Logger::write(sprintf('
                 Error saving Specific: %s. Presta doesn\'t allow special characters in their specifics',
                 reset($specific->getI18ns())->getName()
-            ), Logger::ERROR, 'controller');
+            ), Logger::ERROR, 'global');
             
             return $specific;
         }
@@ -141,7 +141,7 @@ class Specific extends BaseController
                 Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics',
                     reset($specificValue->getI18ns())->getValue(),
                     reset($specific->getI18ns())->getName()
-                ), Logger::ERROR, 'controller');
+                ), Logger::ERROR, 'global');
                 continue;
             }
             
