@@ -2,6 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
+use jtl\Connector\Core\Logger\Logger;
 use jtl\Connector\Model\Identity;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\Utils;
@@ -100,13 +101,24 @@ class Specific extends BaseController
             }
         }
         
-        if (!$feature->save()) {
-            throw new \Exception('Error saving Specific with id: ' . $specific->getId()->getHost());
+        try {
+            if (!$feature->save()) {
+                throw new \Exception('Error saving Specific with id: ' . $specific->getId()->getHost());
+            }
+        } catch (\Exception $e) {
+            Logger::write(sprintf('
+                Error saving Specific: %s. Presta doesn\'t allow special characters in their specifics',
+                reset($specific->getI18ns())->getName()
+            ), Logger::ERROR, 'controller');
+            
+            return $specific;
         }
+        
         $specific->getId()->setEndpoint($feature->id);
         
         //SPECIFCVALUE
         $existingSpecificValues = [];
+        
         foreach ($specific->getValues() as $key => $specificValue) {
             $featureValue = new \FeatureValue($specificValue->getId()->getEndpoint());
             $featureValue->id_feature = $feature->id;
@@ -119,17 +131,20 @@ class Specific extends BaseController
                     $featureValue->value[$langId] = $specificValueI18n->getValue();
                 }
             }
+            
             try {
                 if (!$featureValue->save()) {
-                    throw new \Exception('Error saving SpecificValue with id: ' . $specificValue->getId()->getHost());
+                    throw new \Exception();
                 }
             } catch (\Exception $e) {
-                throw new \Exception(sprintf('
-                Error saving SpecificValue with the id: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics',
-                    $specificValue->getId()->getHost(),
+                Logger::write(sprintf('
+                Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics',
+                    reset($specificValue->getI18ns())->getValue(),
                     reset($specific->getI18ns())->getName()
-                ));
+                ), Logger::ERROR, 'controller');
+                continue;
             }
+            
             $existingSpecificValues[] = $featureValue->id;
             $specificValue->getId()->setEndpoint($featureValue->id);
             $specificValue->getSpecificId()->setEndpoint($feature->id);
