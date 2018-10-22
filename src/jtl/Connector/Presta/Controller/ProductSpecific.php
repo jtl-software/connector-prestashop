@@ -37,23 +37,30 @@ class ProductSpecific extends BaseController
     {
         $currentValues = [];
         foreach ($product->getSpecifics() as $productSpecific) {
-            $currentValues[] = $productSpecific->getSpecificValueId()->getEndpoint();
-            if (!$this->linkingExists($productSpecific)) {
-                $this->createLinking($productSpecific);
+            if ($productSpecific->getSpecificValueId()->getEndpoint() > 0) {
+                $currentValues[] = $productSpecific->getSpecificValueId()->getEndpoint();
+                
+                if (!$this->linkingExists($productSpecific)) {
+                    $this->createLinking($productSpecific, $endpointProduct);
+                }
             }
         }
         
         $this->unlinkOldSpecificValues($product, $currentValues);
     }
     
-    protected function createLinking(ProductSpecificModel $productSpecific)
+    protected function createLinking(ProductSpecificModel $productSpecific, \Product $product)
     {
-        return $this->db->insert('feature_product',
-            [
-                'id_feature'       => $productSpecific->getId()->getEndpoint(),
-                'id_product'       => $productSpecific->getProductId()->getEndpoint(),
-                'id_feature_value' => $productSpecific->getSpecificValueId()->getEndpoint(),
-            ]);
+        if ($productSpecific->getId()->getEndpoint() && $productSpecific->getSpecificValueId()->getEndpoint()) {
+            return $this->db->insert('feature_product',
+                [
+                    'id_feature'       => $productSpecific->getId()->getEndpoint(),
+                    'id_product'       => $product->id,
+                    'id_feature_value' => $productSpecific->getSpecificValueId()->getEndpoint(),
+                ]);
+        }
+        
+        return false;
     }
     
     protected function linkingExists(ProductSpecificModel $productSpecific)
@@ -71,7 +78,7 @@ class ProductSpecific extends BaseController
     
     protected function unlinkOldSpecificValues(ProductModel $product, $existingSpecificValues = [])
     {
-        $specificValuesToRemove = $this->db->executeS($test = sprintf('
+        $specificValuesToRemove = $this->db->executeS(sprintf('
             SELECT id_feature_value, id_product
             FROM %sfeature_product
             WHERE id_product = %s AND id_feature_value NOT IN (%s) AND id_feature_value NOT IN (
@@ -83,17 +90,19 @@ class ProductSpecific extends BaseController
             $product->getId()->getEndpoint(),
             implode(',', array_merge($existingSpecificValues, [0])),
             _DB_PREFIX_
-            )
+        )
         );
         
-        foreach ($specificValuesToRemove as $value) {
-            $this->db->Execute(sprintf('
+        if (is_array($specificValuesToRemove)) {
+            foreach ($specificValuesToRemove as $value) {
+                $this->db->Execute(sprintf('
                     DELETE FROM `%sfeature_product`
                     WHERE `id_feature_value` = %s AND `id_product` = %s',
-                    _DB_PREFIX_,
-                    $value['id_feature_value'],
-                    $value['id_product'])
-            );
+                        _DB_PREFIX_,
+                        $value['id_feature_value'],
+                        $value['id_product'])
+                );
+            }
         }
     }
 }
