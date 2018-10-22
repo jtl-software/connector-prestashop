@@ -106,9 +106,10 @@ class Specific extends BaseController
                 throw new \Exception('Error saving Specific with id: ' . $specific->getId()->getHost());
             }
         } catch (\Exception $e) {
+            $specificI18ns = $specific->getI18ns();
             Logger::write(sprintf('
                 Error saving Specific: %s. Presta doesn\'t allow special characters in their specifics',
-                reset($specific->getI18ns())->getName()
+                reset($specificI18ns)->getName()
             ), Logger::ERROR, 'global');
             
             return $specific;
@@ -137,10 +138,12 @@ class Specific extends BaseController
                     throw new \Exception();
                 }
             } catch (\Exception $e) {
+                $specificValueI18ns = $specificValue->getI18ns();
+                $specificI18ns = $specific->getI18ns();
                 Logger::write(sprintf('
                 Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics',
-                    reset($specificValue->getI18ns())->getValue(),
-                    reset($specific->getI18ns())->getName()
+                    reset($specificValueI18ns)->getValue(),
+                    reset($specificI18ns)->getName()
                 ), Logger::ERROR, 'global');
                 continue;
             }
