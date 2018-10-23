@@ -17,7 +17,10 @@ class ProductSpecific extends BaseController
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
             WHERE custom = 0 AND `id_product` = %s',
-            _DB_PREFIX_, _DB_PREFIX_, $product->getId()->getEndpoint()));
+            _DB_PREFIX_,
+            _DB_PREFIX_,
+            $product->getId()->getEndpoint()
+        ));
         
         $productSpecifics = [];
         
@@ -45,7 +48,6 @@ class ProductSpecific extends BaseController
                 }
             }
         }
-        
         $this->unlinkOldSpecificValues($product, $currentValues);
     }
     
@@ -86,11 +88,11 @@ class ProductSpecific extends BaseController
                 FROM %sfeature_value
                 WHERE custom = 1
             )',
-            _DB_PREFIX_,
-            $product->getId()->getEndpoint(),
-            implode(',', array_merge($existingSpecificValues, [0])),
-            _DB_PREFIX_
-        )
+                _DB_PREFIX_,
+                $product->getId()->getEndpoint(),
+                implode(',', array_merge($existingSpecificValues, [0])),
+                _DB_PREFIX_
+            )
         );
         
         if (is_array($specificValuesToRemove)) {

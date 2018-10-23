@@ -18,14 +18,16 @@ class Specific extends BaseController
     {
         $specifics = [];
         
-        $specificsIds = $this->db->executeS('
+        $specificsIds = $this->db->executeS(sprintf('
 			SELECT v.id_feature
-			FROM ' . _DB_PREFIX_ . 'feature_value v
+			FROM %sfeature_value v
 			LEFT JOIN jtl_connector_link l ON v.id_feature = l.endpointId AND l.type = 128
             WHERE l.hostId IS NULL AND v.custom = 0
             GROUP BY v.id_feature
-            LIMIT ' . $limit
-        );
+            LIMIT %s',
+            _DB_PREFIX_,
+            $limit
+        ));
         
         foreach ($specificsIds as $specificsId) {
             $specific = (new SpecificModel())
@@ -33,10 +35,13 @@ class Specific extends BaseController
                 ->setId(new Identity($specificsId['id_feature']))
                 ->setType('string');
             
-            $specificI18ns = $this->db->executeS('
+            $specificI18ns = $this->db->executeS(sprintf('
                 SELECT *
-                FROM ' . _DB_PREFIX_ . 'feature_lang
-                WHERE id_feature = ' . $specificsId['id_feature']); // SQL QUERY I18Ns for each Feature
+                FROM %sfeature_lang
+                WHERE id_feature = %s',
+                _DB_PREFIX_,
+                $specificsId['id_feature']
+            ));
             
             foreach ($specificI18ns as $specificI18n) {
                 $specific->addI18n(
@@ -47,20 +52,26 @@ class Specific extends BaseController
                 );
             }
             // SpecificValues
-            $specificValueData = $this->db->executeS('
+            $specificValueData = $this->db->executeS(sprintf('
                 SELECT *
-                FROM ' . _DB_PREFIX_ . 'feature_value
-                WHERE custom = 0 AND id_feature = ' . $specificsId['id_feature']); // SQL QUERY Feature_Value where Feature_id = X
+                FROM %sfeature_value
+                WHERE custom = 0 AND id_feature = %s',
+                _DB_PREFIX_,
+                $specificsId['id_feature']
+            ));
             
             foreach ($specificValueData as $specificValueDataSet) {
                 $specificValue = (new SpecificValueModel)
                     ->setId(new Identity($specificValueDataSet['id_feature_value']))
                     ->setSpecificId($specific->getId());
                 
-                $specificValueI18ns = $this->db->executeS('
+                $specificValueI18ns = $this->db->executeS(sprintf('
                     SELECT *
-                    FROM ' . _DB_PREFIX_ . 'feature_value_lang
-                    WHERE id_feature_value = ' . $specificValueDataSet['id_feature_value']);// SQL QUERY Feature_Value_lang where Feature_value_id = X
+                    FROM %sfeature_value_lang
+                    WHERE id_feature_value = %s',
+                    _DB_PREFIX_,
+                    $specificValueDataSet['id_feature_value']
+                ));
                 
                 foreach ($specificValueI18ns as $specificValueI18n) {
                     $specificValue->addI18n((new SpecificValueI18nModel)
@@ -70,7 +81,6 @@ class Specific extends BaseController
                     
                     $specific->addValue($specificValue);
                 }
-                
             }
             $specifics[] = $specific;
         }
@@ -236,31 +246,36 @@ class Specific extends BaseController
     
     public function getStats()
     {
-        return $this->db->getValue('
+        return $this->db->getValue(sprintf('
         SELECT COUNT(*)
         FROM (SELECT v.id_feature
-              FROM ' . _DB_PREFIX_ . 'feature_value v
+              FROM %sfeature_value v
               LEFT JOIN jtl_connector_link l ON v.id_feature = l.endpointId AND l.type = 128
               WHERE l.hostId IS NULL AND v.custom = 0
-              GROUP BY v.id_feature) as Z
-        ');
+              GROUP BY v.id_feature) as Z',
+            _DB_PREFIX_
+        ));
     }
     
     protected function isAttribute($specificId)
     {
-        return (bool)$this->db->getValue('
+        return (bool)$this->db->getValue(sprintf('
             SELECT COUNT(*)
-            FROM ' . _DB_PREFIX_ . 'feature_value
-            WHERE custom = 1 AND id_feature = ' . $specificId
-        );
+            FROM %sfeature_value
+            WHERE custom = 1 AND id_feature = %s',
+            _DB_PREFIX_,
+            $specificId
+        ));
     }
     
     public function getSpecificValues($specificId)
     {
-        return $this->db->executeS('
+        return $this->db->executeS(sprintf('
             SELECT *
-            FROM ' . _DB_PREFIX_ . 'feature_value
-            WHERE custom = 0 AND id_feature = ' . $specificId
-        );
+            FROM %sfeature_value
+            WHERE custom = 0 AND id_feature = %s',
+            _DB_PREFIX_,
+            $specificId
+        ));
     }
 }

@@ -1,5 +1,6 @@
 1.5.4
 ------
+- Added Connector Plugin support
 - Added support for product specifics 
 - Varcombi child attributes are now ignored because they are not supported. (And are now no longer removing varcombi father attributes)
 
