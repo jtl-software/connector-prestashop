@@ -151,7 +151,7 @@ class Specific extends BaseController
                 $specificValueI18ns = $specificValue->getI18ns();
                 $specificI18ns = $specific->getI18ns();
                 Logger::write(sprintf('
-                Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics',
+                Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics_value',
                     reset($specificValueI18ns)->getValue(),
                     reset($specificI18ns)->getName()
                 ), Logger::ERROR, 'global');
@@ -180,7 +180,6 @@ class Specific extends BaseController
             )
         );
         
-        $PKM = new PrimaryKeyMapper();
         foreach ($specificValuesToRemove as $value) {
             $this->db->Execute(sprintf('
                     DELETE FROM `%sfeature_value`
@@ -194,7 +193,7 @@ class Specific extends BaseController
                     _DB_PREFIX_,
                     $value['id_feature_value'])
             );
-            $PKM->delete($value['id_feature_value'], null, 256);
+            (new PrimaryKeyMapper())->delete($value['id_feature_value'], null, 256);
         }
     }
     
