@@ -23,7 +23,7 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
             $loader = require_once CONNECTOR_DIR.'/library/autoload.php';
             $loader->add('', CONNECTOR_DIR . '/plugins');
         } else {
-            $loader = include_once 'phar://'.CONNECTOR_DIR.'/connector.phar';
+            $loader = include_once 'phar://'.CONNECTOR_DIR.'/connector.phar/library/autoload.php';
             $loader->add('', CONNECTOR_DIR . '/plugins');
         }
 

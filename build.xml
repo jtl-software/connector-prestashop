@@ -61,6 +61,9 @@
                 <include name="**/**"/>
             </fileset>
         </pharpackage>
+
+        <delete dir="./build/library" />
+        <delete dir="./build/src" />
     </target>
 
     <target name="release" depends="package">
