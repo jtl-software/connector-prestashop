@@ -71,6 +71,10 @@
                 <include name="**"></include>
             </fileset>
         </copy>
+<<<<<<< HEAD
+=======
+        <zip destfile="./${zipname}${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
+>>>>>>> feature/product-specific-integration
         <phingcall target="clean"/>
     </target>
 
