@@ -47,7 +47,7 @@ class Specific extends BaseController
                 $specific->addI18n(
                     (new SpecificI18nModel)
                         ->setSpecificId($specific->getId())
-                        ->setLanguageISO($specificI18n['id_lang'])
+                        ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificI18n['id_lang']))
                         ->setName($specificI18n['name'])
                 );
             }
@@ -75,7 +75,7 @@ class Specific extends BaseController
                 
                 foreach ($specificValueI18ns as $specificValueI18n) {
                     $specificValue->addI18n((new SpecificValueI18nModel)
-                        ->setLanguageISO($specificValueI18n['id_lang'])
+                        ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificValueI18n['id_lang']))
                         ->setSpecificValueId($specificValue->getId())
                         ->setValue($specificValueI18n['value']));
                     
