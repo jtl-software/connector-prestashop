@@ -78,9 +78,8 @@ class Specific extends BaseController
                         ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificValueI18n['id_lang']))
                         ->setSpecificValueId($specificValue->getId())
                         ->setValue($specificValueI18n['value']));
-                    
-                    $specific->addValue($specificValue);
                 }
+                $specific->addValue($specificValue);
             }
             $specifics[] = $specific;
         }
