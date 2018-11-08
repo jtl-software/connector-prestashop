@@ -14,11 +14,15 @@
         }
     ],
     "config": {
-        "vendor-dir": "library"
+        "vendor-dir": "library",
+        "platform": {
+            "php": "5.6.4"
+        }
     },
     "require": {
-        "php": ">=5.4.0",
-        "jtl/connector": "^2.4.0"
+        "php": ">=5.6.4",
+        "jtl/connector": "^2.4.0",
+        "symfony/yaml": "^3.4"
 	},
     "autoload": {
         "psr-0": {

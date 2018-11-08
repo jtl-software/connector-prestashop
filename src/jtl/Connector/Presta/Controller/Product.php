@@ -46,6 +46,12 @@ class Product extends BaseController
 			}
 		}
 
+		//Adding Specifics to products
+        /** @var \jtl\Connector\Model\Product $product */
+        foreach ($return as $product) {
+		    $product->setSpecifics(ProductSpecific::getInstance()->pullData($product));
+        }
+		
 		return $return;
 	}
 
@@ -208,9 +214,9 @@ class Product extends BaseController
             $categories = new Product2Category();
             $categories->pushData($data);
 
-            if (isset($product)) {
-                $attributes = new ProductAttr();
-                $attributes->pushData($data, $product);
+            if (isset($product) && $data->getMasterProductId()->getHost() === 0) {
+                ProductAttr::getInstance()->pushData($data, $product);
+                ProductSpecific::getInstance()->pushData($data, $product);
             }
         }
 

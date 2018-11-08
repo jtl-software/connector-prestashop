@@ -78,7 +78,13 @@ class Connector extends Controller
             ->setUploadMaxFilesize($returnMegaBytes(ini_get('upload_max_filesize')));
 
         $connector = new ConnectorIdentification();
-        $connector->setEndpointVersion(file_get_contents(CONNECTOR_DIR.'/version'))
+        try{
+            $version = \Symfony\Component\Yaml\Yaml::parseFile(CONNECTOR_DIR . '/build-config.yaml')['version'];
+        }catch (\Exception $e){
+            $version = 'Unknown';
+        }
+        
+        $connector->setEndpointVersion($version)
             ->setPlatformName('PrestaShop')
             ->setPlatformVersion(_PS_VERSION_)
             ->setProtocolVersion(Application()->getProtocolVersion())
