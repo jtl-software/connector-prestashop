@@ -44,12 +44,23 @@ class Specific extends BaseController
             ));
             
             foreach ($specificI18ns as $specificI18n) {
-                $specific->addI18n(
-                    (new SpecificI18nModel)
-                        ->setSpecificId($specific->getId())
-                        ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificI18n['id_lang']))
-                        ->setName($specificI18n['name'])
-                );
+                try {
+                    $specific->addI18n(
+                        (new SpecificI18nModel)
+                            ->setSpecificId($specific->getId())
+                            ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificI18n['id_lang']))
+                            ->setName((string)$specificI18n['name'])
+                    );
+                } catch (\InvalidArgumentException $e) {
+                    $error = sprintf("
+                        Error pulling Specific (ID: %s). It seems that this Specific has an entry for a language that doesn't exist anymore. Language ID: %s",
+                        $specific->getId()->getEndpoint(),
+                        $specificI18n['id_lang']
+                    );
+                    Logger::write($error,Logger::ERROR, 'global');
+    
+                    throw new \RuntimeException($error);
+                }
             }
             // SpecificValues
             $specificValueData = $this->db->executeS(sprintf('
@@ -74,10 +85,21 @@ class Specific extends BaseController
                 ));
                 
                 foreach ($specificValueI18ns as $specificValueI18n) {
-                    $specificValue->addI18n((new SpecificValueI18nModel)
-                        ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificValueI18n['id_lang']))
-                        ->setSpecificValueId($specificValue->getId())
-                        ->setValue($specificValueI18n['value']));
+                    try {
+                        $specificValue->addI18n((new SpecificValueI18nModel)
+                            ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificValueI18n['id_lang']))
+                            ->setSpecificValueId($specificValue->getId())
+                            ->setValue((string)$specificValueI18n['value']));
+                    } catch (\InvalidArgumentException $e) {
+                        $error = sprintf("
+                            Error pulling a SpecificValue (ID: %s). It seems that this SpecificValue has an entry for a language that doesn't exist anymore. Language ID: %s",
+                            $specific->getId()->getEndpoint(),
+                            $specificValueI18n['id_lang']
+                        );
+                        Logger::write($error,Logger::ERROR, 'global');
+                        
+                        throw new \RuntimeException($error);
+                    }
                 }
                 $specific->addValue($specificValue);
             }
