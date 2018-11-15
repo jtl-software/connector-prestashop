@@ -128,7 +128,7 @@ class JTLConnector extends Module
     public function getContent()
     {
         $output = null;
-
+        
         if (Tools::isSubmit('submit'.$this->name)) {
             $pass = (string) Tools::getValue('jtlconnector_pass');
             if (!$pass  || empty($pass) || !Validate::isPlaintextPassword($pass, 8)) {
@@ -191,7 +191,7 @@ class JTLConnector extends Module
                     'label' => $this->l('Truncate short description'),
                     'name' => 'jtlconnector_truncate_desc',
                     'is_bool' => true,
-                    'desc' => sprintf($this->l('Enable this option to truncate too long short descriptions. Your current setting is %s chars. You can change this in your product preferences.'), $limit),
+                    'desc' => $this->l('Enable this option to truncate too long short descriptions. Your current setting is %s chars. You can change this in your product preferences.'),
                     'values' => array(
                         array(
                             'id' => 'active_on',
