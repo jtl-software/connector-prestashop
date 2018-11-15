@@ -131,7 +131,7 @@ class JTLConnector extends Module
 
         if (Tools::isSubmit('submit'.$this->name)) {
             $pass = (string) Tools::getValue('jtlconnector_pass');
-            if (!$pass  || empty($pass) || !Validate::isPasswd($pass, 8)) {
+            if (!$pass  || empty($pass) || !Validate::isPlaintextPassword($pass, 8)) {
                 $output .= $this->displayError($this->l('Password must have a minimum length of 8 chars!'));
             } else {
                 Configuration::updateValue('jtlconnector_pass', $pass);
@@ -139,6 +139,22 @@ class JTLConnector extends Module
                 Configuration::updateValue('jtlconnector_custom_fields', Tools::getValue('jtlconnector_custom_fields'));
                 Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
                 $output .= $this->displayConfirmation($this->l('Settings saved.'));
+            }
+            if (Tools::getValue('jtlconnector_remove_inconsistency')) {
+                Db::getInstance()->execute(sprintf('DELETE FROM %sfeature_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
+                    _DB_PREFIX_,
+                    _DB_PREFIX_)
+                );
+                $affected = Db::getInstance()->Affected_Rows();
+                Db::getInstance()->execute(sprintf('DELETE FROM %sfeature_value_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
+                    _DB_PREFIX_,
+                    _DB_PREFIX_)
+                );
+                $affected += Db::getInstance()->Affected_Rows();
+                
+                $output .= $this->displayConfirmation(sprintf("%s: %s",
+                    $this->l('Successfully cleaned inconsistent entries'),
+                    $affected));
             }
         }
 
@@ -195,6 +211,24 @@ class JTLConnector extends Module
                     'name' => 'jtlconnector_custom_fields',
                     'is_bool' => true,
                     'desc' => sprintf($this->l('Enable this option to add the custom fields as product attributes.'), $limit),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
+                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Remove inconsistant specifics from the database'),
+                    'name' => 'jtlconnector_remove_inconsistency',
+                    'desc' => sprintf($this->l('Use this button to remove inconsistency in your specifics table caused by missing languages.'), $limit),
                     'values' => array(
                         array(
                             'id' => 'active_on',
