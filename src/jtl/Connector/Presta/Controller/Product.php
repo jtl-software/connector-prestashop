@@ -140,7 +140,7 @@ class Product extends BaseController
                         $attrNames[$langId] = $varName;
                     }
 
-                    if ($langId == \Context::getContext()->country->id) {
+                    if ($langId == \Context::getContext()->language->id) {
                         $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM '._DB_PREFIX_.'attribute_group_lang WHERE name="'.$varName.'"');
                     }
                 }
@@ -165,7 +165,7 @@ class Product extends BaseController
                             $valNames[$langId] = $valName;
                         }
 
-                        if ($langId == \Context::getContext()->country->id) {
+                        if ($langId == \Context::getContext()->language->id) {
                             $valId = $this->db->getValue('
                               SELECT l.id_attribute
                               FROM '._DB_PREFIX_.'attribute_lang l
