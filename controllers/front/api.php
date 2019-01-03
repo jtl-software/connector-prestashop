@@ -17,6 +17,10 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
 {
     public function initContent()
     {
+        if (isset($_SESSION)) {
+            session_destroy();
+        }
+        
         defined('CONNECTOR_DIR') || define("CONNECTOR_DIR", _PS_MODULE_DIR_.'/jtlconnector/');
 
         if (file_exists(CONNECTOR_DIR.'/library/autoload.php')) {

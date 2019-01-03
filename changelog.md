@@ -1,3 +1,10 @@
+1.5.5
+------
+- Improved error messages
+- Updated deprecated functions
+- CO-360 - Added missing translations 
+- CO-358 - Added an feature to delete inconsistent specific data through the module configuration 
+
 1.5.4
 ------
 - Added Connector Plugin support
