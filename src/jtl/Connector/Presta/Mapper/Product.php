@@ -36,6 +36,7 @@ class Product extends BaseMapper
         'permitNegativeStock' => null,
         'isActive' => null,
         'isTopProduct' => 'on_sale',
+        'purchasePrice' => 'wholesale_price',
         'minimumOrderQuantity' => 'minimal_quantity'
 	);
 
@@ -60,6 +61,7 @@ class Product extends BaseMapper
         'on_sale' => 'isTopProduct',
         'minimal_quantity' => null,
         'ProductI18n' => 'i18ns',
+        'wholesale_price' => 'purchasePrice',
         'ProductSpecialPrice' => 'specialPrices'
     );
 
