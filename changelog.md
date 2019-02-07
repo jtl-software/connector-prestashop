@@ -1,3 +1,7 @@
+1.5.6
+------
+- CO-432 - Added support for purchase-price (wholesaleprice)
+
 1.5.5
 ------
 - Improved error messages

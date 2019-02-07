@@ -76,8 +76,9 @@ class Product extends BaseController
         $masterId = $data->getMasterProductId()->getEndpoint();
 
         if (empty($masterId)) {
+            
             $product = $this->mapper->toEndpoint($data);
-
+            
             $product->save();
 
             $id = $product->id;
