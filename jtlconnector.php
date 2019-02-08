@@ -243,6 +243,24 @@ class JTLConnector extends Module
                     ),
                 ),
                 array(
+                    'type' => 'switch',
+                    'label' => $this->l('Enable Developer Logging'),
+                    'name' => 'jtlconnector_developer_logging',
+                    'desc' => sprintf($this->l('Use this setting to enable developer logging.'), $limit),
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
+                ),
+                array(
                     'type' => 'date',
                     'label' => $this->l('Date treshold'),
                     'name' => 'jtlconnector_from_date',

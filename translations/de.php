@@ -21,6 +21,8 @@ $_MODULE['<{jtlconnector}prestashop>jtlconnector_0f3c8e45e363273b91db83ef8017155
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_7ffd92fa7c5f750c33e16991fa9b5e09'] = 'Aktivieren um die eigenen Felder aus der Wawi als Produkt-Eigenschaften im Shop anzulegen.';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_64255fe9014f731d0b480ec85e0b24bf'] = 'Entferne inkonsistente Einträge aus der Datenbank';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_2e1ff2899505bf685112d7ba52285a13'] = 'Benutze diese Einstellung um inkonsistente Merkmale, welche durch fehlende Sprachen verursacht wurden, zu löschen.';
+$_MODULE['<{jtlconnector}prestashop>jtlconnector_944b7376759f56eaabd9b8819425d216'] = 'Developer Logging aktivieren';
+$_MODULE['<{jtlconnector}prestashop>jtlconnector_b2391ecb0051e9e5c7b2005450c1427c'] = 'Benutze diese Einstellung, um das Developer Logging zu aktivieren.';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_2bb9d095186c8a85bc6963c57b1d12b8'] = 'Datums-Grenze';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_31ae1c16b5591f199dc43763fe331a74'] = 'Legen Sie hier bei Bedarf eine Datums-Grenze für Bestellungen fest. Wenn diese Einstellung gesetzt ist, werden nur Bestellungen abgeglichen die nach diesem Datum erfolgten.';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_c9cc8cce247e49bae79f15173ce97354'] = 'Speichern';
