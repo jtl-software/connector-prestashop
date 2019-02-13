@@ -49,6 +49,30 @@ class JTLConnector extends Module
         $this->module_key = '488cd335118c56baab7259d5459cf3a3';
     }
     
+    /*public function viewAccess()
+    {
+        return $this->getContent();
+    }
+    
+    public function checkToken()
+    {
+        return true;
+    }
+    
+    public function displayConf()
+    {
+        return $this->displayForm();
+    }
+    public function postProcess()
+    {
+        return true;
+    }
+    public function displayErrors()
+    {
+        return true;
+    }*/
+    
+    
     public function install()
     {
         if (version_compare(PHP_VERSION, '5.6.4') < 0) {
@@ -119,12 +143,28 @@ class JTLConnector extends Module
             Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(type)');
         }
         
+        $tab = new \Tab();
+        $name = "JTL-Connector";
+        $tab->id_parent = 3;
+        $tab->position = 1;
+        foreach (\Language::getLanguages(true) as $lang) {
+            $tab->name[$lang['id_lang']] = $name;
+        }
+        $tab->active = true;
+        $tab->module = $this->name;
+        $tab->class_name = "jtlconnector";
+        $tab->save();
+        
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
     }
     
     public function uninstall()
     {
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
+    
+        $id_tab = (int) Tab::getIdFromClassName('jtlconnector');
+        $tab = new Tab($id_tab);
+        $tab->delete();
         
         if (isset($meta['id_meta'])) {
             $delMeta = new \Meta($meta['id_meta']);
