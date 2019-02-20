@@ -205,29 +205,19 @@ class JTLConnector extends Module
     
     private function clearLogs()
     {
-        $logDir = CONNECTOR_DIR . '/logs';
-        $zip_file = CONNECTOR_DIR . '/tmp/connector_logs.zip';
+        $logDir = CONNECTOR_DIR . 'logs';
+        $zip_file = CONNECTOR_DIR . 'tmp/connector_logs.zip';
         
         if (file_exists($zip_file)) {
             unlink($zip_file);
         }
+    
+        $files = glob($logDir . '/*.txt');
         
-        $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($logDir),
-            RecursiveIteratorIterator::LEAVES_ONLY
-        );
-        
-        foreach ($files as $name => $file) {
-            
-            if ($file->getFilename() === '.gitkeep') {
-                continue;
-            }
-            
-            if (!$file->isDir()) {
-                $filePath = $file->getRealPath();
-                
-                if (file_exists($filePath)) {
-                    unlink($filePath);
+        foreach ($files as $file) {
+            if (!is_dir($file)) {
+                if (file_exists($file)) {
+                    unlink($file);
                 }
             }
         }
