@@ -20,12 +20,12 @@ class JTLConnector extends Module
 {
     public function __construct()
     {
-        if (file_exists(CONNECTOR_DIR.'/library/autoload.php')) {
-            $loader = require_once CONNECTOR_DIR.'/library/autoload.php';
+        if (file_exists(CONNECTOR_DIR . '/library/autoload.php')) {
+            $loader = require_once CONNECTOR_DIR . '/library/autoload.php';
         } else {
-            $loader = include_once 'phar://'.CONNECTOR_DIR.'/connector.phar/library/autoload.php';
+            $loader = include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/library/autoload.php';
         }
-    
+        
         if ($loader instanceof \Composer\Autoload\ClassLoader) {
             $loader->add('', CONNECTOR_DIR . '/plugins');
         }
@@ -49,29 +49,10 @@ class JTLConnector extends Module
         $this->module_key = '488cd335118c56baab7259d5459cf3a3';
     }
     
-    /*public function viewAccess()
+    public function viewAccess()
     {
-        return $this->getContent();
+        Tools::redirectAdmin(Context::getContext()->link->getAdminLink('AdminModules') . '&configure=jtlconnector');
     }
-    
-    public function checkToken()
-    {
-        return true;
-    }
-    
-    public function displayConf()
-    {
-        return $this->displayForm();
-    }
-    public function postProcess()
-    {
-        return true;
-    }
-    public function displayErrors()
-    {
-        return true;
-    }*/
-    
     
     public function install()
     {
@@ -145,12 +126,12 @@ class JTLConnector extends Module
         
         $tab = new \Tab();
         $name = "JTL-Connector";
-        $tab->id_parent = 3;
-        $tab->position = 1;
+        $tab->id_parent = (int)Tab::getIdFromClassName('IMPROVE');
         foreach (\Language::getLanguages(true) as $lang) {
             $tab->name[$lang['id_lang']] = $name;
         }
         $tab->active = true;
+        $tab->position = 0;
         $tab->module = $this->name;
         $tab->class_name = "jtlconnector";
         $tab->save();
@@ -161,10 +142,12 @@ class JTLConnector extends Module
     public function uninstall()
     {
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
-    
-        $id_tab = (int) Tab::getIdFromClassName('jtlconnector');
-        $tab = new Tab($id_tab);
-        $tab->delete();
+        
+        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
+        if ($id_tab) {
+            $tab = new Tab($id_tab);
+            $tab->delete();
+        }
         
         if (isset($meta['id_meta'])) {
             $delMeta = new \Meta($meta['id_meta']);
@@ -179,20 +162,10 @@ class JTLConnector extends Module
         $output = null;
         
         if (Tools::isSubmit('submit' . $this->name)) {
-            $pass = (string)Tools::getValue('jtlconnector_pass');
-            if (!$pass || empty($pass) || !Validate::isPlaintextPassword($pass, 8)) {
-                $output .= $this->displayError($this->l('Password must have a minimum length of 8 chars!'));
-            } else {
-                Configuration::updateValue('jtlconnector_pass', $pass);
-                Configuration::updateValue('jtlconnector_truncate_desc', Tools::getValue('jtlconnector_truncate_desc'));
-                Configuration::updateValue('jtlconnector_custom_fields', Tools::getValue('jtlconnector_custom_fields'));
-                Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
-                Config::set('developer_logging', Tools::getValue('jtlconnector_developer_logging'));
-                
-                $output .= $this->displayConfirmation($this->l('Settings saved.'));
-            }
-          
-            if (Tools::getValue('jtlconnector_remove_inconsistency')) {
+            if (Tools::getValue('jtlconnector_clear_logs')) {
+                $this->clearLogs();
+                $output .= $this->displayConfirmation($this->l('Logs have been cleared successfully!'));
+            } elseif (Tools::getValue('jtlconnector_remove_inconsistency')) {
                 Db::getInstance()->execute(sprintf('DELETE FROM %sfeature_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
                         _DB_PREFIX_,
                         _DB_PREFIX_)
@@ -203,14 +176,95 @@ class JTLConnector extends Module
                         _DB_PREFIX_)
                 );
                 $affected += Db::getInstance()->Affected_Rows();
-                
+    
                 $output .= $this->displayConfirmation(sprintf("%s: %s",
                     $this->l('Successfully cleaned inconsistent entries'),
                     $affected));
+            } elseif (Tools::getValue('jtlconnector_download_logs')) {
+                $this->downloadJTLLogs();
+            } else {
+                $pass = (string)Tools::getValue('jtlconnector_pass');
+                if (!$pass || empty($pass) || !Validate::isPlaintextPassword($pass, 8)) {
+                    $output .= $this->displayError($this->l('Password must have a minimum length of 8 chars!'));
+                } else {
+                    Configuration::updateValue('jtlconnector_pass', $pass);
+                    Configuration::updateValue('jtlconnector_truncate_desc',
+                        Tools::getValue('jtlconnector_truncate_desc'));
+                    Configuration::updateValue('jtlconnector_custom_fields',
+                        Tools::getValue('jtlconnector_custom_fields'));
+                    Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
+                    Config::set('developer_logging', Tools::getValue('jtlconnector_developer_logging'));
+                    
+                    $output .= $this->displayConfirmation($this->l('Settings saved.'));
+                }
             }
         }
         
         return $output . $this->displayForm();
+    }
+    
+    private function clearLogs()
+    {
+        $logDir = CONNECTOR_DIR . '/logs';
+        $zip_file = CONNECTOR_DIR . '/tmp/connector_logs.zip';
+        
+        if (file_exists($zip_file)) {
+            unlink($zip_file);
+        }
+        
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($logDir),
+            RecursiveIteratorIterator::LEAVES_ONLY
+        );
+        
+        foreach ($files as $name => $file) {
+            
+            if ($file->getFilename() === '.gitkeep') {
+                continue;
+            }
+            
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+                
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+            }
+        }
+    }
+    
+    function downloadJTLLogs()
+    {
+        $logDir = CONNECTOR_DIR . 'logs';
+        $zip_file = CONNECTOR_DIR . '/tmp/connector_logs.zip';
+        
+        $zip = new ZipArchive();
+        $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        
+        $files = glob($logDir . '/*.txt');
+        
+        $fileCounter = 0;
+        foreach ($files as $file) {
+            if (!is_dir($file)) {
+                $relativePath = substr($file, strlen($logDir) + 1);
+                
+                $zip->addFile($file, $relativePath);
+                $fileCounter++;
+            }
+        }
+        
+        // Zip archive will be created only after closing object
+        $zip->close();
+        
+        if ($fileCounter > 0) {
+            header('Content-type: application/zip');
+            header('Content-Disposition: attachment; filename="logs.zip"');
+            readfile($zip_file);
+        } else {
+            header('Content-Type: application/json; charset=UTF-8');
+            header('HTTP/1.1 451 Internal Server Booboo');
+            die(json_encode(['message' => 'Keine Logs Vorhanden!', 'code' => 451]));
+        }
     }
     
     public function displayForm()
@@ -278,11 +332,32 @@ class JTLConnector extends Module
                     ],
                 ],
                 [
-                    'type'   => 'switch',
+                    'type'     => 'date',
+                    'label'    => $this->l('Date treshold'),
+                    'name'     => 'jtlconnector_from_date',
+                    'desc'     => $this->l('If this option is set, only orders are pulled that are newer then this date.'),
+                    'size'     => 5,
+                    'required' => false,
+                ],
+                [
+                    'type'   => 'button',
                     'label'  => $this->l('Remove inconsistant specifics from the database'),
+                    'text'   => $this->l('Remove'),
                     'name'   => 'jtlconnector_remove_inconsistency',
+                    'icon'   => 'delete',
                     'desc'   => sprintf($this->l('Use this button to remove inconsistency in your specifics table caused by missing languages.'),
                         $limit),
+                ],
+                [
+                    'type'     => 'html',
+                    'name' => '',
+                    'html_content'  => '<hr>',
+                ],
+                [
+                    'type'   => 'switch',
+                    'label'  => $this->l('Enable Developer Logging'),
+                    'name'   => 'jtlconnector_developer_logging',
+                    'desc'   => sprintf($this->l('Use this setting to enable developer logging.'), $limit),
                     'values' => [
                         [
                             'id'    => 'active_on',
@@ -297,30 +372,20 @@ class JTLConnector extends Module
                     ],
                 ],
                 [
-                    'type'    => 'switch',
-                    'label'   => $this->l('Enable Developer Logging'),
-                    'name'    => 'jtlconnector_developer_logging',
-                    'desc'    => sprintf($this->l('Use this setting to enable developer logging.'), $limit),
-                    'values'  => [
-                        [
-                            'id'    => 'active_on',
-                            'value' => true,
-                            'label' => $this->l('Enabled'),
-                        ],
-                        [
-                            'id'    => 'active_off',
-                            'value' => false,
-                            'label' => $this->l('Disabled'),
-                        ],
-                    ],
+                    'type'  => 'button',
+                    'label' => $this->l('Clear logs'),
+                    'text'  => $this->l('Clear'),
+                    'name'  => 'jtlconnector_clear_logs',
+                    'icon'  => 'delete',
+                    'desc'  => $this->l('Use this button to clear your dev logs.'),
                 ],
                 [
-                    'type'     => 'date',
-                    'label'    => $this->l('Date treshold'),
-                    'name'     => 'jtlconnector_from_date',
-                    'desc'     => $this->l('If this option is set, only orders are pulled that are newer then this date.'),
-                    'size'     => 5,
-                    'required' => false,
+                    'type'  => 'button',
+                    'label' => $this->l('Download logs'),
+                    'text'  => $this->l('Download'),
+                    'name'  => 'jtlconnector_download_logs',
+                    'icon'  => 'download',
+                    'desc'  => $this->l('Use this button to download your dev logs.'),
                 ],
             ],
             'submit'      => [
@@ -331,29 +396,23 @@ class JTLConnector extends Module
         
         $helper = new HelperForm();
         
+        // Module, token and currentIndex
         $helper->module = $this;
         $helper->name_controller = $this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
+        
+        // Language
         $helper->default_form_language = $default_lang;
         $helper->allow_employee_form_lang = $default_lang;
+        
+        // Title and toolbar
         $helper->title = $this->displayName;
         $helper->show_toolbar = true;
         $helper->toolbar_scroll = true;
         $helper->submit_action = 'submit' . $this->name;
-        $helper->toolbar_btn = [
-            'save' =>
-                [
-                    'desc' => $this->l('Save'),
-                    'href' => AdminController::$currentIndex . '&configure=' . $this->name . '&save' . $this->name .
-                        '&token=' . Tools::getAdminTokenLite('AdminModules'),
-                ],
-            'back' => [
-                'href' => AdminController::$currentIndex . '&token=' . Tools::getAdminTokenLite('AdminModules'),
-                'desc' => $this->l('Back to list'),
-            ],
-        ];
         
+        // Load current value
         $helper->fields_value['jtlconnector_pass'] = Configuration::get('jtlconnector_pass');
         $helper->fields_value['jtlconnector_truncate_desc'] = Configuration::get('jtlconnector_truncate_desc');
         $helper->fields_value['jtlconnector_custom_fields'] = Configuration::get('jtlconnector_custom_fields');
