@@ -43,7 +43,7 @@ class JTLConnector extends Module
         
         parent::__construct();
         
-        $this->displayName = 'JTL Wawi Connector';
+        $this->displayName = 'JTL-Connector';
         $this->description = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
         $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
         $this->module_key = '488cd335118c56baab7259d5459cf3a3';
@@ -176,7 +176,7 @@ class JTLConnector extends Module
                         _DB_PREFIX_)
                 );
                 $affected += Db::getInstance()->Affected_Rows();
-    
+                
                 $output .= $this->displayConfirmation(sprintf("%s: %s",
                     $this->l('Successfully cleaned inconsistent entries'),
                     $affected));
@@ -281,22 +281,31 @@ class JTLConnector extends Module
                 'title' => $this->l('Connector Settings'),
                 'icon'  => 'icon-cogs',
             ],
-            'description' => $this->l('Please enter the following URL in your Wawi connector setup:') .
-                '<br/><b>' . $this->context->link->getModuleLink('jtlconnector', 'api') . '</b><br/>',
+            'description' => sprintf('<b>%s</b><br>%s: <b>%s</b><br/>',
+                $this->l('Please enter the following URL in your Wawi connector setup:'),
+                $this->l('The "Onlineshop URL" is'),
+                $this->context->link->getModuleLink('jtlconnector', 'api')),
             'input'       => [
                 [
-                    'type'     => 'text',
+                    'type'     => 'textbutton',
                     'label'    => $this->l('Password'),
                     'name'     => 'jtlconnector_pass',
-                    'size'     => 10,
+                    'size'     => 5,
                     'required' => true,
+                    'button'   => [
+                        'label'      => '<i class="icon-paste"></i>',
+                        'attributes' => [
+                            'onclick' => 'document.getElementById("jtlconnector_pass").select();document.execCommand("copy");',
+                        ],
+                    ],
                 ],
                 [
                     'type'    => 'switch',
                     'label'   => $this->l('Truncate short description'),
                     'name'    => 'jtlconnector_truncate_desc',
                     'is_bool' => true,
-                    'desc'    => $this->l('Enable this option to truncate too long short descriptions. Your current setting is %s chars. You can change this in your product preferences.'),
+                    'desc'    => sprintf($this->l('Enable this option to truncate too long short descriptions. Your current setting is %s chars. You can change this in your product preferences.'),
+                        $limit),
                     'values'  => [
                         [
                             'id'    => 'active_on',
@@ -315,8 +324,7 @@ class JTLConnector extends Module
                     'label'   => $this->l('Add custom fields as attributes'),
                     'name'    => 'jtlconnector_custom_fields',
                     'is_bool' => true,
-                    'desc'    => sprintf($this->l('Enable this option to add the custom fields as product attributes.'),
-                        $limit),
+                    'desc'    => $this->l('Enable this option to add the custom fields as product attributes.'),
                     'values'  => [
                         [
                             'id'    => 'active_on',
@@ -339,18 +347,18 @@ class JTLConnector extends Module
                     'required' => false,
                 ],
                 [
-                    'type'   => 'button',
-                    'label'  => $this->l('Remove inconsistant specifics from the database'),
-                    'text'   => $this->l('Remove'),
-                    'name'   => 'jtlconnector_remove_inconsistency',
-                    'icon'   => 'delete',
-                    'desc'   => sprintf($this->l('Use this button to remove inconsistency in your specifics table caused by missing languages.'),
+                    'type'  => 'button',
+                    'label' => $this->l('Remove inconsistant specifics from the database'),
+                    'text'  => $this->l('Remove'),
+                    'name'  => 'jtlconnector_remove_inconsistency',
+                    'icon'  => 'delete',
+                    'desc'  => sprintf($this->l('Use this button to remove inconsistency in your specifics table caused by missing languages.'),
                         $limit),
                 ],
                 [
-                    'type'     => 'html',
-                    'name' => '',
-                    'html_content'  => '<hr>',
+                    'type'         => 'html',
+                    'name'         => '',
+                    'html_content' => '<hr>',
                 ],
                 [
                     'type'   => 'switch',

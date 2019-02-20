@@ -221,7 +221,7 @@
 								{elseif $input.type == 'textbutton'}
 									{assign var='value_text' value=$fields_value[$input.name]}
 									<div class="row">
-										<div class="col-lg-9">
+										<div class="col-lg-4 input-group">
 										{if isset($input.maxchar)}
 										<div class="input-group">
 											<span id="{if isset($input.id)}{$input.id}{else}{$input.name}{/if}_counter" class="input-group-addon">
@@ -232,7 +232,7 @@
 											name="{$input.name}"
 											id="{if isset($input.id)}{$input.id}{else}{$input.name}{/if}"
 											value="{if isset($input.string_format) && $input.string_format}{$value_text|string_format:$input.string_format|escape:'html':'UTF-8'}{else}{$value_text|escape:'html':'UTF-8'}{/if}"
-											class="{if isset($input.class)}{$input.class}{/if}{if $input.type == 'tags'} tagify{/if}"
+											class="{if isset($input.class)}{$input.class}{/if}{if $input.type == 'tags'} tagify{/if} form-control"
 											{if isset($input.size)} size="{$input.size}"{/if}
 											{if isset($input.maxchar) && $input.maxchar} data-maxchar="{$input.maxchar|intval}"{/if}
 											{if isset($input.maxlength) && $input.maxlength} maxlength="{$input.maxlength|intval}"{/if}
@@ -241,20 +241,21 @@
 											{if isset($input.autocomplete) && !$input.autocomplete} autocomplete="off"{/if}
 											{if isset($input.placeholder) && $input.placeholder } placeholder="{$input.placeholder}"{/if}
 											/>
-										{if isset($input.suffix)}{$input.suffix}{/if}
-										{if isset($input.maxchar) && $input.maxchar}
-										</div>
-										{/if}
-										</div>
-										<div class="col-lg-2">
-											<button type="button" class="btn btn-default{if isset($input.button.attributes['class'])} {$input.button.attributes['class']}{/if}{if isset($input.button.class)} {$input.button.class}{/if}"
+											<div class="input-group-btn">
+												<button type="button" style="padding-bottom: 6px; border-color: #c7d6db;" class="btn btn-default{if isset($input.button.attributes['class'])} {$input.button.attributes['class']}{/if}{if isset($input.button.class)} {$input.button.class}{/if}"
 												{foreach from=$input.button.attributes key=name item=value}
 													{if $name|lower != 'class'}
-													 {$name|escape:'html':'UTF-8'}="{$value|escape:'html':'UTF-8'}"
+														{$name|escape:'html':'UTF-8'}="{$value|escape:'html':'UTF-8'}"
 													{/if}
 												{/foreach} >
 												{$input.button.label}
-											</button>
+												</buton>
+											</div>
+										{if isset($input.suffix)}{$input.suffix}{/if}
+										{if isset($input.maxchar) && $input.maxchar}
+
+										</div>
+										{/if}
 										</div>
 									</div>
 									{if isset($input.maxchar) && $input.maxchar}
