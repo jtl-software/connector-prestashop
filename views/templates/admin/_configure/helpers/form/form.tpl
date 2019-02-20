@@ -766,7 +766,7 @@
 										{$input.name}
 									{/if}
 								{elseif $input.type == 'button'}
-									<button type="submit" value="1" id="{if isset($input.id)}{$input.id}{else}{$input.name}{/if}" name="{$input.name}" class="button">
+									<button type="submit" style="min-width: 6em" value="1" id="{if isset($input.id)}{$input.id}{else}{$input.name}{/if}" name="{$input.name}" class="button">
 										<i class="process-icon-{$input.icon}"></i> {$input.text}
 									</button>
 								{/if}
