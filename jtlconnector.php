@@ -253,7 +253,6 @@ class JTLConnector extends Module
             }
         }
         
-        // Zip archive will be created only after closing object
         $zip->close();
         
         if ($fileCounter > 0) {
