@@ -212,7 +212,7 @@ class JTLConnector extends Module
             unlink($zip_file);
         }
     
-        $files = glob($logDir . '/*.txt');
+        $files = glob($logDir . '/*.log');
         
         foreach ($files as $file) {
             if (!is_dir($file)) {
@@ -231,7 +231,7 @@ class JTLConnector extends Module
         $zip = new ZipArchive();
         $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         
-        $files = glob($logDir . '/*.txt');
+        $files = glob($logDir . '/*.log');
         
         $fileCounter = 0;
         foreach ($files as $file) {
