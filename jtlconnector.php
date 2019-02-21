@@ -223,7 +223,7 @@ class JTLConnector extends Module
         }
     }
     
-    function downloadJTLLogs()
+    private function downloadJTLLogs()
     {
         $logDir = CONNECTOR_DIR . 'logs';
         $zip_file = CONNECTOR_DIR . '/tmp/connector_logs.zip';
