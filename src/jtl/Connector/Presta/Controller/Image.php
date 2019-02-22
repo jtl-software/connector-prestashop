@@ -65,7 +65,7 @@ class Image extends BaseController
                         $images_types = \ImageType::getImagesTypes('manufacturers');
                         foreach ($images_types as $k => $image_type)
                         {
-                            $res &= \ImageManager::resize(
+                            \ImageManager::resize(
                                 _PS_MANU_IMG_DIR_.$id.'.jpg',
                                 _PS_MANU_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'.jpg',
                                 (int)$image_type['width'],
@@ -73,7 +73,7 @@ class Image extends BaseController
                             );
 
                             if ($generate_hight_dpi_images)
-                                $res &= \ImageManager::resize(
+                                \ImageManager::resize(
                                     _PS_MANU_IMG_DIR_.$id.'.jpg',
                                     _PS_MANU_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'2x.jpg',
                                     (int)$image_type['width']*2,
@@ -87,7 +87,7 @@ class Image extends BaseController
                     break;
 
                 case 'product':
-                    list($productId, $combiId) = explode('_', $id);
+                    list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, null);
 
                     $img = new \Image();
                     $img->id_product = $productId;

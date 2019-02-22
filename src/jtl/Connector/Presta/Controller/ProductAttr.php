@@ -101,6 +101,10 @@ class ProductAttr extends BaseController
             $model->id
         ));
         
+        if (!is_array($attributeIds)) {
+            return;
+        }
+        
         foreach ($attributeIds as $attributeId) {
             if ($this->isSpecific($attributeId['id_feature'])) {
                 $attributeValues = $this->db->executeS(sprintf('
