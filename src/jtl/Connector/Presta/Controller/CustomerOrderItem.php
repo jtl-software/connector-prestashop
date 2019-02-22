@@ -36,6 +36,7 @@ class CustomerOrderItem extends BaseController
             $item->setPrice(floatval(-$rule['value_tax_excl']));
             $item->setPriceGross(floatval(-$rule['value']));
             $item->setQuantity(1);
+            $item->setType(CustomerorderItemModel::TYPE_COUPON);
 
             $return[] = $item;
         }
@@ -43,7 +44,7 @@ class CustomerOrderItem extends BaseController
         $shipping = new CustomerOrderItemModel();
         $shipping->setId(new Identity('shipping_'.$data['id_order']));
         $shipping->setCustomerOrderId(new Identity($data['id_order']));
-        $shipping->setType('shipping');
+        $shipping->setType(CustomerorderItemModel::TYPE_SHIPPING);
         $shipping->setName($data['shippingMethod']);
         $shipping->setPrice(floatval($data['total_shipping_tax_excl']));
         $shipping->setPriceGross(floatval($data['total_shipping_tax_incl']));
