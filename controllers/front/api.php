@@ -20,16 +20,6 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
         if (isset($_SESSION)) {
             session_destroy();
         }
-        
-        defined('CONNECTOR_DIR') || define("CONNECTOR_DIR", _PS_MODULE_DIR_.'/jtlconnector/');
-
-        if (file_exists(CONNECTOR_DIR.'/library/autoload.php')) {
-            $loader = require_once CONNECTOR_DIR.'/library/autoload.php';
-            $loader->add('', CONNECTOR_DIR . '/plugins');
-        } else {
-            $loader = include_once 'phar://'.CONNECTOR_DIR.'/connector.phar/library/autoload.php';
-            $loader->add('', CONNECTOR_DIR . '/plugins');
-        }
 
         $connector = \jtl\Connector\Presta\Presta::getInstance();
 
