@@ -125,9 +125,7 @@ class ProductPrice extends BaseController
         $id = $price->getProductId()->getEndpoint();
 
         if (!empty($id)) {
-            list($productId, $combiId) = explode('_', $id);
-
-            if (is_null($combiId)) $combiId = 0;
+            list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, null);
 
             if (!empty($productId) && !is_null($combiId)) {
                 $this->db->execute('
@@ -145,9 +143,7 @@ class ProductPrice extends BaseController
         $id = $price->getProductId()->getEndpoint();
 
         if (!empty($id)) {
-            list($productId, $combiId) = explode('_', $id);
-
-            if (is_null($combiId)) $combiId = 0;
+            list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, null);
 
             if (!empty($productId) && !is_null($combiId)) {
                 $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
