@@ -1,3 +1,9 @@
+1.5.7
+------
+- CO-388 - Reworked the configuration page
+- CO-390 - Refactoring to reduce logs
+- CO-322 - Added Coupon handling
+
 1.5.6
 ------
 - CO-432 - Added support for purchase-price (wholesaleprice)
