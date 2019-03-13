@@ -63,8 +63,7 @@ class Presta extends BaseConnector
                 $this->controller->initPush($requestpacket->getParams());
             }
             $link = \Db::getInstance()->getLink();
-            $items = $requestpacket->getParams();
-            $currentItem = reset($items);
+            $currentItem = reset($items = $requestpacket->getParams());
             try {
                 if ($link instanceof \PDO) {
                     $link->beginTransaction();
@@ -77,7 +76,7 @@ class Presta extends BaseConnector
                     $results[] = $result->getResult();
                 }
             } catch (\Exception $e) {
-                \Db::getInstance()->getLink()->rollback();
+                \Db::getInstance()->getLink()->rollback(); //todo: Check for manual sql scripts!!!
                 if (method_exists($currentItem, 'getId')) {
                     throw new \Exception('Host-Id: ' . $currentItem->getId(), 0, $e);
                 }
