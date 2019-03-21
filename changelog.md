@@ -1,3 +1,8 @@
+1.5.8
+------
+- Fixed Log-Downloading
+- Products without consider_stock can now be bought
+
 1.5.7
 ------
 - CO-388 - Reworked the configuration page
