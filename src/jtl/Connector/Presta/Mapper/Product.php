@@ -67,7 +67,11 @@ class Product extends BaseMapper
 
     protected function out_of_stock($data)
     {
-        return $data->getPermitNegativeStock() === true ? 1 : 0;
+        if ($data->getConsiderStock() === false || $data->getPermitNegativeStock() === true) {
+            return 1;
+        }
+        
+        return 0;
     }
 
     protected function date_add($data)
