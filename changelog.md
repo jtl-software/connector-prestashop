@@ -1,7 +1,8 @@
 1.5.8
 ------
-- Fixed Log-Downloading
-- Products without consider_stock can now be bought
+- CO-460 - Fixed Category-Parent for import
+- CO-459 - Fixed Log-Downloading
+- CO-458 - Products without consider_stock can now be bought
 
 1.5.7
 ------
