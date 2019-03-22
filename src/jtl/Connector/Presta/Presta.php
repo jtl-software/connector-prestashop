@@ -75,8 +75,9 @@ class Presta extends BaseConnector
                     $result = $this->controller->{$this->action}($param);
                     $results[] = $result->getResult();
                 }
+                \Db::getInstance()->getLink()->commit();
             } catch (\Exception $e) {
-                \Db::getInstance()->getLink()->rollback(); //todo: Check for manual sql scripts!!!
+                \Db::getInstance()->getLink()->rollback();
                 if (method_exists($currentItem, 'getId')) {
                     throw new \Exception('Host-Id: ' . $currentItem->getId(), 0, $e);
                 }
