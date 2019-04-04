@@ -5,6 +5,7 @@ namespace jtl\Connector\Presta;
 use \jtl\Connector\Core\Rpc\RequestPacket;
 use \jtl\Connector\Core\Utilities\RpcMethod;
 use \jtl\Connector\Base\Connector as BaseConnector;
+use jtl\Connector\Model\Product;
 use \jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use \jtl\Connector\Result\Action;
 use \jtl\Connector\Presta\Auth\TokenLoader;
@@ -76,10 +77,14 @@ class Presta extends BaseConnector
                 if ($result->getError()) {
                     \Db::getInstance()->getLink()->rollback();
                     if (method_exists($currentItem, 'getId')) {
-                        throw new \Exception(sprintf('Host-Id: %s %s', $currentItem->getId()->getHost(), $result->getError()->getMessage()));
+                        if ($currentItem instanceof Product) {
+                            throw new \Exception(sprintf('Type: Product Host-Id: %s SKU: %s %s', $currentItem->getId()->getHost(), $currentItem->getSku(), $result->getError()->getMessage()));
+                        } else {
+                            throw new \Exception(sprintf('Type: %s Host-Id: %s %s', get_class($currentItem), $currentItem->getId()->getHost(), $result->getError()->getMessage()));
+                        }
                     }
     
-                    throw new \Exception($result->getError()->getMessage());
+                    throw new \Exception(sprintf('Type: %s %s', get_class($currentItem), $result->getError()->getMessage()));
                 }
                 
                 $results[] = $result->getResult();
