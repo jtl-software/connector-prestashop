@@ -64,24 +64,27 @@ class Presta extends BaseConnector
             }
             $link = \Db::getInstance()->getLink();
             $currentItem = reset($items = $requestpacket->getParams());
-            try {
-                if ($link instanceof \PDO) {
-                    $link->beginTransaction();
-                } elseif ($link instanceof \mysqli) {
-                    $link->begin_transaction();
-                }
-                foreach ($requestpacket->getParams() as $param) {
-                    $currentItem = $param;
-                    $result = $this->controller->{$this->action}($param);
-                    $results[] = $result->getResult();
-                }
-                \Db::getInstance()->getLink()->commit();
-            } catch (\Exception $e) {
-                \Db::getInstance()->getLink()->rollback();
-                if (method_exists($currentItem, 'getId')) {
-                    throw new \Exception('Host-Id: ' . $currentItem->getId(), 0, $e);
-                }
+            if ($link instanceof \PDO) {
+                $link->beginTransaction();
+            } elseif ($link instanceof \mysqli) {
+                $link->begin_transaction();
             }
+            foreach ($requestpacket->getParams() as $param) {
+                $currentItem = $param;
+                $result = $this->controller->{$this->action}($param);
+                
+                if ($result->getError()) {
+                    \Db::getInstance()->getLink()->rollback();
+                    if (method_exists($currentItem, 'getId')) {
+                        throw new \Exception(sprintf('Host-Id: %s %s', $currentItem->getId()->getHost(), $result->getError()->getMessage()));
+                    }
+    
+                    throw new \Exception($result->getError()->getMessage());
+                }
+                
+                $results[] = $result->getResult();
+            }
+            \Db::getInstance()->getLink()->commit();
             
             if (method_exists($this->controller, 'finishPush')) {
                 $this->controller->finishPush($requestpacket->getParams(), $results);
