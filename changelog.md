@@ -1,3 +1,7 @@
+1.5.9
+------
+- CO-489 - Corrected Taxes for order items
+
 1.5.8
 ------
 - CO-461 - Article prices that are too precise should now be rounded to 4 decimals
