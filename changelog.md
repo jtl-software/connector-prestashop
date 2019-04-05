@@ -1,3 +1,11 @@
+1.5.8
+------
+- CO-461 - Article prices that are too precise should now be rounded to 4 decimals
+- CO-460 - Fixed Category-Parent for import
+- CO-459 - Fixed Log-Downloading
+- CO-458 - Products without consider_stock can now be bought
+- CO-456 - Creation of duplicates should now be prevented
+
 1.5.7
 ------
 - CO-388 - Reworked the configuration page

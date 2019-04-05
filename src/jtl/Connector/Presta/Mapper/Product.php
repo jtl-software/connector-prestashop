@@ -61,13 +61,22 @@ class Product extends BaseMapper
         'on_sale' => 'isTopProduct',
         'minimal_quantity' => null,
         'ProductI18n' => 'i18ns',
-        'wholesale_price' => 'purchasePrice',
+        'wholesale_price' => null,
         'ProductSpecialPrice' => 'specialPrices'
     );
 
+	protected function wholesale_price($data)
+    {
+        return round($data->getPurchasePrice(), 4);
+    }
+	
     protected function out_of_stock($data)
     {
-        return $data->getPermitNegativeStock() === true ? 1 : 0;
+        if ($data->getConsiderStock() === false || $data->getPermitNegativeStock() === true) {
+            return 1;
+        }
+        
+        return 0;
     }
 
     protected function date_add($data)

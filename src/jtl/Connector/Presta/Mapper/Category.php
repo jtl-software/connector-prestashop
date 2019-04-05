@@ -29,7 +29,10 @@ class Category extends BaseMapper
 
 	protected function parentCategoryId($data)
 	{
-		return new Identity($data['id_parent'] == \Category::getRootCategory()->id ? 0 : $data['id_parent']);
+        if (($data['id_parent'] == \Category::getRootCategory()->id) || $data['id_parent'] == 2) {
+            return new Identity(null);
+        }
+		return new Identity($data['id_parent']);
 	}
 
     protected function id_parent($data)

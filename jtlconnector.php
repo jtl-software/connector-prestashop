@@ -249,6 +249,8 @@ class JTLConnector extends Module
             header('Content-type: application/zip');
             header('Content-Disposition: attachment; filename="logs.zip"');
             readfile($zip_file);
+            exit();
+            
         } else {
             header('Content-Type: application/json; charset=UTF-8');
             header('HTTP/1.1 451 Internal Server Booboo');
