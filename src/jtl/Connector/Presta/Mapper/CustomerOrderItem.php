@@ -25,6 +25,6 @@ class CustomerOrderItem extends BaseMapper
 
     protected function vat($data)
     {
-        return floatval($data['tax_rate'] == 0 ? Utils::getInstance()->getProductTaxRate($data['product_id']) : $data['tax_rate']);
+        return round(floatval($data['tax_rate'] == 0 ? (100 / $data['total_price_tax_excl'] * $data['total_price_tax_incl']) - 100 : $data['tax_rate']), 4);
     }
 }

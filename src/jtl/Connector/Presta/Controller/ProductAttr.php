@@ -88,10 +88,10 @@ class ProductAttr extends BaseController
     {
         $attributeIds = $this->db->executeS(sprintf('
 			SELECT id_feature
-			FROM feature_value
+			FROM %sfeature_value
             WHERE custom = 1 AND id_feature IN (
                 SELECT id_feature
-                FROM feature_product
+                FROM %sfeature_product
                 WHERE id_product = %s
                 GROUP BY id_feature
             )

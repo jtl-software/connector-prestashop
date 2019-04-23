@@ -64,7 +64,7 @@ class Presta extends BaseConnector
                 $this->controller->initPush($requestpacket->getParams());
             }
             $link = \Db::getInstance()->getLink();
-            $currentItem = reset($items = $requestpacket->getParams());
+
             if ($link instanceof \PDO) {
                 $link->beginTransaction();
             } elseif ($link instanceof \mysqli) {
