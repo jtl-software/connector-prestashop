@@ -1,5 +1,8 @@
 1.5.9
 ------
+
+1.5.8.1
+------
 - Fixed a bug on ProductAttr push
 - CO-489 - Corrected Taxes for order items
 
