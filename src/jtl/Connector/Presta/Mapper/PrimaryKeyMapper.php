@@ -1,6 +1,7 @@
 <?php
 namespace jtl\Connector\Presta\Mapper;
 
+use jtl\Connector\Linker\IdentityLinker;
 use jtl\Connector\Mapper\IPrimaryKeyMapper;
 use jtl\Connector\Core\Logger\Logger;
 use jtl\Connector\Drawing\ImageRelationType;
@@ -8,6 +9,21 @@ use jtl\Connector\Drawing\ImageRelationType;
 class PrimaryKeyMapper implements IPrimaryKeyMapper
 {
     protected $db;
+    
+    protected static $types = array(
+        IdentityLinker::TYPE_CATEGORY => 'category',
+        IdentityLinker::TYPE_CUSTOMER => 'customer',
+        IdentityLinker::TYPE_CUSTOMER_ORDER => 'customer_order',
+        IdentityLinker::TYPE_DELIVERY_NOTE => 'delivery_note',
+        IdentityLinker::TYPE_IMAGE => 'image',
+        IdentityLinker::TYPE_MANUFACTURER => 'manufacturer',
+        IdentityLinker::TYPE_PRODUCT => 'product',
+        IdentityLinker::TYPE_SPECIFIC => 'specific',
+        IdentityLinker::TYPE_SPECIFIC_VALUE => 'specific_value',
+        IdentityLinker::TYPE_PAYMENT => 'payment',
+        IdentityLinker::TYPE_CROSSSELLING => 'crossselling',
+        IdentityLinker::TYPE_CROSSSELLING_GROUP => 'crossselling_group'
+    );
 
     public function __construct()
     {
@@ -16,7 +32,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
 
     public function getHostId($endpointId, $type)
     {
-        $dbResult = $this->db->getValue('SELECT hostId FROM jtl_connector_link WHERE endpointId = "'.$endpointId.'" AND type = '.$type);
+        $dbResult = $this->db->getValue('SELECT host_id FROM jtl_connector_link_' . static::$types[$type] . " WHERE endpoint_id = '" . $endpointId . "'");
 
         $hostId = $dbResult ? $dbResult : null;
 
@@ -27,9 +43,13 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
 
     public function getEndpointId($hostId, $type, $relationType = null)
     {
+        if (isset(static::$types[$type])) {
+            return null;
+        }
+        
         $relation = '';
 
-        if ($type == 16) {
+        if ($type == IdentityLinker::TYPE_IMAGE) {
             switch ($relationType) {
                 case ImageRelationType::TYPE_CATEGORY:
                     $relation = ' AND endpointId LIKE "c%"';
@@ -40,7 +60,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
             }
         }
 
-        $dbResult = $this->db->getValue('SELECT endpointId FROM jtl_connector_link WHERE hostId = '.$hostId.' AND type = '.$type.$relation);
+        $dbResult = $this->db->getValue(sprintf('SELECT endpointId FROM jtl_connector_link_%s WHERE hostId = %s AND type = %s%s', static::$types[$type], $hostId, $type, $relation));
 
         $endpointId = $dbResult ? $dbResult : null;
 
