@@ -76,7 +76,10 @@ function upgrade_module_1_5_9($object)
     }
     
     try {
-        return jtl_connector_migration($object);
+        $return = jtl_connector_migration($object);
+        \Db::getInstance()->getLink()->commit();
+        
+        return $return;
     } catch (\Exception $e) {
         $link->rollback();
         
