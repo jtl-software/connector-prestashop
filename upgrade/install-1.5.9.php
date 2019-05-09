@@ -38,27 +38,27 @@ function jtl_connector_migration($object)
     
     foreach ($types as $id => $name) {
         if ($id == 16 || $id == 64) {
-            $db->query(sprintf($queryChar, 'jtl_connector_link_' . $name));
+            $db->query(sprintf($queryChar, 'jtl_connector_link_' . $name))->execute();
         } else {
-            $db->query(sprintf($queryInt, 'jtl_connector_link_' . $name));
+            $db->query(sprintf($queryInt, 'jtl_connector_link_' . $name))->execute();
         }
     }
-    //TODO: EXECUTE ALL QUERIES
-    $check = $db->query('SHOW TABLES LIKE "jtl_connector_link"');
     
-    if ($check == true) {
-        $existingTypes = $db->query('SELECT type FROM jtl_connector_link GROUP BY type');
+    $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
+    
+    if (!empty($check)) {
+        $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
         
         foreach ($existingTypes as $existingType) {
             $typeId = (int)$existingType['type'];
             $tableName = 'jtl_connector_link_' . $types[$typeId];
             $db->query("INSERT INTO {$tableName} (host_id, endpoint_id)
                         SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
-                        ");
+                        ")->execute();
         }
         
         if (count($existingTypes) > 0) {
-            $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup");
+            $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
         }
     }
     
