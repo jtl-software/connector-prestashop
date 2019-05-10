@@ -47,7 +47,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
 
     public function getEndpointId($hostId, $type, $relationType = null)
     {
-        if (isset(static::$types[$type])) {
+        if (!isset(static::$types[$type])) {
             return null;
         }
         
@@ -56,15 +56,15 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         if ($type == IdentityLinker::TYPE_IMAGE) {
             switch ($relationType) {
                 case ImageRelationType::TYPE_CATEGORY:
-                    $relation = ' AND endpointId LIKE "c%"';
+                    $relation = ' AND endpoint_id LIKE "c%"';
                     break;
                 case ImageRelationType::TYPE_MANUFACTURER:
-                    $relation = ' AND endpointId LIKE "m%"';
+                    $relation = ' AND endpoint_id LIKE "m%"';
                     break;
             }
         }
-
-        $dbResult = $this->db->getValue(sprintf('SELECT endpointId FROM jtl_connector_link_%s WHERE hostId = %s AND type = %s%s', static::$types[$type], $hostId, $type, $relation));
+        
+        $dbResult = $this->db->getValue(sprintf('SELECT endpoint_id FROM jtl_connector_link_%s WHERE host_id = %s%s', static::$types[$type], $hostId,  $relation));
 
         $endpointId = $dbResult ? $dbResult : null;
 
@@ -76,9 +76,8 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
     public function save($endpointId, $hostId, $type)
     {
         Logger::write(sprintf('Save link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type), Logger::DEBUG, 'linker');
-        //TODO: endpoint_id NICHT endpointId
-        $test2 = sprintf('INSERT IGNORE INTO jtl_connector_link_%s (endpointId, hostId) VALUES ("%s",%s)', static::$types[$type], $endpointId, $hostId);
-        $test = $this->db->execute(sprintf('INSERT IGNORE INTO jtl_connector_link_%s (endpointId, hostId) VALUES ("%s",%s)',
+        
+        $this->db->execute(sprintf('INSERT IGNORE INTO jtl_connector_link_%s (endpoint_id, host_id) VALUES ("%s",%s)',
             static::$types[$type],
             $endpointId,
             $hostId));
@@ -91,11 +90,11 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         $where = '';
 
         if ($endpointId && $endpointId != '') {
-            $where .= ' && endpointId = "'.$endpointId.'"';
+            $where .= ' && endpoint_id = "'.$endpointId.'"';
         }
 
         if ($hostId) {
-            $where .= ' && hostId = '.$hostId;
+            $where .= ' && host_id = '.$hostId;
         }
 
         $this->db->execute(sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], $where));
