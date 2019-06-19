@@ -20,6 +20,7 @@
                 <include name="controllers/"/>
                 <include name="translations/"/>
                 <include name="views/"/>
+		<include name="upgrade/"/>
                 <include name="build-config.yaml"/>
                 <include name="config/features.json"/>
                 <include name="config/.htaccess"/>
