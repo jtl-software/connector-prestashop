@@ -1,6 +1,6 @@
 1.5.9
 ------
-
+- CO-521 - Fixed a bug regarding cover images
 1.5.8.1
 ------
 - Fixed a bug on ProductAttr push
