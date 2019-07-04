@@ -1,12 +1,23 @@
 <?php
 namespace jtl\Connector\Presta\Controller;
 
+use Attribute;
+use AttributeGroup;
+use Combination;
+use Context;
+use Exception;
 use jtl\Connector\Presta\Utils\Utils;
+use PrestaShopDatabaseException;
+use PrestaShopException;
 
 class Product extends BaseController
 {
     private static $idCache = array();
-
+    private static $specialAttributes = [
+        'online_only' => 'online_only',
+        'products_status' => 'active',
+        ];
+    
     public function pullData($data, $model, $limit = null)
 	{
 		$limit = $limit < 25 ? $limit : 25;
@@ -66,8 +77,14 @@ class Product extends BaseController
 
         \Product::flushPriceCache();
     }
-
-	public function pushData($data)
+    
+    /**
+     * @param \jtl\Connector\Model\Product $data
+     * @return mixed
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+    public function pushData($data)
 	{
         if (isset(static::$idCache[$data->getMasterProductId()->getHost()])) {
             $data->getMasterProductId()->setEndpoint(static::$idCache[$data->getMasterProductId()->getHost()]);
@@ -83,7 +100,7 @@ class Product extends BaseController
 
             $id = $product->id;
         } else {
-            list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
+            list($productId, $combiId) = array_pad(explode('_', $data->getId()->getEndpoint(), 2), 2, null);
 
             $product = new \Product($masterId);
 
@@ -126,10 +143,11 @@ class Product extends BaseController
                 $id = $data->getMasterProductId()->getEndpoint().'_'.$combiId;
             }
 
-            $combi = new \Combination($combiId);
+            $combi = new Combination($combiId);
 
             $valIds = array();
-
+            $attrGrpId = null;
+            
             foreach ($data->getVariations() as $variation) {
                 $attrNames = array();
                 foreach ($variation->getI18ns() as $varI18n) {
@@ -141,12 +159,12 @@ class Product extends BaseController
                         $attrNames[$langId] = $varName;
                     }
 
-                    if ($langId == \Context::getContext()->language->id) {
+                    if ($langId == Context::getContext()->language->id) {
                         $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM '._DB_PREFIX_.'attribute_group_lang WHERE name="'.$varName.'"');
                     }
                 }
 
-                $attrGrp = new \AttributeGroup($attrGrpId);
+                $attrGrp = new AttributeGroup($attrGrpId);
                 $attrGrp->name = $attrNames;
                 $attrGrp->public_name = $attrNames;
                 $attrGrp->group_type = 'select';
@@ -166,7 +184,7 @@ class Product extends BaseController
                             $valNames[$langId] = $valName;
                         }
 
-                        if ($langId == \Context::getContext()->language->id) {
+                        if ($langId == Context::getContext()->language->id) {
                             $valId = $this->db->getValue('
                               SELECT l.id_attribute
                               FROM '._DB_PREFIX_.'attribute_lang l
@@ -176,7 +194,7 @@ class Product extends BaseController
                         }
                     }
 
-                    $val = new \Attribute($valId);
+                    $val = new Attribute($valId);
                     $val->name = $valNames;
                     $val->id_attribute_group = $attrGrpId;
 
@@ -218,6 +236,7 @@ class Product extends BaseController
             if (isset($product) && $data->getMasterProductId()->getHost() === 0) {
                 ProductAttr::getInstance()->pushData($data, $product);
                 ProductSpecific::getInstance()->pushData($data, $product);
+                $this->pushSpecialAttributes($data, $product);
             }
         }
 
@@ -225,7 +244,14 @@ class Product extends BaseController
 
 		return $data;
 	}
-
+    
+    /**
+     * @param \jtl\Connector\Model\Product $data
+     * @return mixed
+     * @throws PrestaShopException
+     * @throws PrestaShopDatabaseException
+     * @throws Exception
+     */
     public function deleteData($data)
     {
         $isCombi = (strpos($data->getId()->getEndpoint(), '_') === false) ? false : true;
@@ -235,11 +261,11 @@ class Product extends BaseController
         } else {
             list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
 
-            $obj = new \Combination($combiId);
+            $obj = new Combination($combiId);
         }
 
         if (!$obj->delete()) {
-            throw new \Exception('Error deleting product with id: '.$data->getId()->getEndpoint());
+            throw new Exception('Error deleting product with id: '.$data->getId()->getEndpoint());
         }
 
         return $data;
@@ -263,4 +289,34 @@ class Product extends BaseController
 
         return ($count + $countVars);
 	}
+    
+    /**
+     * @param \jtl\Connector\Model\Product $data
+     * @param \Product $product
+     * @throws PrestaShopException
+     */
+    private function pushSpecialAttributes($data, $product)
+    {
+        $foundSpecialAttributes = [];
+        foreach ($data->getAttributes() as $attribute) {
+            foreach ($attribute->getI18ns() as $i18n) {
+                if (isset(self::$specialAttributes[$i18n->getName()]) && !empty($i18n->getValue())) {
+                    $foundSpecialAttributes[$i18n->getName()] = $i18n->getValue();
+                    break;
+                }
+            }
+        }
+        
+        foreach ($foundSpecialAttributes as $key => $value) {
+            if ($value === 'false' || $value === 'true') {
+                $value = filter_var($value,FILTER_VALIDATE_BOOLEAN);
+            } elseif (is_numeric($value)) {
+                $value = (int)$value;
+            }
+            
+            $product->{self::$specialAttributes[$key]} = $value;
+        }
+        
+        $product->save();
+    }
 }
