@@ -1,5 +1,6 @@
 1.5.9
 ------
+- CO-530 - Implemented product special attributes like "products_status"
 
 1.5.8.1
 ------
