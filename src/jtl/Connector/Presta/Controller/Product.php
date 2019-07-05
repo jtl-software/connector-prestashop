@@ -6,6 +6,7 @@ use AttributeGroup;
 use Combination;
 use Context;
 use Exception;
+use jtl\Connector\Model\Identity;
 use jtl\Connector\Presta\Utils\Utils;
 use PrestaShopDatabaseException;
 use PrestaShopException;
@@ -37,7 +38,8 @@ class Product extends BaseController
 			$model = $this->mapper->toHost($data);
 
 			$return[] = $model;
-
+            $this->pullSpecialAttributes($data, $model);
+			
 			$count++;
 		}
 
@@ -52,7 +54,7 @@ class Product extends BaseController
 
 			foreach ($resultVars as $data) {
 				$model = $this->mapper->toHost($data);
-
+				
 				$return[] = $model;
 			}
 		}
@@ -300,7 +302,7 @@ class Product extends BaseController
         $foundSpecialAttributes = [];
         foreach ($data->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
-                if (isset(self::$specialAttributes[$i18n->getName()]) && !empty($i18n->getValue())) {
+                if (isset(self::$specialAttributes[$i18n->getName()]) && $i18n->getValue() !== "") {
                     $foundSpecialAttributes[$i18n->getName()] = $i18n->getValue();
                     break;
                 }
@@ -318,5 +320,25 @@ class Product extends BaseController
         }
         
         $product->save();
+    }
+    
+    /**
+     * @param $data
+     * @param \jtl\Connector\Model\Product $model
+     */
+    private function pullSpecialAttributes($data, $model) {
+        foreach (self::$specialAttributes as $wawiName => $prestaName) {
+            $attribute = new \jtl\Connector\Model\ProductAttr();
+            $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
+            $attribute->setId(new Identity($prestaName));
+            $attribute->setProductId($model->getId());
+            $attribute->setIsTranslated(true);
+            $attributeI18n->setProductAttrId($attribute->getId());
+            $attributeI18n->setLanguageISO(Utils::getInstance()->getLanguageIsoById((string)Context::getContext()->language->id));
+            $attributeI18n->setName($wawiName);
+            $attributeI18n->setValue($data[$prestaName]);
+            $attribute->setI18ns([$attributeI18n]);
+            $model->addAttribute($attribute);
+        }
     }
 }

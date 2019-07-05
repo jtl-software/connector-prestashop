@@ -15,7 +15,7 @@ class ProductI18n extends BaseController
                     foreach ($value->getI18ns() as $i18n) {
                         $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
 
-                        if (!is_null($id)) {
+                        if (!is_null($id) && isset($varNames[$id])) {
                             $varNames[$id] .= ' ' . $i18n->getName();
                         }
                     }

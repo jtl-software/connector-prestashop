@@ -88,7 +88,7 @@ class ProductAttr extends BaseController
                         ));
                     }
                 }
-                if ($isIgnoredAttribute) {
+                if ($isIgnoredAttribute || !isset($featureData['names'])) {
                     continue;
                 }
                 

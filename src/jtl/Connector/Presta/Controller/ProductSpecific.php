@@ -16,7 +16,7 @@ class ProductSpecific extends BaseController
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
-            WHERE custom = 0 AND `id_product` = %s',
+            WHERE custom = 0 AND `id_product` = "%s"',
             _DB_PREFIX_,
             _DB_PREFIX_,
             $product->getId()->getEndpoint()
@@ -70,7 +70,7 @@ class ProductSpecific extends BaseController
         return (int)$this->db->getValue(sprintf('
             SELECT COUNT(*)
             FROM %sfeature_product
-            WHERE id_feature = %s AND id_product = %s AND id_feature_value = %s',
+            WHERE id_feature = "%s" AND id_product = "%s" AND id_feature_value = "%s"',
             _DB_PREFIX_,
             $productSpecific->getId()->getEndpoint(),
             $productSpecific->getProductId()->getEndpoint(),
@@ -83,7 +83,7 @@ class ProductSpecific extends BaseController
         $specificValuesToRemove = $this->db->executeS(sprintf('
             SELECT id_feature_value, id_product
             FROM %sfeature_product
-            WHERE id_product = %s AND id_feature_value NOT IN (%s) AND id_feature_value NOT IN (
+            WHERE id_product = "%s" AND id_feature_value NOT IN (%s) AND id_feature_value NOT IN (
                 SELECT id_feature_value
                 FROM %sfeature_value
                 WHERE custom = 1
@@ -99,7 +99,7 @@ class ProductSpecific extends BaseController
             foreach ($specificValuesToRemove as $value) {
                 $this->db->Execute(sprintf('
                     DELETE FROM `%sfeature_product`
-                    WHERE `id_feature_value` = %s AND `id_product` = %s',
+                    WHERE `id_feature_value` = "%s" AND `id_product` = "%s"',
                         _DB_PREFIX_,
                         $value['id_feature_value'],
                         $value['id_product'])
