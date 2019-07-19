@@ -11,9 +11,10 @@ use PrestaShopException;
 
 class ProductAttr extends BaseController
 {
-    private $ignoredAttributes = [
-            'products_status',
-        ];
+    protected static $specialAttributes = [
+        'online_only' => 'online_only',
+        'products_status' => 'active',
+    ];
     
     /**
      * @param $data
@@ -45,7 +46,7 @@ class ProductAttr extends BaseController
         
         return $return;
     }
-    
+
     /**
      * @param \jtl\Connector\Model\Product $data
      * @param \Product $model
@@ -61,10 +62,16 @@ class ProductAttr extends BaseController
                 $featureData = [];
                 
                 foreach ($attr->getI18ns() as $i18n) {
-                    if (in_array($i18n->getName(), $this->ignoredAttributes)) {
+                    $name = array_search($i18n->getName(), self::$specialAttributes);
+                    if($name === false) {
+                        $name = $i18n->getName();
+                    }
+
+                    if (isset(self::$specialAttributes[$name])) {
                         $isIgnoredAttribute = true;
                         break;
                     }
+
                     $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
                     
                     if (is_null($id)) {
@@ -178,7 +185,11 @@ class ProductAttr extends BaseController
             }
         }
     }
-    
+
+    /**
+     * @param $attributeId
+     * @return boolean
+     */
     protected function isSpecific($attributeId)
     {
         return (bool)$this->db->getValue(sprintf('
@@ -188,5 +199,13 @@ class ProductAttr extends BaseController
             _DB_PREFIX_,
             $attributeId
         ));
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function getSpecialAttributes()
+    {
+        return self::$specialAttributes;
     }
 }

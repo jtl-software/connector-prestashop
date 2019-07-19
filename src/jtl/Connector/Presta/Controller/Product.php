@@ -14,11 +14,6 @@ use PrestaShopException;
 class Product extends BaseController
 {
     private static $idCache = array();
-    private static $specialAttributes = [
-        'online_only' => 'online_only',
-        'products_status' => 'active',
-        'active' => 'active',
-        ];
     
     public function pullData($data, $model, $limit = null)
 	{
@@ -300,11 +295,18 @@ class Product extends BaseController
      */
     private function pushSpecialAttributes($data, $product)
     {
+        $specialAttributes = ProductAttr::getSpecialAttributes();
+
         $foundSpecialAttributes = [];
         foreach ($data->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
-                if (isset(self::$specialAttributes[$i18n->getName()]) && $i18n->getValue() !== "") {
-                    $foundSpecialAttributes[$i18n->getName()] = $i18n->getValue();
+                $name = array_search($i18n->getName(), $specialAttributes);
+                if($name === false) {
+                    $name = $i18n->getName();
+                }
+
+                if (isset($specialAttributes[$name]) && $i18n->getValue() !== "") {
+                    $foundSpecialAttributes[$name] = $i18n->getValue();
                     break;
                 }
             }
@@ -317,7 +319,7 @@ class Product extends BaseController
                 $value = (int)$value;
             }
             
-            $product->{self::$specialAttributes[$key]} = $value;
+            $product->{$specialAttributes[$key]} = $value;
         }
         
         $product->save();
@@ -328,12 +330,11 @@ class Product extends BaseController
      * @param \jtl\Connector\Model\Product $model
      */
     private function pullSpecialAttributes($data, $model) {
-        foreach (self::$specialAttributes as $wawiName => $prestaName) {
+        foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
             $attribute = new \jtl\Connector\Model\ProductAttr();
             $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
             $attribute->setId(new Identity($prestaName));
             $attribute->setProductId($model->getId());
-            $attribute->setIsTranslated(true);
             $attributeI18n->setProductAttrId($attribute->getId());
             $attributeI18n->setLanguageISO(Utils::getInstance()->getLanguageIsoById((string)Context::getContext()->language->id));
             $attributeI18n->setName($wawiName);
