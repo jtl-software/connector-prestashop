@@ -1,5 +1,7 @@
 1.5.9
 ------
+- CO-489 - Corrected Taxes for orders
+- CO-366 - The linking table was split into seperate tables to improve performance
 - CO-521 - Fixed a bug regarding cover images
 - CO-530 - Implemented product special attributes like "products_status"
 
