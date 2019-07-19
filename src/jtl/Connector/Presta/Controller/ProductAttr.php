@@ -2,10 +2,27 @@
 
 namespace jtl\Connector\Presta\Controller;
 
+use Configuration;
+use Context;
+use Exception;
 use jtl\Connector\Presta\Utils\Utils;
+use PrestaShopDatabaseException;
+use PrestaShopException;
 
 class ProductAttr extends BaseController
 {
+    protected static $specialAttributes = [
+        'online_only' => 'online_only',
+        'products_status' => 'active',
+    ];
+    
+    /**
+     * @param $data
+     * @param \jtl\Connector\Model\Product $model
+     * @param int $limit
+     * @return array
+     * @throws PrestaShopDatabaseException
+     */
     public function pullData($data, $model, $limit = null)
     {
         $productId = $model->getId()->getEndpoint();
@@ -29,20 +46,36 @@ class ProductAttr extends BaseController
         
         return $return;
     }
-    
+
+    /**
+     * @param \jtl\Connector\Model\Product $data
+     * @param \Product $model
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
     public function pushData($data, $model)
     {
         $this->removeCurrentAttributes($model);
-        
         foreach ($data->getAttributes() as $attr) {
-            if ($attr->getIsCustomProperty() === false || \Configuration::get('jtlconnector_custom_fields')) {
+            $isIgnoredAttribute = false;
+            if ($attr->getIsCustomProperty() === false || Configuration::get('jtlconnector_custom_fields')) {
                 $featureData = [];
                 
                 foreach ($attr->getI18ns() as $i18n) {
+                    $name = array_search($i18n->getName(), self::$specialAttributes);
+                    if($name === false) {
+                        $name = $i18n->getName();
+                    }
+
+                    if (isset(self::$specialAttributes[$name])) {
+                        $isIgnoredAttribute = true;
+                        break;
+                    }
+
                     $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
                     
                     if (is_null($id)) {
-                        $id = \Context::getContext()->language->id;
+                        $id = Context::getContext()->language->id;
                     }
                     
                     $name = $i18n->getName();
@@ -51,16 +84,19 @@ class ProductAttr extends BaseController
                         $featureData['values'][$id] = $i18n->getValue();
                     }
                     
-                    if ($id == \Context::getContext()->language->id) {
+                    if ($id == Context::getContext()->language->id) {
                         $fId = $this->db->getValue(sprintf('
                         SELECT id_feature
-                        FROM %s feature_lang
-                        WHERE name = %s
+                        FROM %sfeature_lang
+                        WHERE name = "%s"
                         GROUP BY id_feature',
                             _DB_PREFIX_,
                             $name
                         ));
                     }
+                }
+                if ($isIgnoredAttribute || !isset($featureData['names'])) {
+                    continue;
                 }
                 
                 $feature = new \Feature($fId);
@@ -84,6 +120,12 @@ class ProductAttr extends BaseController
         }
     }
     
+    /**
+     * @param $model
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     * @throws Exception
+     */
     protected function removeCurrentAttributes($model)
     {
         $attributeIds = $this->db->executeS(sprintf('
@@ -138,12 +180,16 @@ class ProductAttr extends BaseController
             } else {
                 $feature = new \Feature($attributeId['id_feature']);
                 if (!$feature->delete()) {
-                    throw new \Exception('Error deleting attribute with id: ' . $attributeId['id_feature']);
+                    throw new Exception('Error deleting attribute with id: ' . $attributeId['id_feature']);
                 }
             }
         }
     }
-    
+
+    /**
+     * @param $attributeId
+     * @return boolean
+     */
     protected function isSpecific($attributeId)
     {
         return (bool)$this->db->getValue(sprintf('
@@ -153,5 +199,13 @@ class ProductAttr extends BaseController
             _DB_PREFIX_,
             $attributeId
         ));
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function getSpecialAttributes()
+    {
+        return self::$specialAttributes;
     }
 }
