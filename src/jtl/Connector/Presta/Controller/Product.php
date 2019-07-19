@@ -17,6 +17,7 @@ class Product extends BaseController
     private static $specialAttributes = [
         'online_only' => 'online_only',
         'products_status' => 'active',
+        'active' => 'active',
         ];
     
     public function pullData($data, $model, $limit = null)
