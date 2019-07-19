@@ -98,31 +98,7 @@ class JTLConnector extends Module
         
         $meta->save();
         
-        Db::getInstance()->Execute('
-            CREATE TABLE IF NOT EXISTS jtl_connector_link (
-              endpointId char(16) NOT NULL,
-              hostId int(16) NOT NULL,
-              type int(8),
-              PRIMARY KEY (endpointId, hostId, type)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
-        ');
-        
-        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "PRIMARY"')) > 0) {
-            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link DROP PRIMARY KEY');
-        }
-        
-        if (count(Db::getInstance()->ExecuteS('
-                SHOW INDEX FROM jtl_connector_link WHERE Key_name = "endpointId"
-            ')) == 0) {
-            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(endpointId)');
-        }
-        
-        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "hostId"')) == 0) {
-            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(hostId)');
-        }
-        if (count(Db::getInstance()->ExecuteS('SHOW INDEX FROM jtl_connector_link WHERE Key_name = "type"')) == 0) {
-            Db::getInstance()->Execute('ALTER TABLE jtl_connector_link ADD INDEX(type)');
-        }
+        $this->createLinkingTables();
         
         $tab = new \Tab();
         $name = "JTL-Connector";
@@ -211,7 +187,7 @@ class JTLConnector extends Module
         if (file_exists($zip_file)) {
             unlink($zip_file);
         }
-    
+        
         $files = glob($logDir . '/*.log');
         
         foreach ($files as $file) {
@@ -420,5 +396,82 @@ class JTLConnector extends Module
         $helper->fields_value['jtlconnector_developer_logging'] = Config::get('developer_logging');
         
         return $helper->generateForm($fields_form);
+    }
+    
+    private function createLinkingTables()
+    {
+        $db = Db::getInstance();
+        
+        $link = $db->getLink();
+        
+        if ($link instanceof \PDO) {
+            $link->beginTransaction();
+        } elseif ($link instanceof \mysqli) {
+            $link->begin_transaction();
+        }
+        
+        try {
+            $types = [
+                1    => 'category',
+                2    => 'customer',
+                4    => 'customer_order',
+                8    => 'delivery_note',
+                16   => 'image',
+                32   => 'manufacturer',
+                64   => 'product',
+                128  => 'specific',
+                256  => 'specific_value',
+                512  => 'payment',
+                1024 => 'crossselling',
+                2048 => 'crossselling_group',
+            ];
+            
+            $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
+                endpoint_id INT(10) NOT NULL,
+                host_id INT(10) NOT NULL,
+                PRIMARY KEY (endpoint_id),
+                INDEX (host_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci';
+            
+            $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
+                endpoint_id varchar(255) NOT NULL,
+                host_id INT(10) NOT NULL,
+                PRIMARY KEY (endpoint_id),
+                INDEX (host_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci';
+            
+            foreach ($types as $id => $name) {
+                if ($id == 16 || $id == 64) {
+                    $db->query(sprintf($queryChar, 'jtl_connector_link_' . $name))->execute();
+                } else {
+                    $db->query(sprintf($queryInt, 'jtl_connector_link_' . $name))->execute();
+                }
+            }
+            
+            $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
+            
+            if (!empty($check)) {
+                $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
+                
+                foreach ($existingTypes as $existingType) {
+                    $typeId = (int)$existingType['type'];
+                    $tableName = 'jtl_connector_link_' . $types[$typeId];
+                    $db->query("INSERT INTO {$tableName} (host_id, endpoint_id)
+                        SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
+                        ")->execute();
+                }
+                
+                if (count($existingTypes) > 0) {
+                    $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
+                }
+            }
+            
+            \Db::getInstance()->getLink()->commit();
+            
+            return true;
+        } catch (\Exception $e) {
+            $link->rollback();
+            throw $e;
+        }
     }
 }

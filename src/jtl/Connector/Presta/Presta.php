@@ -40,6 +40,10 @@ class Presta extends BaseConnector
     
     public function handle(RequestPacket $requestpacket)
     {
+        if (!empty(\Db::getInstance()->executeS('SHOW TABLES LIKE "jtl_connector_link"'))) {
+            throw new \RuntimeException("Detected old linking table, please upgrade your connector in the Prestashop backend!");
+        }
+        
         $this->controller->setMethod($this->getMethod());
         
         $actionExceptions = [
