@@ -1,3 +1,7 @@
+1.6.0.1
+------
+- CO-552 Ignore product-images which are not assigned to a product
+
 1.5.9
 ------
 - CO-489 - Corrected Taxes for orders

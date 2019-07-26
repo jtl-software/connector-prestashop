@@ -1,6 +1,9 @@
 <?php
 namespace jtl\Connector\Presta\Controller;
 
+use jtl\Connector\Core\Logger\Logger;
+use jtl\Connector\Formatter\ExceptionFormatter;
+
 class Image extends BaseController
 {
     public function pullData($data, $model, $limit = null)
@@ -103,8 +106,13 @@ class Image extends BaseController
                         $oldCover->cover = 0;
                         $oldCover->save();
                     }
-                    
-                    $img->save();
+    
+                    try {
+                        $img->save();
+                    } catch (\Exception $e) {
+                        Logger::write(ExceptionFormatter::format($e), Logger::WARNING, 'global');
+                        break;
+                    }
 
                     $new_path = $img->getPathForCreation();
                     \ImageManager::resize($data->getFilename(), $new_path.'.jpg');
