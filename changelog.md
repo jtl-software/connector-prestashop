@@ -1,4 +1,4 @@
-1.6.0.1
+1.6.1
 ------
 - Linking table access is now fixed
 - Fixed image push (Error on setting the cover)
