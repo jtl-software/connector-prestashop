@@ -21,7 +21,7 @@ class Specific extends BaseController
         $specificsIds = $this->db->executeS(sprintf('
 			SELECT v.id_feature
 			FROM %sfeature_value v
-			LEFT JOIN jtl_connector_link l ON v.id_feature = l.endpointId AND l.type = 128
+			LEFT JOIN jtl_connector_link_product l ON v.id_feature = l.endpointId AND l.type = 128
             WHERE l.hostId IS NULL AND v.custom = 0
             GROUP BY v.id_feature
             LIMIT %s',
@@ -270,7 +270,7 @@ class Specific extends BaseController
         SELECT COUNT(*)
         FROM (SELECT v.id_feature
               FROM %sfeature_value v
-              LEFT JOIN jtl_connector_link l ON v.id_feature = l.endpointId AND l.type = 128
+              LEFT JOIN jtl_connector_link_specific l ON v.id_feature = l.endpointId AND l.type = 128
               WHERE l.hostId IS NULL AND v.custom = 0
               GROUP BY v.id_feature) as Z',
             _DB_PREFIX_

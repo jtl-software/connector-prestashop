@@ -11,7 +11,7 @@ class CustomerOrder extends BaseController
 			FROM '._DB_PREFIX_.'orders o
 			LEFT JOIN '._DB_PREFIX_.'currency c ON c.id_currency = o.id_currency
 			LEFT JOIN '._DB_PREFIX_.'carrier s ON s.id_carrier = o.id_carrier
-			LEFT JOIN jtl_connector_link l ON o.id_order = l.endpointId AND l.type = 4
+			LEFT JOIN jtl_connector_link_customer_order l ON o.id_order = l.endpointId AND l.type = 4
             WHERE l.hostId IS NULL';
 
         if (!empty(\Configuration::get('jtlconnector_from_date'))) {
@@ -39,7 +39,7 @@ class CustomerOrder extends BaseController
     {
         $query = 'SELECT COUNT(*)
 			FROM '._DB_PREFIX_.'orders o
-			LEFT JOIN jtl_connector_link l ON o.id_order = l.endpointId AND l.type = 4
+			LEFT JOIN jtl_connector_link_customer_order l ON o.id_order = l.endpointId AND l.type = 4
             WHERE l.hostId IS NULL';
 
         if (!empty(\Configuration::get('jtlconnector_from_date'))) {
