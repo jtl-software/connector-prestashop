@@ -279,6 +279,10 @@ class Specific extends BaseController
     
     protected function isAttribute($specificId)
     {
+        if (!$specificId) {
+            return false;
+        }
+        
         return (bool)$this->db->getValue(sprintf('
             SELECT COUNT(*)
             FROM %sfeature_value
@@ -290,6 +294,10 @@ class Specific extends BaseController
     
     public function getSpecificValues($specificId)
     {
+        if (!$specificId) {
+            return false;
+        }
+        
         return $this->db->executeS(sprintf('
             SELECT *
             FROM %sfeature_value

@@ -192,6 +192,10 @@ class ProductAttr extends BaseController
      */
     protected function isSpecific($attributeId)
     {
+        if (!$attributeId) {
+            return false;
+        }
+        
         return (bool)$this->db->getValue(sprintf('
             SELECT COUNT(*)
             FROM %sfeature_value
