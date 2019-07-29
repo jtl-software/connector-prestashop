@@ -106,13 +106,8 @@ class Image extends BaseController
                         $oldCover->cover = 0;
                         $oldCover->save();
                     }
-    
-                    try {
-                        $img->save();
-                    } catch (\Exception $e) {
-                        Logger::write(ExceptionFormatter::format($e), Logger::WARNING, 'global');
-                        break;
-                    }
+                    
+                    $img->save();
 
                     $new_path = $img->getPathForCreation();
                     \ImageManager::resize($data->getFilename(), $new_path.'.jpg');

@@ -38,7 +38,7 @@ class Specific extends BaseController
             $specificI18ns = $this->db->executeS(sprintf('
                 SELECT *
                 FROM %sfeature_lang
-                WHERE id_feature = %s',
+                WHERE id_feature = "%s"',
                 _DB_PREFIX_,
                 $specificsId['id_feature']
             ));
@@ -229,7 +229,7 @@ class Specific extends BaseController
                 $sql = sprintf(
                     'SELECT id_feature
                             FROM %sfeature_lang
-                            WHERE name = %s
+                            WHERE name = "%s"
                             AND id_lang = %s',
                     _DB_PREFIX_,
                     $i18n->getName(),
