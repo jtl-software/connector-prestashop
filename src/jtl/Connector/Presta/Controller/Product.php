@@ -23,8 +23,8 @@ class Product extends BaseController
 
         $result = $this->db->executeS('
 			SELECT * FROM '._DB_PREFIX_.'product p
-			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpointId AND l.type = 64
-            WHERE l.hostId IS NULL 
+			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
+            WHERE l.host_id IS NULL
             LIMIT '.$limit
         );
 
@@ -43,8 +43,8 @@ class Product extends BaseController
 			$resultVars = $this->db->executeS('
                 SELECT p.*, pr.price AS pPrice FROM ' . _DB_PREFIX_ . 'product_attribute p
                 LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
-                LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpointId AND l.type = 64
-                WHERE l.hostId IS NULL
+                LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
+                WHERE l.host_id IS NULL
                 LIMIT ' . ($limit - $count)
 			);
 
@@ -274,15 +274,15 @@ class Product extends BaseController
 		$count = $this->db->getValue('
 			SELECT COUNT(*) 
 			FROM '._DB_PREFIX_.'product p
-			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpointId AND l.type = 64
-            WHERE l.hostId IS NULL
+			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
+            WHERE l.host_id IS NULL
         ');
 
         $countVars = $this->db->getValue('
             SELECT COUNT(*)
             FROM '._DB_PREFIX_.'product_attribute p
-			LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpointId AND l.type = 64
-            WHERE l.hostId IS NULL
+			LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
+            WHERE l.host_id IS NULL
         ');
 
         return ($count + $countVars);

@@ -101,7 +101,7 @@ class Image extends BaseController
                     }
                     
                     $coverId = \Product::getCover($productId);
-                    if (count($coverId) > 0 ) {
+                    if ($coverId != false ) {
                         $oldCover = new \Image(reset($coverId));
                         $oldCover->cover = 0;
                         $oldCover->save();
@@ -181,8 +181,8 @@ class Image extends BaseController
     {
         $categories = $this->db->executeS('
           SELECT c.id_category FROM '._DB_PREFIX_.'category c
-          LEFT JOIN jtl_connector_link_image l ON CONCAT("c", c.id_category) = l.endpointId AND l.type = 16
-          WHERE l.hostId IS NULL
+          LEFT JOIN jtl_connector_link_image l ON CONCAT("c", c.id_category) = l.endpoint_id
+          WHERE l.host_id IS NULL
         ');
 
         $return = array();
@@ -206,8 +206,8 @@ class Image extends BaseController
     {
         $manufacturers = $this->db->executeS('
           SELECT m.id_manufacturer FROM '._DB_PREFIX_.'manufacturer m
-          LEFT JOIN jtl_connector_link_image l ON CONCAT("m", m.id_manufacturer) = l.endpointId AND l.type = 16
-          WHERE l.hostId IS NULL
+          LEFT JOIN jtl_connector_link_image l ON CONCAT("m", m.id_manufacturer) = l.endpoint_id
+          WHERE l.host_id IS NULL
         ');
 
         $return = array();
@@ -231,8 +231,8 @@ class Image extends BaseController
     {
         $images = $this->db->executeS('
           SELECT i.* FROM '._DB_PREFIX_.'image i
-          LEFT JOIN jtl_connector_link_image l ON i.id_image = l.endpointId AND l.type = 16
-          WHERE l.hostId IS NULL
+          LEFT JOIN jtl_connector_link_image l ON i.id_image = l.endpoint_id
+          WHERE l.host_id IS NULL
         ');
 
         $return = array();

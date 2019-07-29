@@ -2,6 +2,7 @@
 ------
 - CO-552 Ignore product-images which are not assigned to a product
 - Linking table access is now fixed
+- Fixed image push (Error on setting the cover)
 
 1.5.9
 ------

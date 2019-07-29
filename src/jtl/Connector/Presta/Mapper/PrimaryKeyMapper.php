@@ -90,11 +90,11 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         $where = '';
 
         if ($endpointId && $endpointId != '') {
-            $where .= ' && endpoint_id = "'.$endpointId.'"';
+            $where = ' endpoint_id = "'.$endpointId.'"';
         }
 
         if ($hostId) {
-            $where .= ' && host_id = '.$hostId;
+            $where = ' host_id = '.$hostId;
         }
 
         $this->db->execute(sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], $where));

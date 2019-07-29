@@ -8,8 +8,8 @@ class Manufacturer extends BaseController
 		$result = $this->db->executeS('
 			SELECT m.*
 			FROM '._DB_PREFIX_.'manufacturer m
-			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpointId AND l.type = 32
-            WHERE l.hostId IS NULL
+			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
+            WHERE l.host_id IS NULL
             LIMIT '.$limit
         );
 
@@ -55,8 +55,8 @@ class Manufacturer extends BaseController
 		return $this->db->getValue('
 			SELECT COUNT(*) 
 			FROM '._DB_PREFIX_.'manufacturer m
-			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpointId AND l.type = 32
-            WHERE l.hostId IS NULL
+			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
+            WHERE l.host_id IS NULL
         ');
 	}
 }
