@@ -43,7 +43,7 @@
         <copy todir="./build">
             <fileset dir=".">
                 <include name="src/"/>
-                <include name="library/"/>
+                <include name="vendor/"/>
                 <include name="build-config.yaml"/>
             </fileset>
         </copy>

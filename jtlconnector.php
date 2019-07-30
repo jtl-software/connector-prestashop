@@ -20,10 +20,10 @@ class JTLConnector extends Module
 {
     public function __construct()
     {
-        if (file_exists(CONNECTOR_DIR . '/library/autoload.php')) {
-            $loader = require_once CONNECTOR_DIR . '/library/autoload.php';
+        if (file_exists(CONNECTOR_DIR . '/vendor/autoload.php')) {
+            $loader = require_once CONNECTOR_DIR . '/vendor/autoload.php';
         } else {
-            $loader = include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/library/autoload.php';
+            $loader = include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/vendor/autoload.php';
         }
         
         if ($loader instanceof \Composer\Autoload\ClassLoader) {

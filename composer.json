@@ -14,7 +14,7 @@
         }
     ],
     "config": {
-        "vendor-dir": "library",
+        "vendor-dir": "vendor",
         "platform": {
             "php": "5.6.4"
         }
@@ -24,9 +24,14 @@
         "jtl/connector": "^2.4.0",
         "symfony/yaml": "^3.4"
 	},
+    "require-dev": {
+        "jtl/connector-client": "^0.12",
+        "phpunit/phpunit": "^5"
+    },
     "autoload": {
-        "psr-0": {
-            "jtl\\Connector\\Presta": "src/"
+        "psr-4": {
+            "jtl\\Connector\\Presta\\": "src/",
+            "Tests\\": "tests/"
         }
     }
 }
