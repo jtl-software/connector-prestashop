@@ -2,15 +2,26 @@
 
 namespace Tests;
 
+use jtl\Connector\Linker\IdentityLinker;
+use jtl\Connector\Mapper\IPrimaryKeyMapper;
 use jtl\Connector\Model\DataModel;
 use jtl\Connector\Serializer\JMS\SerializerBuilder;
 use PHPUnit\Framework\TestCase;
 use Jtl\Connector\Client\Client;
+
 \Doctrine\Common\Annotations\AnnotationRegistry::registerLoader('class_exists');
 
 class ConnectorTestCase extends TestCase
 {
+    /**
+     * @var Client
+     */
     protected static $client = null;
+    
+    /**
+     * @var IPrimaryKeyMapper
+     */
+    protected static $primaryKeyMapper = null;
     
     /**
      * @return Client
@@ -45,6 +56,7 @@ class ConnectorTestCase extends TestCase
     {
         $ns = 'ArrayCollection<jtl\\Connector\\Model\\' . $controllerName . '>';
         $serializer = SerializerBuilder::create();
+        
         return $serializer->deserialize($json, $ns, 'json');
     }
     
@@ -72,10 +84,11 @@ class ConnectorTestCase extends TestCase
     
     /**
      * @param array $models
+     * @param bool $clearLinkings
      * @return array
      * @throws \ReflectionException
      */
-    protected function pushCoreModels(array $models)
+    protected function pushCoreModels(array $models, bool $clearLinkings)
     {
         if (empty($models)) {
             return [];
@@ -84,16 +97,27 @@ class ConnectorTestCase extends TestCase
         $controllerName = (new \ReflectionClass($models[0]))->getShortName();
         $client = $this->getConnectorClient();
         
+        $convertedModels = $this->jsonToCoreModels(json_encode($client->push($controllerName, $models)),
+            $controllerName);
         
-        return $this->jsonToCoreModels(json_encode($client->push($controllerName, $models)), $controllerName);
+        if ($clearLinkings) {
+            foreach ($convertedModels as $convertedModel) {
+                self::$primaryKeyMapper->delete(
+                    $convertedModel->getId()->getEndpoint(),
+                    $convertedModel->getId()->getHost(),
+                    IdentityLinker::getInstance()->getType($controllerName, 'id')
+                );
+            }
+        }
+        
+        return $convertedModels;
     }
     
     /**
      * @param DataModel $actual
-     * @param array $assertArray
      * @param DataModel $expected
+     * @param array|null $assertArray
      */
-    //protected function assertCoreModel(DataModel $model, array $assertArray, DataModel $assertModel = null)
     protected function assertCoreModel(DataModel $actual, DataModel $expected, array $assertArray = null)
     {
         if (empty($assertArray)) {
@@ -108,10 +132,10 @@ class ConnectorTestCase extends TestCase
         ];
         
         foreach ($assertArray as $name => $assertion) {
-            $assertMethod = "assert".ucfirst($assertion);
-            $getMethod = "get".ucfirst($name);
+            $assertMethod = "assert" . ucfirst($assertion);
+            $getMethod = "get" . ucfirst($name);
             
-            if(array_search($assertMethod, $valid)  !== false) {
+            if (array_search($assertMethod, $valid) !== false) {
                 $this->$assertMethod($actual->$getMethod(), $expected->$getMethod());
             }
         }

@@ -7,6 +7,7 @@ use jtl\Connector\Model\Product;
 use jtl\Connector\Model\ProductI18n;
 use jtl\Connector\Model\ProductPrice;
 use jtl\Connector\Model\ProductStockLevel;
+use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Serializer\JMS\SerializerBuilder;
 use Tests\ConnectorTestCase;
 
@@ -30,7 +31,7 @@ class ProductTest extends ConnectorTestCase
         $productI18N->setShortDescription('Kurze Beschreibung');
         $product->addI18n($productI18N);
         
-        $response = $this->pushCoreModels([$product]);
+        $response = $this->pushCoreModels([$product], true);
         
         $i18nAssertions = [
             'LanguageISO' => 'Equals',
@@ -39,6 +40,8 @@ class ProductTest extends ConnectorTestCase
         ];
         
         $endpointId = $response[0]->getId()->getEndpoint();
+        $this->assertNotEmpty($endpointId);
+        $endpointId = $response[0]->getI18ns()[0]->getProductId()->getEndpoint();
         $this->assertNotEmpty($endpointId);
         
         $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');

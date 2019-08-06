@@ -26,7 +26,8 @@
 	},
     "require-dev": {
         "jtl/connector-client": "^0.12",
-        "phpunit/phpunit": "^5"
+        "phpunit/phpunit": "^5",
+        "guzzlehttp/guzzle": "^5.3"
     },
     "autoload": {
         "psr-4": {
