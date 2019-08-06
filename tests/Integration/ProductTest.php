@@ -10,8 +10,9 @@ use jtl\Connector\Model\ProductStockLevel;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Serializer\JMS\SerializerBuilder;
 use Tests\ConnectorTestCase;
+use Tests\PrestashopConnectorTestCase;
 
-class ProductTest extends ConnectorTestCase
+class ProductTest extends PrestashopConnectorTestCase
 {
     
     /**
