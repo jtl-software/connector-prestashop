@@ -2,8 +2,10 @@
 
 namespace Tests;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use jtl\Connector\Linker\IdentityLinker;
 use jtl\Connector\Mapper\IPrimaryKeyMapper;
+use jtl\Connector\Model\Ack;
 use jtl\Connector\Model\DataModel;
 use jtl\Connector\Serializer\JMS\SerializerBuilder;
 use PHPUnit\Framework\TestCase;
@@ -61,18 +63,18 @@ class ConnectorTestCase extends TestCase
     }
     
     /**
-     * @param string $modelName
+     * @param string $controllerName
      * @param int $limit
      * @param string $endpointId
      * @return DataModel|DataModel[]|null
      */
-    protected function pullCoreModels(string $modelName, int $limit = 100, string $endpointId = "")
+    protected function pullCoreModels(string $controllerName, int $limit = 100, string $endpointId = "")
     {
         if ($endpointId === "") {
-            return $this->getConnectorClient()->pull($modelName, $limit);
+            return $this->getConnectorClient()->pull($controllerName, $limit);
         }
         
-        $models = $this->getConnectorClient()->pull($modelName, 999999);
+        $models = $this->getConnectorClient()->pull($controllerName, 999999);
         foreach ($models as $model) {
             if ($model->getId()->getEndpoint() === $endpointId) {
                 return $model;
@@ -80,6 +82,22 @@ class ConnectorTestCase extends TestCase
         }
         
         return null;
+    }
+    
+    protected function deleteModel(string $controllerName, array $ids)
+    {
+        $hostId = 10000;
+        $ack = new Ack();
+        $ids = [];
+        foreach ($ids as $id) {
+            $ids[] = [$id, $hostId++];
+        }
+        $ack->setIdentities(new ArrayCollection([$controllerName => $ids]));
+        $this->getConnectorClient()->ack($ack);
+        
+        for($i = 10000; $i <= $hostId; $i++) {
+            //$this->getConnectorClient()->delete($controllerName, $i)
+        }
     }
     
     /**
