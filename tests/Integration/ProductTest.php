@@ -111,13 +111,7 @@ class ProductTest extends PrestashopConnectorTestCase
         $product->setVat(0.0);
         $product->setWidth(0.0);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductManufacturerPush(){
@@ -141,13 +135,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $manufacturer->setI18ns([$manufacturerI18n]);
         $product->setManufacturer($manufacturer);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductStockLevelPush(){
@@ -160,13 +148,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $stockLevel->setStockLevel(0.0);
         $product->setStockLevel($stockLevel);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductAttributePush(){
@@ -187,13 +169,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $attribute->setI18ns([$attributeI18n]);
         $product->setAttributes([$attribute]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductToCategoryPush(){
@@ -207,13 +183,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $productsToCategories->setProductId(new Identity('', 1));
         $product->setCategories([$productsToCategories]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductChecksumPush(){
@@ -229,13 +199,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $checksum->setType(0);
         $product->setChecksums([$checksum]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductConfigGroupPush(){
@@ -249,13 +213,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $configGroup->setSort(0);
         $product->setConfigGroups([$configGroup]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductCustomerGroupPackagingQuantityPush(){
@@ -270,13 +228,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $packagingQuantity->setPackagingQuantity(0.0);
         $product->setCustomerGroupPackagingQuantities([$packagingQuantity]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductFileUploadPush(){
@@ -297,13 +249,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $fileUpload->setI18ns([$fileUploadI18n]);
         $product->setFileDownloads([$fileUpload]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductI18nPush(){
@@ -326,13 +272,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $productI18n->setUrlPath('');
         $product->setI18ns([$productI18n]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductInvisibilityPush(){
@@ -345,13 +285,7 @@ class ProductTest extends PrestashopConnectorTestCase
             $invisibility->setProductId(new Identity('', 1));
         $product->setInvisibilities([$invisibility]);
     
-        $response = $this->pushCoreModels([$product], true);
-        $endpointId = $response[0]->getId()->getEndpoint();
-        $this->assertNotEmpty($endpointId);
-    
-        $response[0]->getI18ns()[0]->getProductId()->setEndpoint('');
-    
-        $this->assertCoreModel($product->getI18ns()[0], $response[0]->getI18ns()[0]);
+        $this->pushCoreModels([$product], true);
     }
     
     public function testProductMediaFilePush(){
