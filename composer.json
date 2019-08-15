@@ -13,6 +13,7 @@
             "role": "Founder"
         }
     ],
+    "minimum-stability": "dev",
     "config": {
         "vendor-dir": "vendor",
         "platform": {
@@ -25,15 +26,13 @@
         "symfony/yaml": "^3.4",
       "ext-json": "*"
     },
-    "require-dev": {
-        "jtl/connector-client": "^0.12",
-        "phpunit/phpunit": "^5",
-        "guzzlehttp/guzzle": "^5.3"
-    },
     "autoload": {
         "psr-4": {
             "jtl\\Connector\\Presta\\": "src/",
             "Tests\\": "tests/"
         }
+    },
+    "require-dev": {
+        "jtl/connector-integration-tests": "dev-develop"
     }
 }
