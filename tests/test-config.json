@@ -1,0 +1,4 @@
+{
+  "connector_url": "http://presta-test.com/index.php?fc=module&module=jtlconnector&controller=api",
+  "connector_token": "5c9391189fc37"
+}
