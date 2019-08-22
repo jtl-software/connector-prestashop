@@ -14,15 +14,15 @@ class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTes
             'invisibilities',
             'considerStock',
             'modified',
-            'permitNegativeStock',
+            'permitNegativeStock', //Is set default to true, otherwise products without Stock handling couldn't be bought
             'minBestBeforeDate',
             'newReleaseDate',
             'nextAvailableInflowDate',
             'creationDate',
             'basePriceUnitName',
-            'attributes.0',
-            'attributes.1',
-            'isActive',
+            'attributes.0', // onlineOnly Attribute is sent by pull
+            'attributes.1', // isActive Attribute is sent by pull
+            'isActive', //Is Handled via attributes
         ];
     }
 }
