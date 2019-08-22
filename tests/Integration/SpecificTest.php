@@ -20,7 +20,8 @@ class SpecificTest extends \Jtl\Connector\IntegrationTests\Integration\SpecificT
     
     public function testSpecificBasicPush()
     {
-        $this->expectException("TypeError");
-        parent::testSpecificBasicPush();
+        $this->markTestIncomplete(
+            'This test has not been implemented yet.'
+        );
     }
 }
