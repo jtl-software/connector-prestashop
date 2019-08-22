@@ -4,15 +4,25 @@
 namespace Tests;
 
 
-class ProductTest extends \ConnectorIntegrationTests\Integration\ProductTest
+class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTest
 {
     public function getIgnoreArray()
     {
         return [
-            'id',
             'i18ns',
             'customerGroups',
-            'invisibilities'
+            'invisibilities',
+            'considerStock',
+            'modified',
+            'permitNegativeStock',
+            'minBestBeforeDate',
+            'newReleaseDate',
+            'nextAvailableInflowDate',
+            'creationDate',
+            'basePriceUnitName',
+            'attributes.0',
+            'attributes.1',
+            'isActive',
         ];
     }
 }

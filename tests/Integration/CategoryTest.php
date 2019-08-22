@@ -4,15 +4,12 @@
 namespace Tests;
 
 
-class CategoryTest extends \ConnectorIntegrationTests\Integration\CategoryTest
+class CategoryTest extends \Jtl\Connector\IntegrationTests\Integration\CategoryTest
 {
     public function getIgnoreArray()
     {
         return [
             'level',
-            'id',
-            'parentCategoryId',
-            'i18ns.0.categoryId',
             'attributes',
             'customerGroups',
             'invisibilities'

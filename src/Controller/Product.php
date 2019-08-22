@@ -17,7 +17,7 @@ class Product extends BaseController
     
     public function pullData($data, $model, $limit = null)
 	{
-		$limit = $limit < 25 ? $limit : 25;
+		//$limit = $limit < 25 ? $limit : 25;
 
 		$return = array();
 

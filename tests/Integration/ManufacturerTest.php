@@ -4,13 +4,11 @@
 namespace Tests;
 
 
-class ManufacturerTest extends \ConnectorIntegrationTests\Integration\ManufacturerTest
+class ManufacturerTest extends \Jtl\Connector\IntegrationTests\Integration\ManufacturerTest
 {
     public function getIgnoreArray()
     {
         return [
-            'id',
-            'i18ns.0.manufacturerId',
         ];
     }
 }
