@@ -1,3 +1,7 @@
+1.6.2
+------
+- CO-575 - Attributes are no longer pulled as Specifics
+
 1.6.1
 ------
 - Linking table access is now fixed
