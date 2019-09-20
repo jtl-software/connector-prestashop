@@ -25,48 +25,43 @@ class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTes
             'attributes.0', // onlineOnly Attribute is sent by pull
             'attributes.1', // isActive Attribute is sent by pull
             'isActive', //Is Handled via attributes
-            
-            'prices.0.items.0.netPrice', //Needs fixing
-            'prices.0.items.0.quantity', //Needs fixing
-            
-            'variations.0.type', //Needs fixing
-            'variations.0.sort', //Needs fixing
+            'asin',
+            'taric',
             'variations.0.values.0.stockLevel',
-            'variations.0.values.0.ean', //Needs fixing
-            'variations.0.values.0.extraWeight', //Needs fixing
-            'variations.0.values.0.sku', //Needs fixing
-            'variations.0.values.0.sort', //Needs fixing
+            'variations.0.values.0.extraWeight',
+            'keywords',
+            'sort',
+            'variations.0.sort',
+            'variations.0.type',
+            'unNumber',
+            'isNewProduct',
+            'productWeight',
+            'isSerialNumber',
+            'serialNumber', 
+            'basePriceDivisor', 
+            'basePriceFactor', 
+            'basePriceQuantity', 
+            'basePriceUnitCode', 
+            'note', 
+            'recommendedRetailPrice', 
+            'isBatch', 
+            'isBestBefore', 
+            'isDivisible', 
+            'manufacturerNumber', 
+            'measurementQuantity', 
+            'measurementUnitCode', 
+            'nextAvailableInflowQuantity', 
+            'packagingQuantity', 
+            'supplierDeliveryTime', 
+            'supplierStockLevel',
+            'originCountry',
+            'minimumQuantity',
             
-            'asin', //Needs fixing
-            'basePriceDivisor', //Needs fixing
-            'basePriceFactor', //Needs fixing
-            'basePriceQuantity', //Needs fixing
-            'basePriceUnitCode', //Needs fixing
-            'isBatch', //Needs fixing
-            'isBestBefore', //Needs fixing
-            'isbn', //Needs fixing
-            'isDivisible', //Needs fixing
-            'isMasterProduct', //Needs fixing
-            'isNewProduct', //Needs fixing
-            'isSerialNumber', //Needs fixing
-            'keywords', //Needs fixing
-            'manufacturerNumber', //Needs fixing
-            'measurementQuantity', //Needs fixing
-            'measurementUnitCode', //Needs fixing
-            'minimumQuantity', //Needs fixing
-            'nextAvailableInflowQuantity', //Needs fixing
-            'note', //Needs fixing
-            'originCountry', //Needs fixing
-            'packagingQuantity', //Needs fixing
-            'productWeight', //Needs fixing
-            'recommendedRetailPrice', //Needs fixing
-            'serialNumber', //Needs fixing
-            'sort', //Needs fixing
-            'supplierDeliveryTime', //Needs fixing
-            'supplierStockLevel', //Needs fixing
-            'taric', //Needs fixing
-            'unNumber', //Needs fixing
-            'vat', //Needs fixing
+            /**
+             * 'prices.0.items.0.netPrice', //Needs fixing
+             * 'prices.0.items.0.quantity', //Needs fixing
+             *
+             */
         ];
     }
     
