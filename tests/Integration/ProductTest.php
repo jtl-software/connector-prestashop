@@ -11,7 +11,8 @@ class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTes
     public function getIgnoreArray()
     {
         return [
-            'i18ns',
+            'i18ns.0.measurementUnitName',
+            'i18ns.0.unitName',
             'customerGroups',
             'invisibilities',
             'considerStock',
