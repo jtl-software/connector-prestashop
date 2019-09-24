@@ -1,3 +1,8 @@
+1.6.2
+------
+- Now pulling Product: ISBN | ProductVariationValue: ean, sku correctly.
+- Price is now pushed correctly.
+
 1.6.1
 ------
 - Linking table access is now fixed
