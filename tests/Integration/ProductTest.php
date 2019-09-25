@@ -30,6 +30,7 @@ class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTes
             'taric',
             'variations.0.values.0.stockLevel',
             'variations.0.values.0.extraWeight',
+            'variations.0.values.0.sort',
             'keywords',
             'sort',
             'variations.0.sort',
@@ -57,12 +58,8 @@ class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTes
             'supplierStockLevel',
             'originCountry',
             'minimumQuantity',
+            'prices.0.items.0.quantity',
             
-            /**
-             * 'prices.0.items.0.netPrice', //Needs fixing
-             * 'prices.0.items.0.quantity', //Needs fixing
-             *
-             */
         ];
     }
     

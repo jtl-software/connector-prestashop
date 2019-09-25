@@ -321,6 +321,7 @@ class Product extends BaseController
             
             $product->{$specialAttributes[$key]} = $value;
         }
+        
         $prices = $data->getPrices();
         $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
         $product->save();
