@@ -14,6 +14,6 @@ class Currency extends BaseMapper
 
 	protected function isDefault($data)
 	{
-		return $data['id_currency'] === '1' ? true : false;
+        return \Context::getContext()->currency->id == $data['id_currency'];
 	}
 }
