@@ -17,6 +17,7 @@ class CustomerOrderBillingAddress extends BaseMapper
         'phone' => 'phone',
         'salutation' => null,
         'state' => 'state',
+        'vatNumber' => 'vat_number',
         'street' => 'address1',
         'zipCode' => 'postcode'
     );
