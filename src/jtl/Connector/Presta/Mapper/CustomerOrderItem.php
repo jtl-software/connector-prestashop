@@ -25,6 +25,10 @@ class CustomerOrderItem extends BaseMapper
 
     protected function vat($data)
     {
+        if ($data['total_price_tax_excl'] <= 0) {
+            return 0;
+        }
+        
         return round(floatval($data['tax_rate'] == 0 ? (100 / $data['total_price_tax_excl'] * $data['total_price_tax_incl']) - 100 : $data['tax_rate']), 4);
     }
 }
