@@ -22,10 +22,10 @@ class CustomerOrderItem extends BaseMapper
     {
         return new Identity($data['product_attribute_id'] == 0 ? $data['product_id'] :  $data['product_id'].'_'.$data['product_attribute_id']);
     }
-
+    
     protected function vat($data)
     {
-        if ($data['total_price_tax_excl'] <= 0) {
+        if ($data['total_price_tax_excl'] === (float)0) {
             return 0;
         }
         
