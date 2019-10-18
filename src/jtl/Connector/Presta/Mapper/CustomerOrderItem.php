@@ -25,7 +25,7 @@ class CustomerOrderItem extends BaseMapper
     
     protected function vat($data)
     {
-        if ($data['total_price_tax_excl'] === (float)0) {
+        if ((float)$data['total_price_tax_excl'] === (float)0) {
             return 0;
         }
         
