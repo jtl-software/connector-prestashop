@@ -121,26 +121,6 @@ class ProductPrice extends BaseController
         return $return;
     }
     
-    public function initPush($data)
-    {
-        $price = $data[0];
-        
-        $id = $price->getProductId()->getEndpoint();
-        
-        if (!empty($id)) {
-            list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, 0);
-            
-            if (!empty($productId) && !is_null($combiId)) {
-                $this->db->execute('
-                    DELETE p FROM ' . _DB_PREFIX_ . 'specific_price p
-                    WHERE p.id_product = ' . $productId . '
-                    AND p.id_product_attribute = ' . $combiId . '
-                    AND p.from = "0000-00-00 00:00:00"
-                ');
-            }
-        }
-    }
-    
     public function pushData($price, $model = null)
     {
         $id = $price->getProductId()->getEndpoint();
@@ -164,6 +144,14 @@ class ProductPrice extends BaseController
                             $combi->save();
                         }
                     } else {
+                        $this->db->execute(sprintf("
+                            DELETE p FROM %sspecific_price p
+                            WHERE p.id_product = %s
+                            AND p.id_product_attribute = %s
+                            AND p.from = \"0000-00-00 00:00:00\"
+                            AND p.id_group = %s
+                        ", _DB_PREFIX_, $productId, $combiId, $customerGroupId));
+                        
                         $priceObj = new \SpecificPrice();
                         $priceObj->id_product = $productId;
                         $priceObj->id_product_attribute = $combiId;
