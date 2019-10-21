@@ -1,3 +1,7 @@
+1.6.2
+------
+- Fixed ProductPrice push
+
 1.6.1
 ------
 - Linking table access is now fixed
