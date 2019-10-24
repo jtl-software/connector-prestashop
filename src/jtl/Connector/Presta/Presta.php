@@ -63,10 +63,6 @@ class Presta extends BaseConnector
             
             $action = new Action();
             $results = [];
-            
-            if (method_exists($this->controller, 'initPush')) {
-                $this->controller->initPush($requestpacket->getParams());
-            }
             $link = \Db::getInstance()->getLink();
 
             if ($link instanceof \PDO) {
@@ -74,6 +70,11 @@ class Presta extends BaseConnector
             } elseif ($link instanceof \mysqli) {
                 $link->begin_transaction();
             }
+    
+            if (method_exists($this->controller, 'initPush')) {
+                $this->controller->initPush($requestpacket->getParams());
+            }
+            
             foreach ($requestpacket->getParams() as $param) {
                 $currentItem = $param;
                 $result = $this->controller->{$this->action}($param);
@@ -93,11 +94,12 @@ class Presta extends BaseConnector
                 
                 $results[] = $result->getResult();
             }
-            \Db::getInstance()->getLink()->commit();
-            
+    
             if (method_exists($this->controller, 'finishPush')) {
                 $this->controller->finishPush($requestpacket->getParams(), $results);
             }
+            
+            \Db::getInstance()->getLink()->commit();
             
             $action->setHandled(true)
                 ->setResult($results)

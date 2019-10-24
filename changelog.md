@@ -1,6 +1,6 @@
 1.6.2
-------
 - CO-585 - Fixed default currency detection
+- Fixed ProductPrice push
 
 1.6.1
 ------
