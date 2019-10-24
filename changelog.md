@@ -1,6 +1,7 @@
 1.6.2
 ------
 - CO-604 - Fixed connector linking table collation on install
+- Fixed ProductPrice push
 
 1.6.1
 ------
