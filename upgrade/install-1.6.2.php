@@ -24,7 +24,7 @@ function jtl_connector_migration_hotfix($object)
     return true;
 }
 
-function upgrade_module_1_6_0_1($object)
+function upgrade_module_1_6_2($object)
 {
     $link = \Db::getInstance()->getLink();
     
