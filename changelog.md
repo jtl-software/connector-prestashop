@@ -1,5 +1,6 @@
 1.6.2
 ------
+- CO-633 - Fixed division by zero error on CustomerOrder Pull (price = 0)
 - CO-585 - Fixed default currency detection
 - Fixed ProductPrice push
 - CO-604 - Fixed connector linking table collation on install/update
