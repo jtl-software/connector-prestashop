@@ -27,14 +27,14 @@ function jtl_connector_migration($object)
                 host_id INT(10) NOT NULL,
                 PRIMARY KEY (endpoint_id),
                 INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci';
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci';
     
     $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
                 endpoint_id varchar(255) NOT NULL,
                 host_id INT(10) NOT NULL,
                 PRIMARY KEY (endpoint_id),
                 INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci';
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci';
     
     foreach ($types as $id => $name) {
         if ($id == 16 || $id == 64) {
