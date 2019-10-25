@@ -1,3 +1,7 @@
+1.6.2
+------
+- CO-604 - Fixed connector linking table collation on install/update
+
 1.6.1
 ------
 - Linking table access is now fixed
