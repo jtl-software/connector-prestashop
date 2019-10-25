@@ -1,6 +1,8 @@
 1.6.2
+------
 - CO-585 - Fixed default currency detection
 - Fixed ProductPrice push
+- CO-604 - Fixed connector linking table collation on install/update
 
 1.6.1
 ------
