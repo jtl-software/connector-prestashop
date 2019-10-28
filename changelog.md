@@ -1,5 +1,7 @@
 UNRELEASED
 - CO-448 - Added Integration tests
+- CO-579 - Added ISBN, keywords, variation->values-> ean, stocklevel and sku are now filled on product pull
+- CO-587 - Added Product price will now be set on the product itself instead of only in customer group prices
 
 1.6.2
 ------
@@ -7,8 +9,6 @@ UNRELEASED
 - CO-585 - Fixed default currency detection
 - CO-604 - Fixed connector linking table collation on install/update
 - CO-575 - Attributes are no longer pulled as Specifics
-- CO-579 - Added ISBN, keywords, variation->values-> ean, stocklevel and sku are now filled on product pull
-- CO-587 - Added Product price will now be set on the product itself instead of only in customer group prices
 - CO-635 - Fixed ProductPrice push, previously failing on updating multiple prices at once
 
 1.6.1
