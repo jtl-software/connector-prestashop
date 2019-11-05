@@ -13,7 +13,9 @@
 if (!defined('CONNECTOR_DIR')) {
     define("CONNECTOR_DIR", _PS_MODULE_DIR_ . 'jtlconnector/');
 }
-
+if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
+    define("JTL_CONNECTOR_DATABASE_COLLATION", "utf8_general_ci");
+}
 use jtl\Connector\Presta\Utils\Config;
 
 class JTLConnector extends Module
@@ -99,6 +101,7 @@ class JTLConnector extends Module
         $meta->save();
         
         $this->createLinkingTables();
+        $this->convertLinkingTables();
         
         $tab = new \Tab();
         $name = "JTL-Connector";
@@ -431,20 +434,20 @@ class JTLConnector extends Module
                 host_id INT(10) NOT NULL,
                 PRIMARY KEY (endpoint_id),
                 INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci';
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
             
             $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
                 endpoint_id varchar(255) NOT NULL,
                 host_id INT(10) NOT NULL,
                 PRIMARY KEY (endpoint_id),
                 INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci';
-            
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+
             foreach ($types as $id => $name) {
                 if ($id == 16 || $id == 64) {
-                    $db->query(sprintf($queryChar, 'jtl_connector_link_' . $name))->execute();
+                    $db->query(sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION))->execute();
                 } else {
-                    $db->query(sprintf($queryInt, 'jtl_connector_link_' . $name))->execute();
+                    $db->query(sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION))->execute();
                 }
             }
             
@@ -468,6 +471,43 @@ class JTLConnector extends Module
             
             \Db::getInstance()->getLink()->commit();
             
+            return true;
+        } catch (\Exception $e) {
+            $link->rollback();
+            throw $e;
+        }
+    }
+    
+    private function convertLinkingTables()
+    {
+        $db = Db::getInstance();
+        
+        $link = $db->getLink();
+        
+        if ($link instanceof \PDO) {
+            $link->beginTransaction();
+        } elseif ($link instanceof \mysqli) {
+            $link->begin_transaction();
+        }
+        
+        try {
+            $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
+            
+            $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
+            
+            if (!empty($newLinkingTables)) {
+                foreach ($newLinkingTables as $newLinkingTable) {
+                    if (!empty($newLinkingTable)) {
+                        $newLinkingTable = reset($newLinkingTable);
+                        if ($newLinkingTable !== 'jtl_connector_link_backup') {
+                            $db->query(sprintf($query, $newLinkingTable))->execute();
+                        }
+                    }
+                }
+            }
+    
+            \Db::getInstance()->getLink()->commit();
+    
             return true;
         } catch (\Exception $e) {
             $link->rollback();

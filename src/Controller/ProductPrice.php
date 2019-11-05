@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\Identity;
@@ -10,60 +11,60 @@ class ProductPrice extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $return = array();
-
+        $return = [];
+        
         $productTaxRate = Utils::getInstance()->getProductTaxRate($data['id_product']);
-
+        
         $default = new ProductpriceModel();
-        $default->setId(new Identity($model->getId()->getEndpoint().'_default'));
+        $default->setId(new Identity($model->getId()->getEndpoint() . '_default'));
         $default->setProductId($model->getId());
         $defaultItem = new ProductPriceItemModel();
         $defaultItem->setProductPriceId($default->getId());
-
+        
         if (isset($data['id_product_attribute'])) {
             $defaultItem->setNetPrice(floatval($data['pPrice'] + $data['price']));
         } else {
             $defaultItem->setNetPrice(floatval($data['price']));
         }
-
+        
         $default->addItem($defaultItem);
-
+        
         $return[] = $default;
-
+        
         $pResult = $this->db->executeS('
 			SELECT p.*, pr.price AS pPrice
-			FROM '._DB_PREFIX_.'specific_price p
-			LEFT JOIN '._DB_PREFIX_.'product pr ON pr.id_product = p.id_product
+			FROM ' . _DB_PREFIX_ . 'specific_price p
+			LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
 			WHERE
 			    p.id_product_attribute = 0
-			    AND p.id_product = '.$data['id_product'].'
+			    AND p.id_product = ' . $data['id_product'] . '
 			    AND p.id_country = 0
 			    AND p.id_currency = 0
 			    AND id_customer = 0
 			    AND p.from = "0000-00-00 00:00:00"
         ');
-
-        $varResult = array();
-
+        
+        $varResult = [];
+        
         if (isset($data['id_product_attribute'])) {
             $varResult = $this->db->executeS('
                 SELECT p.*, pr.price AS pPrice
-                FROM '._DB_PREFIX_.'specific_price p
-                LEFT JOIN '._DB_PREFIX_.'product pr ON pr.id_product = p.id_product
+                FROM ' . _DB_PREFIX_ . 'specific_price p
+                LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
                 WHERE
-                    p.id_product_attribute = '.$data['id_product_attribute'].'
+                    p.id_product_attribute = ' . $data['id_product_attribute'] . '
                     AND p.id_country = 0
 			        AND p.id_currency = 0
 			        AND id_customer = 0
 			        AND p.from = "0000-00-00 00:00:00"
             ');
         }
-
+        
         $result = array_merge($pResult, $varResult);
-
+        
         //$customerPrices = array();
-        $groupPrices = array();
-
+        $groupPrices = [];
+        
         foreach ($result as $pData) {
             if ($pData['id_customer'] !== '0') {
                 //$customerPrices[$pData['id_customer']][] = $pData;
@@ -75,7 +76,7 @@ class ProductPrice extends BaseController
                 }
             }
         }
-
+        
         /*
         foreach ($customerPrices as $cId => $cPriceData) {
             $cPrice = new ProductpriceModel();
@@ -95,59 +96,41 @@ class ProductPrice extends BaseController
             $return[] = $cPrice;
         }
         */
-
+        
         foreach ($groupPrices as $gId => $gPriceData) {
-            if ($gId === 0) $gId = '';
+            if ($gId === 0) {
+                $gId = '';
+            }
             $gPrice = new ProductpriceModel();
-            $gPrice->setId(new Identity($model->getId()->getEndpoint().'_g'.$gId));
+            $gPrice->setId(new Identity($model->getId()->getEndpoint() . '_g' . $gId));
             $gPrice->setProductId($model->getId());
             $gPrice->setCustomerGroupId(new Identity($gId));
-
+            
             foreach ($gPriceData as $gItemData) {
                 $gItem = new ProductPriceItemModel();
                 $gItem->setProductPriceId($gPrice->getId());
                 $gItem->setQuantity(intval($gItemData['from_quantity']));
                 $gItem->setNetPrice($this->calculateNetPrice($gItemData, $productTaxRate));
-
+                
                 $gPrice->addItem($gItem);
             }
-
+            
             $return[] = $gPrice;
         }
-
+        
         return $return;
     }
-
-    public function initPush($data)
-    {
-        $price = $data[0];
-
-        $id = $price->getProductId()->getEndpoint();
-
-        if (!empty($id)) {
-            list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, 0);
-
-            if (!empty($productId) && !is_null($combiId)) {
-                $this->db->execute('
-                    DELETE p FROM '._DB_PREFIX_.'specific_price p
-                    WHERE p.id_product = '.$productId.'
-                    AND p.id_product_attribute = '.$combiId.'
-                    AND p.from = "0000-00-00 00:00:00"
-                ');
-            }
-        }
-    }
-
+    
     public function pushData($price, $model = null)
     {
         $id = $price->getProductId()->getEndpoint();
-
+        
         if (!empty($id)) {
             list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, 0);
-
+            
             if (!empty($productId) && !is_null($combiId)) {
                 $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
-
+                
                 foreach ($price->getItems() as $item) {
                     if (empty($customerGroupId)) {
                         $product = new \Product($productId);
@@ -161,6 +144,14 @@ class ProductPrice extends BaseController
                             $combi->save();
                         }
                     } else {
+                        $this->db->execute(sprintf("
+                            DELETE p FROM %sspecific_price p
+                            WHERE p.id_product = %s
+                            AND p.id_product_attribute = %s
+                            AND p.from = \"0000-00-00 00:00:00\"
+                            AND p.id_group = %s
+                        ", _DB_PREFIX_, $productId, $combiId, $customerGroupId));
+                        
                         $priceObj = new \SpecificPrice();
                         $priceObj->id_product = $productId;
                         $priceObj->id_product_attribute = $combiId;
@@ -175,21 +166,22 @@ class ProductPrice extends BaseController
                         $priceObj->reduction_type = 'amount';
                         $priceObj->from = '0000-00-00 00:00:00';
                         $priceObj->to = '0000-00-00 00:00:00';
-
+                        
                         $priceObj->save();
                     }
                 }
             }
         }
-
+        
         return $price;
     }
-
+    
     private function calculateNetPrice($data, $taxRate)
     {
         if ($data['price'] === '-1.000000') {
             if ($data['reduction_type'] === 'amount') {
                 $reduction = ($data['reduction_tax'] === 1) ? ($data['reduction'] / (100 + $taxRate)) * 100 : $data['reduction'];
+                
                 return floatval($data['pPrice'] - $reduction);
             } else {
                 return floatval($data['pPrice'] - (($data['pPrice'] / 100) * $data['price']));

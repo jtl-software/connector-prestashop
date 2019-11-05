@@ -223,7 +223,6 @@ class Product extends BaseController
             }
 
             $price = new ProductPrice();
-            $price->initPush($data->getPrices());
             foreach ($data->getPrices() as $priceData) {
                 $price->pushData($priceData);
             }

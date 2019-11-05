@@ -1,3 +1,14 @@
+1.6.2
+------
+- CO-620 - Fixed division by zero error on CustomerOrder Pull (price = 0)
+- CO-585 - Fixed default currency detection
+- CO-604 - Fixed connector linking table collation on install/update
+- CO-448 - Added Integrationtests
+- CO-575 - Attributes are no longer pulled as Specifics
+- CO-579 - Added ISBN, keywords, variation->values-> ean, stocklevel and sku are now filled on product pull
+- CO-587 - Added Product price will now be set on the product itself instead of only in customer group prices
+- CO-635 - Fixed ProductPrice push, previously failing on updating multiple prices at once
+
 1.6.1
 ------
 - Linking table access is now fixed

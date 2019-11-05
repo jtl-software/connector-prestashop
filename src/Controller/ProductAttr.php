@@ -26,27 +26,28 @@ class ProductAttr extends BaseController
     public function pullData($data, $model, $limit = null)
     {
         $productId = $model->getId()->getEndpoint();
-        
-        $result = $this->db->executeS(sprintf('
-			SELECT p.*
-			FROM %sfeature_product p
-			WHERE p.id_product= %s',
+    
+        $attributes = $this->db->executeS(sprintf('
+            SELECT fp.id_feature, fp.id_product, fp.id_feature_value
+            FROM `%sfeature_product` fp
+            LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
+            WHERE custom = 1 AND `id_product` = "%s"',
             _DB_PREFIX_,
-            $data['id_product']
+            _DB_PREFIX_,
+            $productId
         ));
         
         $return = [];
         
-        foreach ($result as $lData) {
-            $lData['id_product'] = $productId;
-            $model = $this->mapper->toHost($lData);
+        foreach ($attributes as $attribute) {
+            $model = $this->mapper->toHost($attribute);
             
             $return[] = $model;
         }
         
         return $return;
     }
-
+    
     /**
      * @param \jtl\Connector\Model\Product $data
      * @param \Product $model

@@ -12,7 +12,7 @@ class ProductSpecific extends BaseController
 {
     public function pullData(ProductModel $product)
     {
-        $specifics = $this->db->executeS($test = sprintf('
+        $specifics = $this->db->executeS(sprintf('
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
