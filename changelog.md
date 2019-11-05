@@ -1,3 +1,7 @@
+UNRELEASED
+------
+- CO-700 - Es wird nicht mehr versucht Produkte mit der id 0 zu verarbeiten.
+
 1.6.2
 ------
 - CO-620 - Fixed division by zero error on CustomerOrder Pull (price = 0)
