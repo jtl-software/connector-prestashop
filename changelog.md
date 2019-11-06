@@ -3,6 +3,11 @@ UNRELEASED
 - CO-579 - Added ISBN, keywords, variation->values-> ean, stocklevel and sku are now filled on product pull
 - CO-587 - Added Product price will now be set on the product itself instead of only in customer group prices
 
+1.6.2.1
+------
+- CO-700 - Products with an endpoint_id of 0 are now ignored on stats and pull.
+-        - Fixed the Delete call of the primarykeymapper
+
 1.6.2
 ------
 - CO-620 - Fixed division by zero error on CustomerOrder Pull (price = 0)
