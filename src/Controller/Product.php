@@ -17,14 +17,14 @@ class Product extends BaseController
     
     public function pullData($data, $model, $limit = null)
 	{
-		$limit = $limit < 25 ? $limit : 25;
+		//$limit = $limit < 25 ? $limit : 25;
 
 		$return = array();
 
         $result = $this->db->executeS('
 			SELECT * FROM '._DB_PREFIX_.'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
-            WHERE l.host_id IS NULL
+            WHERE l.host_id IS NULL AND p.id_product > 0
             LIMIT '.$limit
         );
 
@@ -44,7 +44,7 @@ class Product extends BaseController
                 SELECT p.*, pr.price AS pPrice FROM ' . _DB_PREFIX_ . 'product_attribute p
                 LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
                 LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
-                WHERE l.host_id IS NULL
+                WHERE l.host_id IS NULL AND p.id_product > 0
                 LIMIT ' . ($limit - $count)
 			);
 
@@ -274,14 +274,14 @@ class Product extends BaseController
 			SELECT COUNT(*) 
 			FROM '._DB_PREFIX_.'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
-            WHERE l.host_id IS NULL
+            WHERE l.host_id IS NULL AND p.id_product > 0
         ');
 
         $countVars = $this->db->getValue('
             SELECT COUNT(*)
             FROM '._DB_PREFIX_.'product_attribute p
 			LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
-            WHERE l.host_id IS NULL
+            WHERE l.host_id IS NULL AND p.id_product > 0
         ');
 
         return ($count + $countVars);

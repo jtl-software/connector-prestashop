@@ -86,18 +86,18 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
     public function delete($endpointId = null, $hostId = null, $type)
     {
         Logger::write(sprintf('Delete link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type), Logger::DEBUG, 'linker');
-
-        $where = '';
-
+    
+        $where = [];
+    
         if ($endpointId && $endpointId != '') {
-            $where = ' endpoint_id = "'.$endpointId.'"';
+            $where[] = 'endpoint_id = "'.$endpointId.'"';
         }
-
+    
         if ($hostId) {
-            $where = ' host_id = '.$hostId;
+            $where[] = 'host_id = '.$hostId;
         }
-
-        $this->db->execute(sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], $where));
+    
+        $this->db->execute(sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], implode(' AND ', $where)));
     }
 
     public function clear()

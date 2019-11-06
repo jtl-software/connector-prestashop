@@ -1,3 +1,8 @@
+1.6.2.1
+------
+- CO-700 - Products with an endpoint_id of 0 are now ignored on stats and pull.
+-        - Fixed the Delete call of the primarykeymapper
+
 1.6.2
 ------
 - CO-620 - Fixed division by zero error on CustomerOrder Pull (price = 0)
