@@ -24,7 +24,7 @@ class Product extends BaseController
         $result = $this->db->executeS('
 			SELECT * FROM '._DB_PREFIX_.'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
-            WHERE l.host_id IS NULL
+            WHERE l.host_id IS NULL && p.id_product > 0
             LIMIT '.$limit
         );
 
