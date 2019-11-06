@@ -1,6 +1,7 @@
-UNRELEASED
+1.6.2.1
 ------
-- CO-700 - Es wird nicht mehr versucht Produkte mit der id 0 zu verarbeiten.
+- CO-700 - Products with an endpoint_id of 0 are now ignored on stats and pull.
+-        - Fixed the Delete call of the primarykeymapper
 
 1.6.2
 ------
