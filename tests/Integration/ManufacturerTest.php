@@ -9,6 +9,9 @@ class ManufacturerTest extends \Jtl\Connector\IntegrationTests\Integration\Manuf
     public function getIgnoreArray()
     {
         return [
+            'sort',
+            'urlPath',
+            'websiteUrl'
         ];
     }
 }
