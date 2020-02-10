@@ -3,6 +3,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Core\Logger\Logger;
 use jtl\Connector\Formatter\ExceptionFormatter;
+use jtl\Connector\Presta\Utils\Utils;
 
 class Image extends BaseController
 {
@@ -90,7 +91,7 @@ class Image extends BaseController
                     break;
 
                 case 'product':
-                    list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, null);
+                    list($productId, $combiId) = Utils::explodeProductEndpoint($id);
 
                     $img = new \Image();
                     $img->id_product = $productId;

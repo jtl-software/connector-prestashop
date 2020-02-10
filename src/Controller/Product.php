@@ -98,7 +98,7 @@ class Product extends BaseController
 
             $id = $product->id;
         } else {
-            list($productId, $combiId) = array_pad(explode('_', $data->getId()->getEndpoint(), 2), 2, null);
+            list($productId, $combiId) = Utils::explodeProductEndpoint($data->getId()->getEndpoint());
 
             $product = new \Product($masterId);
 
@@ -226,6 +226,9 @@ class Product extends BaseController
             foreach ($data->getPrices() as $priceData) {
                 $price->pushData($priceData);
             }
+
+            $specialPrices = new ProductSpecialPrice();
+            $specialPrices->pushData($data);
 
             $categories = new Product2Category();
             $categories->pushData($data);

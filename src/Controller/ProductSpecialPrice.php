@@ -6,27 +6,36 @@ use jtl\Connector\Model\ProductSpecialPrice as ProductSpecialPriceModel;
 use jtl\Connector\Model\ProductSpecialPriceItem as ProductSpecialPriceItemModel;
 use jtl\Connector\Presta\Utils\Utils;
 
+/**
+ * Class ProductSpecialPrice
+ * @package jtl\Connector\Presta\Controller
+ */
 class ProductSpecialPrice extends BaseController
 {
+    /**
+     * @param $data
+     * @param $model
+     * @param null $limit
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
     public function pullData($data, $model, $limit = null)
     {
-        /*
         $return = array();
 
         $productTaxRate = Utils::getInstance()->getProductTaxRate($data['id_product']);
 
         $pResult = $this->db->executeS('
 			SELECT p.*, pr.price AS pPrice
-			FROM '._DB_PREFIX_.'specific_price p
-			LEFT JOIN '._DB_PREFIX_.'product pr ON pr.id_product = p.id_product
+			FROM ' . _DB_PREFIX_ . 'specific_price p
+			LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
 			WHERE
 			    p.id_product_attribute = 0
-			    AND p.id_product = '.$data['id_product'].'
+			    AND p.id_product = ' . $data['id_product'] . '
 			    AND p.id_country = 0
 			    AND p.id_currency = 0
 			    AND id_customer = 0
-			    AND p.from != "0000-00-00 00:00:00"
-                AND p.from_quantity = 1
+			    AND p.from != "0000-00-00 00:00:00"                
         ');
 
         $varResult = array();
@@ -34,42 +43,39 @@ class ProductSpecialPrice extends BaseController
         if (isset($data['id_product_attribute'])) {
             $varResult = $this->db->executeS('
                 SELECT p.*, pr.price AS pPrice
-                FROM '._DB_PREFIX_.'specific_price p
-                LEFT JOIN '._DB_PREFIX_.'product pr ON pr.id_product = p.id_product
+                FROM ' . _DB_PREFIX_ . 'specific_price p
+                LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
                 WHERE
-                    p.id_product_attribute = '.$data['id_product_attribute'].'
+                    p.id_product_attribute = ' . $data['id_product_attribute'] . '
                     AND p.id_country = 0
 			        AND p.id_currency = 0
 			        AND id_customer = 0
-			        AND p.from != "0000-00-00 00:00:00"
-                    AND p.from_quantity = 1
+			        AND p.from != "0000-00-00 00:00:00"                    
             ');
         }
 
         $result = array_merge($pResult, $varResult);
 
-        $groupPrices = array();
-
-        foreach ($result as $pData) {
-            if ($pData['id_customer'] !== '0') {
-                //$customerPrices[$pData['id_customer']][] = $pData;
-            } elseif ($pData['id_group'] !== '0') {
-                $groupPrices[$pData['id_group']][] = $pData;
-            } else {
-                foreach (\Group::getGroups(1) as $gData) {
-                    $groupPrices[$gData['id_group']][] = $pData;
-                }
-            }
-        }
+        $groupPrices = Utils::groupProductPrices($result);
 
         foreach ($groupPrices as $gId => $gPriceData) {
-            if ($gId === 0) $gId = '';
+            if ($gId === 0) {
+                $gId = '';
+            }
             $gPrice = new ProductSpecialPriceModel();
-            $gPrice->setId(new Identity($model->getId()->getEndpoint().'_g'.$gId));
+            $gPrice->setId(new Identity($model->getId()->getEndpoint() . '_g' . $gId));
             $gPrice->setProductId($model->getId());
 
             foreach ($gPriceData as $gItemData) {
-                $gPrice->setActiveFromDate(new \DateTime($gItemData['from']));
+                $gItemData['pPriceGross'] = $gItemData['pPrice'] * ($productTaxRate / 100 + 1);
+
+                if ($gItemData['from'] !== '0000-00-00 00:00:00') {
+                    $gPrice->setActiveFromDate(new \DateTime($gItemData['from']));
+                }
+                if ($gItemData['to'] !== '0000-00-00 00:00:00') {
+                    $gPrice->setActiveUntilDate(new \DateTime($gItemData['to']));
+                }
+                $gPrice->setStockLimit((int)$gItemData['from_quantity']);
 
                 $gItem = new ProductSpecialPriceItemModel();
                 $gItem->setProductSpecialPriceId($gPrice->getId());
@@ -83,7 +89,6 @@ class ProductSpecialPrice extends BaseController
         }
 
         return $return;
-        */
     }
 
     public function pushData($data, $model = null)
@@ -91,17 +96,22 @@ class ProductSpecialPrice extends BaseController
         $id = $data->getId()->getEndpoint();
 
         if (!empty($id)) {
-            list($productId, $combiId) = array_pad(explode('_', $id, 2), 2, null);
+            list($productId, $combiId) = Utils::explodeProductEndpoint($id, 0);
 
             if (!empty($productId) && !is_null($combiId)) {
                 $this->db->execute('
-                    DELETE p FROM '._DB_PREFIX_.'specific_price p
-                    WHERE p.id_product = '.$productId.'
-                    AND p.id_product_attribute = '.$combiId.'
+                    DELETE p FROM ' . _DB_PREFIX_ . 'specific_price p
+                    WHERE p.id_product = ' . $productId . '
+                    AND p.id_product_attribute = ' . $combiId . '
                     AND p.from != "0000-00-00 00:00:00"
                 ');
 
                 foreach ($data->getSpecialPrices() as $specialPrice) {
+
+                    if ($specialPrice->getConsiderStockLimit() === true) {
+                        continue;
+                    }
+
                     foreach ($specialPrice->getItems() as $item) {
                         $priceObj = new \SpecificPrice();
                         $priceObj->id_product = $productId;
@@ -137,19 +147,34 @@ class ProductSpecialPrice extends BaseController
         return $data;
     }
 
-    /*
+    /**
+     * @param $data
+     * @param $taxRate
+     * @return float
+     */
     private function calculateNetPrice($data, $taxRate)
     {
         if ($data['price'] === '-1.000000') {
+
+            $priceNet = $data['pPrice'];
             if ($data['reduction_type'] === 'amount') {
-                $reduction = ($data['reduction_tax'] === 1) ? ($data['reduction'] / (100 + $taxRate)) * 100 : $data['reduction'];
-                return floatval($data['pPrice'] - $reduction);
-            } else {
-                return floatval($data['pPrice'] - (($data['pPrice'] / 100) * $data['price']));
+
+                $reduction = $data['reduction'];
+                if ((int)$data['reduction_tax'] === 1) {
+                    $reduction = $data['reduction'] / ($taxRate / 100 + 1);
+                }
+
+                return (float)round($priceNet - $reduction, 6);
+
+            } elseif ($data['reduction_type'] === 'percentage') {
+
+                $percentage = $data['reduction'] * 100;
+                $reduction = $priceNet * $percentage / 100;
+
+                return (float)round($priceNet - $reduction, 6);
+
             }
-        } else {
-            return floatval($data['price']);
         }
+        return floatval($data['price']);
     }
-    */
 }
