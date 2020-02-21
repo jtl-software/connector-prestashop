@@ -39,10 +39,10 @@ class CustomerOrderItem extends BaseMapper
             $rate = $this->db->getValue($query);
 
             if ($rate === false || $rate === null) {
-                $rate = (100 / $data['total_price_tax_excl'] * $data['total_price_tax_incl']) - 100;
+                $rate = round((100 / $data['total_price_tax_excl'] * $data['total_price_tax_incl']) - 100, 4);
             }
         }
 
-        return round((float)$rate, 4);
+        return (float)$rate;
     }
 }
