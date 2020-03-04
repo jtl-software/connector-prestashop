@@ -58,13 +58,15 @@ class ProductSpecialPrice extends BaseController
 
         $groupPrices = Utils::groupProductPrices($result);
 
+        $gPrice = new ProductSpecialPriceModel();
+        $gPrice->setId(new Identity($model->getId()->getEndpoint() . '_g'));
+        $gPrice->setProductId($model->getId());
+        $gPrice->setIsActive(true);
+
         foreach ($groupPrices as $gId => $gPriceData) {
             if ($gId === 0) {
                 $gId = '';
             }
-            $gPrice = new ProductSpecialPriceModel();
-            $gPrice->setId(new Identity($model->getId()->getEndpoint() . '_g' . $gId));
-            $gPrice->setProductId($model->getId());
 
             foreach ($gPriceData as $gItemData) {
                 $gItemData['pPriceGross'] = $gItemData['pPrice'] * ($productTaxRate / 100 + 1);
