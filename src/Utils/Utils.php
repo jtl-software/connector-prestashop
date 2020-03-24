@@ -72,4 +72,35 @@ class Utils {
 
 		return $tax_manager->getTaxCalculator()->getTotalRate();
 	}
+
+    /**
+     * @param $id
+     * @param null $padValue
+     * @return array
+     */
+	public static function explodeProductEndpoint($id, $padValue = null)
+    {
+        return array_pad(explode('_', $id, 2), 2, $padValue);
+    }
+
+    /**
+     * @param $result
+     * @return array
+     */
+    public static function groupProductPrices($result)
+    {
+        $groupPrices = [];
+        foreach ($result as $pData) {
+            if ($pData['id_customer'] !== '0') {
+                //$customerPrices[$pData['id_customer']][] = $pData;
+            } elseif ($pData['id_group'] !== '0') {
+                $groupPrices[$pData['id_group']][] = $pData;
+            } else {
+                foreach (\Group::getGroups(1) as $gData) {
+                    $groupPrices[$gData['id_group']][] = $pData;
+                }
+            }
+        }
+        return $groupPrices;
+    }
 }
