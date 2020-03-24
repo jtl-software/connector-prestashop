@@ -1,6 +1,6 @@
 {
-    "name": "jtl/connector/prestashop",
-    "type": "APP",
+    "name": "jtl/connector-prestashop",
+    "type": "app",
     "description": "PrestaShop Connector",
     "keywords": ["jtl", "Connector"],
     "homepage": "http://www.jtl-software.de",
