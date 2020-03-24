@@ -15,6 +15,7 @@ class Product extends BaseMapper
 		'masterProductId' => null,
 		'creationDate' => 'date_add',
 		'ean' => 'ean13',
+        'isbn' => 'isbn',
 		'height' => 'height',
 		'isMasterProduct' => null,
 		'length' => 'depth',
@@ -23,6 +24,7 @@ class Product extends BaseMapper
 		'sku' => 'reference',
 		'upc' => 'upc',
 		'stockLevel' => 'ProductStockLevel',
+		'specialPrices'=>'ProductSpecialPrice',
 		'vat' => null,
 		'width' => 'width',
 		'attributes' => 'ProductAttr',
@@ -52,6 +54,7 @@ class Product extends BaseMapper
         'weight' => 'shippingWeight',
         'reference' => 'sku',
         'upc' => 'upc',
+        'isbn' => 'isbn',
         'out_of_stock' => null,
         'id_tax_rules_group' => null,
         'width' => 'width',
@@ -61,8 +64,7 @@ class Product extends BaseMapper
         'on_sale' => 'isTopProduct',
         'minimal_quantity' => null,
         'ProductI18n' => 'i18ns',
-        'wholesale_price' => null,
-        'ProductSpecialPrice' => 'specialPrices'
+        'wholesale_price' => null
     );
 
 	protected function wholesale_price($data)

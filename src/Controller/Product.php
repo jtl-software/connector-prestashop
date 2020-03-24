@@ -17,7 +17,7 @@ class Product extends BaseController
     
     public function pullData($data, $model, $limit = null)
 	{
-		$limit = $limit < 25 ? $limit : 25;
+		//$limit = $limit < 25 ? $limit : 25;
 
 		$return = array();
 
@@ -98,7 +98,7 @@ class Product extends BaseController
 
             $id = $product->id;
         } else {
-            list($productId, $combiId) = array_pad(explode('_', $data->getId()->getEndpoint(), 2), 2, null);
+            list($productId, $combiId) = Utils::explodeProductEndpoint($data->getId()->getEndpoint());
 
             $product = new \Product($masterId);
 
@@ -195,6 +195,7 @@ class Product extends BaseController
                     $val = new Attribute($valId);
                     $val->name = $valNames;
                     $val->id_attribute_group = $attrGrpId;
+                    $val->position = $value->getSort();
 
                     $val->save();
 
@@ -226,6 +227,9 @@ class Product extends BaseController
             foreach ($data->getPrices() as $priceData) {
                 $price->pushData($priceData);
             }
+
+            $specialPrices = new ProductSpecialPrice();
+            $specialPrices->pushData($data);
 
             $categories = new Product2Category();
             $categories->pushData($data);
@@ -321,6 +325,8 @@ class Product extends BaseController
             $product->{$specialAttributes[$key]} = $value;
         }
         
+        $prices = $data->getPrices();
+        $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
         $product->save();
     }
     

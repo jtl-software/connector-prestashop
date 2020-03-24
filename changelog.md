@@ -1,7 +1,14 @@
+UNRELEASED
+
+1.6.3
+------
+- CO-845 - Add sort to product attributes
+- CO-802 - Special prices fix
+
 1.6.2.1
 ------
 - CO-700 - Products with an endpoint_id of 0 are now ignored on stats and pull.
--        - Fixed the Delete call of the primarykeymapper
+- Fixed the Delete call of the primarykeymapper
 
 1.6.2
 ------
