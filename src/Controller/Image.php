@@ -4,6 +4,7 @@ namespace jtl\Connector\Presta\Controller;
 use jtl\Connector\Core\Logger\Logger;
 use jtl\Connector\Formatter\ExceptionFormatter;
 use jtl\Connector\Presta\Utils\Utils;
+use Context;
 
 class Image extends BaseController
 {
@@ -96,6 +97,21 @@ class Image extends BaseController
                     $img = new \Image();
                     $img->id_product = $productId;
                     $img->position = $data->getSort();
+
+                    $defaultImageLegend = false;
+                    $defaultLanguageId = (int) Context::getContext()->language->id;
+
+                    foreach ($data->getI18ns() as $imageI18n) {
+                        $languageId = Utils::getInstance()->getLanguageIdByIso($imageI18n->getLanguageISO());
+                        if ($languageId !== false && $defaultLanguageId === (int)$languageId) {
+                            $defaultImageLegend = $imageI18n->getAltText();
+                            break;
+                        }
+                    }
+
+                    if($defaultImageLegend !== false){
+                        $img->legend = $defaultImageLegend;
+                    }
 
                     if (empty($combiId) && $img->position == 1) {
                         $img->cover =  1;
