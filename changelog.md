@@ -1,4 +1,7 @@
-UNRELEASED
+1.6.3.1
+------
+- CO-1003 - Fixed image alt text wasn't saved on push
+- CO-864 - Added improvements in tax calculations
 
 1.6.3
 ------
