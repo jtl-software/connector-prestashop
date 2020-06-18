@@ -97,6 +97,16 @@ class ProductPrice extends BaseController
             if (!empty($productId) && !is_null($combiId)) {
                 $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
 
+				if (!empty($customerGroupId)) {
+					$this->db->execute(sprintf("
+						DELETE p FROM %sspecific_price p
+						WHERE p.id_product = %s
+						AND p.id_product_attribute = %s
+						AND p.from = \"0000-00-00 00:00:00\"
+						AND p.id_group = %s
+					", _DB_PREFIX_, $productId, $combiId, $customerGroupId));
+				}
+
                 foreach ($price->getItems() as $item) {
                     if (empty($customerGroupId)) {
                         $product = new \Product($productId);
@@ -110,14 +120,6 @@ class ProductPrice extends BaseController
                             $combi->save();
                         }
                     } else {
-                        $this->db->execute(sprintf("
-                            DELETE p FROM %sspecific_price p
-                            WHERE p.id_product = %s
-                            AND p.id_product_attribute = %s
-                            AND p.from = \"0000-00-00 00:00:00\"
-                            AND p.id_group = %s
-                        ", _DB_PREFIX_, $productId, $combiId, $customerGroupId));
-
                         $priceObj = new \SpecificPrice();
                         $priceObj->id_product = $productId;
                         $priceObj->id_product_attribute = $combiId;
