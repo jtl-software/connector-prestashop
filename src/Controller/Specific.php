@@ -44,22 +44,25 @@ class Specific extends BaseController
             ));
             
             foreach ($specificI18ns as $specificI18n) {
-                try {
-                    $specific->addI18n(
-                        (new SpecificI18nModel)
-                            ->setSpecificId($specific->getId())
-                            ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificI18n['id_lang']))
-                            ->setName((string)$specificI18n['name'])
-                    );
-                } catch (\InvalidArgumentException $e) {
-                    $error = sprintf("
+                $languageIso = Utils::getInstance()->getLanguageIsoById($specificI18n['id_lang']);
+                if($languageIso !== false) {
+                    try {
+                        $specific->addI18n(
+                            (new SpecificI18nModel)
+                                ->setSpecificId($specific->getId())
+                                ->setLanguageISO($languageIso)
+                                ->setName((string)$specificI18n['name'])
+                        );
+                    } catch (\InvalidArgumentException $e) {
+                        $error = sprintf("
                         Error pulling Specific (ID: %s). It seems that this Specific has an entry for a language that doesn't exist anymore. Language ID: %s",
-                        $specific->getId()->getEndpoint(),
-                        $specificI18n['id_lang']
-                    );
-                    Logger::write($error,Logger::ERROR, 'global');
-    
-                    throw new \RuntimeException($error);
+                            $specific->getId()->getEndpoint(),
+                            $specificI18n['id_lang']
+                        );
+                        Logger::write($error,Logger::ERROR, 'global');
+        
+                        throw new \RuntimeException($error);
+                    }
                 }
             }
             // SpecificValues
@@ -85,20 +88,23 @@ class Specific extends BaseController
                 ));
                 
                 foreach ($specificValueI18ns as $specificValueI18n) {
-                    try {
-                        $specificValue->addI18n((new SpecificValueI18nModel)
-                            ->setLanguageISO(Utils::getInstance()->getLanguageIsoById($specificValueI18n['id_lang']))
-                            ->setSpecificValueId($specificValue->getId())
-                            ->setValue((string)$specificValueI18n['value']));
-                    } catch (\InvalidArgumentException $e) {
-                        $error = sprintf("
+                    $languageIso = Utils::getInstance()->getLanguageIsoById($specificValueI18n['id_lang']);
+                    if($languageIso !== false) {
+                        try {
+                            $specificValue->addI18n((new SpecificValueI18nModel)
+                                ->setLanguageISO($languageIso)
+                                ->setSpecificValueId($specificValue->getId())
+                                ->setValue((string)$specificValueI18n['value']));
+                        } catch (\InvalidArgumentException $e) {
+                            $error = sprintf("
                             Error pulling a SpecificValue (ID: %s). It seems that this SpecificValue has an entry for a language that doesn't exist anymore. Language ID: %s",
-                            $specific->getId()->getEndpoint(),
-                            $specificValueI18n['id_lang']
-                        );
-                        Logger::write($error,Logger::ERROR, 'global');
-                        
-                        throw new \RuntimeException($error);
+                                $specific->getId()->getEndpoint(),
+                                $specificValueI18n['id_lang']
+                            );
+                            Logger::write($error, Logger::ERROR, 'global');
+        
+                            throw new \RuntimeException($error);
+                        }
                     }
                 }
                 $specific->addValue($specificValue);
