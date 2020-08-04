@@ -10,6 +10,7 @@ class Image extends BaseMapper
         'filename' => 'filename',
         'relationType' => 'relationType',
         'remoteUrl' => 'remoteUrl',
-        'sort' => 'sort'
+        'sort' => 'sort',
+        'i18ns'=>'ImageI18n'
     ];
 }
