@@ -15,7 +15,7 @@ use PrestaShopException;
 class Product extends BaseController
 {
     private static $idCache = [];
-    
+
     public function pullData($data, $model, $limit = null)
     {
         //$limit = $limit < 25 ? $limit : 25;
@@ -24,10 +24,10 @@ class Product extends BaseController
 
         $result = $this->db->executeS(
             '
-			SELECT * FROM '._DB_PREFIX_.'product p
+			SELECT * FROM ' . _DB_PREFIX_ . 'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
             WHERE l.host_id IS NULL AND p.id_product > 0
-            LIMIT '.$limit
+            LIMIT ' . $limit
         );
 
         $count = 0;
@@ -37,7 +37,7 @@ class Product extends BaseController
 
             $return[] = $model;
             $this->pullSpecialAttributes($data, $model);
-            
+
             $count++;
         }
 
@@ -53,7 +53,7 @@ class Product extends BaseController
 
             foreach ($resultVars as $data) {
                 $model = $this->mapper->toHost($data);
-                
+
                 $return[] = $model;
             }
         }
@@ -63,7 +63,7 @@ class Product extends BaseController
         foreach ($return as $product) {
             $product->setSpecifics(ProductSpecific::getInstance()->pullData($product));
         }
-        
+
         return $return;
     }
 
@@ -72,13 +72,13 @@ class Product extends BaseController
         $masterId = $data->getMasterProductId()->getEndpoint();
 
         if (empty($masterId)) {
-            $this->db->execute('UPDATE '._DB_PREFIX_.'product SET unit_price_ratio='.$data->getBasePriceDivisor().' WHERE id_product='.$data->getId()->getEndpoint());
-            $this->db->execute('UPDATE '._DB_PREFIX_.'product_shop SET unit_price_ratio='.$data->getBasePriceDivisor().' WHERE id_product='.$data->getId()->getEndpoint());
+            $this->db->execute('UPDATE ' . _DB_PREFIX_ . 'product SET unit_price_ratio=' . $data->getBasePriceDivisor() . ' WHERE id_product=' . $data->getId()->getEndpoint());
+            $this->db->execute('UPDATE ' . _DB_PREFIX_ . 'product_shop SET unit_price_ratio=' . $data->getBasePriceDivisor() . ' WHERE id_product=' . $data->getId()->getEndpoint());
         }
 
         \Product::flushPriceCache();
     }
-    
+
     /**
      * @param \jtl\Connector\Model\Product $data
      * @return mixed
@@ -95,7 +95,7 @@ class Product extends BaseController
 
         if (empty($masterId)) {
             $product = $this->mapper->toEndpoint($data);
-            
+
             $product->save();
 
             $id = $product->id;
@@ -140,14 +140,14 @@ class Product extends BaseController
                     $minOrder
                 );
 
-                $id = $data->getMasterProductId()->getEndpoint().'_'.$combiId;
+                $id = $data->getMasterProductId()->getEndpoint() . '_' . $combiId;
             }
 
             $combi = new Combination($combiId);
 
             $valIds = [];
             $attrGrpId = null;
-            
+
             foreach ($data->getVariations() as $variation) {
                 $attrNames = [];
                 foreach ($variation->getI18ns() as $varI18n) {
@@ -160,7 +160,7 @@ class Product extends BaseController
                     }
 
                     if ($langId == Context::getContext()->language->id) {
-                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM '._DB_PREFIX_.'attribute_group_lang WHERE name="'.$varName.'"');
+                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM ' . _DB_PREFIX_ . 'attribute_group_lang WHERE name="' . $varName . '"');
                     }
                 }
 
@@ -188,9 +188,9 @@ class Product extends BaseController
                             $valId = $this->db->getValue(
                                 '
                               SELECT l.id_attribute
-                              FROM '._DB_PREFIX_.'attribute_lang l
-                              LEFT JOIN '._DB_PREFIX_.'attribute a ON a.id_attribute = l.id_attribute
-                              WHERE l.name="'.$valName.'" && a.id_attribute_group = '.$attrGrpId
+                              FROM ' . _DB_PREFIX_ . 'attribute_lang l
+                              LEFT JOIN ' . _DB_PREFIX_ . 'attribute a ON a.id_attribute = l.id_attribute
+                              WHERE l.name="' . $valName . '" && a.id_attribute_group = ' . $attrGrpId
                             );
                         }
                     }
@@ -248,7 +248,7 @@ class Product extends BaseController
 
         return $data;
     }
-    
+
     /**
      * @param \jtl\Connector\Model\Product $data
      * @return mixed
@@ -269,7 +269,7 @@ class Product extends BaseController
         }
 
         if (!$obj->delete()) {
-            throw new Exception('Error deleting product with id: '.$data->getId()->getEndpoint());
+            throw new Exception('Error deleting product with id: ' . $data->getId()->getEndpoint());
         }
 
         return $data;
@@ -279,21 +279,21 @@ class Product extends BaseController
     {
         $count = $this->db->getValue('
 			SELECT COUNT(*) 
-			FROM '._DB_PREFIX_.'product p
+			FROM ' . _DB_PREFIX_ . 'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
             WHERE l.host_id IS NULL AND p.id_product > 0
         ');
 
         $countVars = $this->db->getValue('
             SELECT COUNT(*)
-            FROM '._DB_PREFIX_.'product_attribute p
+            FROM ' . _DB_PREFIX_ . 'product_attribute p
 			LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
             WHERE l.host_id IS NULL AND p.id_product > 0
         ');
 
         return ($count + $countVars);
     }
-    
+
     /**
      * @param \jtl\Connector\Model\Product $data
      * @param \Product $product
@@ -301,6 +301,8 @@ class Product extends BaseController
      */
     private function pushSpecialAttributes($data, $product)
     {
+        /** @var \jtl\Connector\Model\Product $data */
+
         $specialAttributes = ProductAttr::getSpecialAttributes();
 
         $foundSpecialAttributes = [];
@@ -317,22 +319,30 @@ class Product extends BaseController
                 }
             }
         }
-        
+
         foreach ($foundSpecialAttributes as $key => $value) {
             if ($value === 'false' || $value === 'true') {
                 $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
             } elseif (is_numeric($value)) {
                 $value = (int)$value;
+                if ($key === 'main_category_id') {
+                    foreach ($data->getCategories() as $product2Category) {
+                        if ($product2Category->getCategoryId()->getHost() === $value) {
+                            $value = (int)$product2Category->getCategoryId()->getEndpoint();
+                            break;
+                        }
+                    }
+                }
             }
-            
+
             $product->{$specialAttributes[$key]} = $value;
         }
-        
+
         $prices = $data->getPrices();
         $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
         $product->save();
     }
-    
+
     /**
      * @param $data
      * @param \jtl\Connector\Model\Product $model

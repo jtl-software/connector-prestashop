@@ -14,7 +14,7 @@ class ProductAttr extends BaseController
     protected static $specialAttributes = [
         'online_only' => 'online_only',
         'products_status' => 'active',
-        'main_category_id' => 'main_category_id',
+        'main_category_id' => 'id_category_default',
     ];
     
     /**
