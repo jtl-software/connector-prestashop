@@ -14,6 +14,7 @@ class ProductAttr extends BaseController
     protected static $specialAttributes = [
         'online_only' => 'online_only',
         'products_status' => 'active',
+        'main_category_id' => 'main_category_id',
     ];
     
     /**
@@ -47,6 +48,36 @@ class ProductAttr extends BaseController
         
         return $return;
     }
+
+    /**
+     * @param array $jtlAttributes
+     * @param \Product $product
+     * @throws PrestaShopException
+     */
+    protected function setDefaultProductCategory(array $jtlAttributes, \Product $product)
+    {
+        $languageId = Context::getContext()->language->id;
+
+        $defaultCategoryId = false;
+        foreach ($jtlAttributes as $attribute) {
+            foreach ($attribute->getI18ns() as $attrI18n) {
+                $attrLanguageId = Utils::getInstance()->getLanguageIdByIso($attrI18n->getLanguageISO());
+                if ($attrI18n->getName() === 'main_category_id' && (int) $attrLanguageId === $languageId) {
+                    $categoryHostId = (int)$attrI18n->getValue();
+                    $defaultCategoryId = $this->db->getValue(
+                        sprintf('SELECT endpoint_id FROM jtl_connector_link_category WHERE host_id = %s',
+                            $categoryHostId)
+                    );
+                    break;
+                }
+            }
+        }
+
+        if ($defaultCategoryId !== false) {
+            $product->id_category_default = $defaultCategoryId;
+            $product->save();
+        }
+    }
     
     /**
      * @param \jtl\Connector\Model\Product $data
@@ -57,6 +88,8 @@ class ProductAttr extends BaseController
     public function pushData($data, $model)
     {
         $this->removeCurrentAttributes($model);
+        $this->setDefaultProductCategory($data->getAttributes(), $model);
+
         foreach ($data->getAttributes() as $attr) {
             $isIgnoredAttribute = false;
             if ($attr->getIsCustomProperty() === false || Configuration::get('jtlconnector_custom_fields')) {
