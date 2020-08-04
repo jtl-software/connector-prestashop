@@ -1,0 +1,23 @@
+<?php
+$finder = PhpCsFixer\Finder::create()
+    ->exclude(__DIR__ . '/vendor')
+    ->in([
+        __DIR__ . '/src',
+        __DIR__ . '/install',
+        __DIR__ . '/upgrade',
+        __DIR__ . '/translations',
+        __DIR__ . '/controllers'
+    ])
+    ->name('*.php')
+;
+
+return PhpCsFixer\Config::create()
+    ->setRiskyAllowed(false)
+    ->setLineEnding("\n")
+    ->setUsingCache(false)
+    ->setRules([
+        '@PSR2' => true,
+        'array_syntax' => ['syntax' => 'short'],
+        'blank_line_after_opening_tag' => true
+    ])
+    ->setFinder($finder);

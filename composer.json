@@ -1,38 +1,42 @@
 {
-    "name": "jtl/connector-prestashop",
-    "type": "app",
-    "description": "PrestaShop Connector",
-    "keywords": ["jtl", "Connector"],
-    "homepage": "http://www.jtl-software.de",
-    "license": "LGPL-3.0-or-later",
-    "authors": [
-        {
-            "name": "JTL Software GmbH",
-            "email": "info@jtl-software.de",
-            "homepage": "http://www.jtl-software.de",
-            "role": "Founder"
-        }
-    ],
-    "minimum-stability": "dev",
-    "config": {
-        "vendor-dir": "vendor",
-        "platform": {
-            "php": "5.6.4"
-        }
-    },
-    "require": {
-        "php": ">=5.6.4",
-        "jtl/connector": "^2.4.0",
-        "symfony/yaml": "^3.4",
-      "ext-json": "*"
-    },
-    "autoload": {
-        "psr-4": {
-            "jtl\\Connector\\Presta\\": "src/",
-            "Tests\\": "tests/"
-        }
-    },
-    "require-dev": {
-        "jtl/connector-integration-tests": "dev-develop"
+  "name": "jtl/connector-prestashop",
+  "type": "app",
+  "description": "PrestaShop Connector",
+  "keywords": [
+    "jtl",
+    "Connector"
+  ],
+  "homepage": "http://www.jtl-software.de",
+  "license": "LGPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "JTL Software GmbH",
+      "email": "info@jtl-software.de",
+      "homepage": "http://www.jtl-software.de",
+      "role": "Founder"
     }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "config": {
+    "vendor-dir": "vendor",
+    "platform": {
+      "php": "5.6.4"
+    }
+  },
+  "require": {
+    "php": ">=5.6.4",
+    "jtl/connector": "^2.4.0",
+    "symfony/yaml": "^3.4",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "jtl\\Connector\\Presta\\": "src/",
+      "Tests\\": "tests/"
+    }
+  },
+  "require-dev": {
+    "jtl/connector-integration-tests": "dev-develop"
+  }
 }
