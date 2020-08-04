@@ -326,11 +326,17 @@ class Product extends BaseController
             } elseif (is_numeric($value)) {
                 $value = (int)$value;
                 if ($key === 'main_category_id') {
+                    $found = false;
                     foreach ($data->getCategories() as $product2Category) {
                         if ($product2Category->getCategoryId()->getHost() === $value) {
                             $value = (int)$product2Category->getCategoryId()->getEndpoint();
+                            $found = true;
                             break;
                         }
+                    }
+
+                    if(!$found) {
+                        continue;
                     }
                 }
             }
