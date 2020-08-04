@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\Identity;
@@ -21,7 +22,7 @@ class ProductSpecialPrice extends BaseController
      */
     public function pullData($data, $model, $limit = null)
     {
-        $return = array();
+        $return = [];
 
         $productTaxRate = Utils::getInstance()->getProductTaxRate($data['id_product']);
 
@@ -38,7 +39,7 @@ class ProductSpecialPrice extends BaseController
 			    AND p.from != "0000-00-00 00:00:00"                
         ');
 
-        $varResult = array();
+        $varResult = [];
 
         if (isset($data['id_product_attribute'])) {
             $varResult = $this->db->executeS('
@@ -109,7 +110,6 @@ class ProductSpecialPrice extends BaseController
                 ');
 
                 foreach ($data->getSpecialPrices() as $specialPrice) {
-
                     if ($specialPrice->getConsiderStockLimit() === true) {
                         continue;
                     }
@@ -157,24 +157,19 @@ class ProductSpecialPrice extends BaseController
     private function calculateNetPrice($data, $taxRate)
     {
         if ($data['price'] === '-1.000000') {
-
             $priceNet = $data['pPrice'];
             if ($data['reduction_type'] === 'amount') {
-
                 $reduction = $data['reduction'];
                 if ((int)$data['reduction_tax'] === 1) {
                     $reduction = $data['reduction'] / ($taxRate / 100 + 1);
                 }
 
                 return (float)round($priceNet - $reduction, 6);
-
             } elseif ($data['reduction_type'] === 'percentage') {
-
                 $percentage = $data['reduction'] * 100;
                 $reduction = $priceNet * $percentage / 100;
 
                 return (float)round($priceNet - $reduction, 6);
-
             }
         }
         return floatval($data['price']);

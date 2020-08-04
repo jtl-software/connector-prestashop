@@ -1,10 +1,11 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 class CategoryInvisibility extends BaseMapper
 {
-    protected $pull = array(
+    protected $pull = [
         'categoryId' => 'id_category',
         'customerGroupId' => 'id_group'
-    );
+    ];
 }

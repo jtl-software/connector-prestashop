@@ -7,12 +7,12 @@ use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Model\Product as ProductModel;
 use jtl\Connector\Model\ProductSpecific as ProductSpecificModel;
 
-
 class ProductSpecific extends BaseController
 {
     public function pullData(ProductModel $product)
     {
-        $specifics = $this->db->executeS(sprintf('
+        $specifics = $this->db->executeS(sprintf(
+            '
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
@@ -54,12 +54,14 @@ class ProductSpecific extends BaseController
     protected function createLinking(ProductSpecificModel $productSpecific, \Product $product)
     {
         if ($productSpecific->getId()->getEndpoint() && $productSpecific->getSpecificValueId()->getEndpoint()) {
-            return $this->db->insert('feature_product',
+            return $this->db->insert(
+                'feature_product',
                 [
                     'id_feature'       => $productSpecific->getId()->getEndpoint(),
                     'id_product'       => $product->id,
                     'id_feature_value' => $productSpecific->getSpecificValueId()->getEndpoint(),
-                ]);
+                ]
+            );
         }
         
         return false;
@@ -67,7 +69,8 @@ class ProductSpecific extends BaseController
     
     protected function linkingExists(ProductSpecificModel $productSpecific)
     {
-        return (int)$this->db->getValue(sprintf('
+        return (int)$this->db->getValue(sprintf(
+            '
             SELECT COUNT(*)
             FROM %sfeature_product
             WHERE id_feature = "%s" AND id_product = "%s" AND id_feature_value = "%s"',
@@ -80,7 +83,9 @@ class ProductSpecific extends BaseController
     
     protected function unlinkOldSpecificValues(ProductModel $product, $existingSpecificValues = [])
     {
-        $specificValuesToRemove = $this->db->executeS(sprintf('
+        $specificValuesToRemove = $this->db->executeS(
+            sprintf(
+            '
             SELECT id_feature_value, id_product
             FROM %sfeature_product
             WHERE id_product = "%s" AND id_feature_value NOT IN (%s) AND id_feature_value NOT IN (
@@ -88,21 +93,24 @@ class ProductSpecific extends BaseController
                 FROM %sfeature_value
                 WHERE custom = 1
             )',
-                _DB_PREFIX_,
-                $product->getId()->getEndpoint(),
-                implode(',', array_merge($existingSpecificValues, [0])),
-                _DB_PREFIX_
-            )
+            _DB_PREFIX_,
+            $product->getId()->getEndpoint(),
+            implode(',', array_merge($existingSpecificValues, [0])),
+            _DB_PREFIX_
+        )
         );
         
         if (is_array($specificValuesToRemove)) {
             foreach ($specificValuesToRemove as $value) {
-                $this->db->Execute(sprintf('
+                $this->db->Execute(
+                    sprintf(
+                    '
                     DELETE FROM `%sfeature_product`
                     WHERE `id_feature_value` = "%s" AND `id_product` = "%s"',
-                        _DB_PREFIX_,
-                        $value['id_feature_value'],
-                        $value['id_product'])
+                    _DB_PREFIX_,
+                    $value['id_feature_value'],
+                    $value['id_product']
+                )
                 );
             }
         }

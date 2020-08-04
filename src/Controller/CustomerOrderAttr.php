@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\CustomerOrderAttr as CustomerOrderAttrModel;
@@ -8,7 +9,7 @@ class CustomerOrderAttr extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $return = array();
+        $return = [];
 
         if ($data['gift'] == 1) {
             $isGift = new CustomerOrderAttrModel();

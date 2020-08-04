@@ -1,11 +1,12 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Presta\Utils\Utils;
 
 class CustomerOrder extends BaseMapper
 {
-    protected $pull = array(
+    protected $pull = [
         'id' => 'id_order',
         'customerId' => 'id_customer',
         'billingAddress' => 'CustomerOrderBillingAddress',
@@ -23,7 +24,7 @@ class CustomerOrder extends BaseMapper
         'totalSumGross' => 'total_paid_tax_incl',
         'items' => 'CustomerOrderItem',
         'attributes' => 'CustomerOrderAttr'
-    );
+    ];
 
     protected function languageISO($data)
     {

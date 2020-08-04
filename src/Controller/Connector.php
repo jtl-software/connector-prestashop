@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\ConnectorServerInfo;
@@ -18,7 +19,7 @@ class Connector extends Controller
 
         $return = [];
 
-        $mainControllers = array(
+        $mainControllers = [
             'Category',
             'Customer',
             'CustomerOrder',
@@ -26,7 +27,7 @@ class Connector extends Controller
             'Product',
             'Manufacturer',
             'Payment'
-        );
+        ];
 
         foreach ($mainControllers as $controller) {
             $class = "\\jtl\\Connector\\Presta\\Controller\\{$controller}";
@@ -60,7 +61,7 @@ class Connector extends Controller
         $action = new Action();
         $action->setHandled(true);
 
-        $returnMegaBytes = function($value) {
+        $returnMegaBytes = function ($value) {
             $value = trim($value);
             $unit = strtolower($value[strlen($value) - 1]);
             switch ($unit) {
@@ -78,9 +79,9 @@ class Connector extends Controller
             ->setUploadMaxFilesize($returnMegaBytes(ini_get('upload_max_filesize')));
 
         $connector = new ConnectorIdentification();
-        try{
+        try {
             $version = \Symfony\Component\Yaml\Yaml::parseFile(CONNECTOR_DIR . '/build-config.yaml')['version'];
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             $version = 'Unknown';
         }
         

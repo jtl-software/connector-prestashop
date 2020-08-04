@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 use \jtl\Connector\Model\Identity;
@@ -6,31 +7,31 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class Product extends BaseMapper
 {
-	protected $endpointModel = '\Product';
+    protected $endpointModel = '\Product';
     protected $identity = 'id|id_product';
 
-	protected $pull = array(
-		'id' => null,
-		'manufacturerId' => 'id_manufacturer',
-		'masterProductId' => null,
-		'creationDate' => 'date_add',
-		'ean' => 'ean13',
+    protected $pull = [
+        'id' => null,
+        'manufacturerId' => 'id_manufacturer',
+        'masterProductId' => null,
+        'creationDate' => 'date_add',
+        'ean' => 'ean13',
         'isbn' => 'isbn',
-		'height' => 'height',
-		'isMasterProduct' => null,
-		'length' => 'depth',
-		'modified' => 'date_upd',
-		'shippingWeight' => 'weight',
-		'sku' => 'reference',
-		'upc' => 'upc',
-		'stockLevel' => 'ProductStockLevel',
-		'specialPrices'=>'ProductSpecialPrice',
-		'vat' => null,
-		'width' => 'width',
-		'attributes' => 'ProductAttr',
-		'categories' => 'Product2Category',
-		'prices' => 'ProductPrice',
-		'variations' => 'ProductVariation',
+        'height' => 'height',
+        'isMasterProduct' => null,
+        'length' => 'depth',
+        'modified' => 'date_upd',
+        'shippingWeight' => 'weight',
+        'sku' => 'reference',
+        'upc' => 'upc',
+        'stockLevel' => 'ProductStockLevel',
+        'specialPrices'=>'ProductSpecialPrice',
+        'vat' => null,
+        'width' => 'width',
+        'attributes' => 'ProductAttr',
+        'categories' => 'Product2Category',
+        'prices' => 'ProductPrice',
+        'variations' => 'ProductVariation',
         'i18ns' => 'ProductI18n',
         'availableFrom' => 'available_date',
         'basePriceUnitName' => 'unity',
@@ -40,9 +41,9 @@ class Product extends BaseMapper
         'isTopProduct' => 'on_sale',
         'purchasePrice' => 'wholesale_price',
         'minimumOrderQuantity' => 'minimal_quantity'
-	);
+    ];
 
-	protected $push = array(
+    protected $push = [
         'id_product' => 'id',
         'id_manufacturer' => 'manufacturerId',
         'id_category_default' => null,
@@ -65,13 +66,13 @@ class Product extends BaseMapper
         'minimal_quantity' => null,
         'ProductI18n' => 'i18ns',
         'wholesale_price' => null
-    );
+    ];
 
-	protected function wholesale_price($data)
+    protected function wholesale_price($data)
     {
         return round($data->getPurchasePrice(), 4);
     }
-	
+    
     protected function out_of_stock($data)
     {
         if ($data->getConsiderStock() === false || $data->getPermitNegativeStock() === true) {

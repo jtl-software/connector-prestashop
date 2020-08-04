@@ -1,11 +1,13 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 class Manufacturer extends BaseController
-{	
-	public function pullData($data, $model, $limit = null)
-	{
-		$result = $this->db->executeS('
+{
+    public function pullData($data, $model, $limit = null)
+    {
+        $result = $this->db->executeS(
+            '
 			SELECT m.*
 			FROM '._DB_PREFIX_.'manufacturer m
 			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
@@ -13,16 +15,16 @@ class Manufacturer extends BaseController
             LIMIT '.$limit
         );
 
-		$return = array();
+        $return = [];
 
-		foreach ($result as $data) {
-			$model = $this->mapper->toHost($data);
-			
-			$return[] = $model;
-		}
+        foreach ($result as $data) {
+            $model = $this->mapper->toHost($data);
+            
+            $return[] = $model;
+        }
 
-		return $return;
-	}
+        return $return;
+    }
 
     public function pushData($data)
     {
@@ -50,13 +52,13 @@ class Manufacturer extends BaseController
         return $data;
     }
 
-	public function getStats()
-	{
-		return $this->db->getValue('
+    public function getStats()
+    {
+        return $this->db->getValue('
 			SELECT COUNT(*) 
 			FROM '._DB_PREFIX_.'manufacturer m
 			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
             WHERE l.host_id IS NULL
         ');
-	}
+    }
 }

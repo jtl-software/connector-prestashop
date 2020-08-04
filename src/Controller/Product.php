@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use Attribute;
@@ -13,56 +14,58 @@ use PrestaShopException;
 
 class Product extends BaseController
 {
-    private static $idCache = array();
+    private static $idCache = [];
     
     public function pullData($data, $model, $limit = null)
-	{
-		//$limit = $limit < 25 ? $limit : 25;
+    {
+        //$limit = $limit < 25 ? $limit : 25;
 
-		$return = array();
+        $return = [];
 
-        $result = $this->db->executeS('
+        $result = $this->db->executeS(
+            '
 			SELECT * FROM '._DB_PREFIX_.'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
             WHERE l.host_id IS NULL AND p.id_product > 0
             LIMIT '.$limit
         );
 
-		$count = 0;
+        $count = 0;
 
         foreach ($result as $data) {
-			$model = $this->mapper->toHost($data);
+            $model = $this->mapper->toHost($data);
 
-			$return[] = $model;
+            $return[] = $model;
             $this->pullSpecialAttributes($data, $model);
-			
-			$count++;
-		}
+            
+            $count++;
+        }
 
-		if ($count < $limit) {
-			$resultVars = $this->db->executeS('
+        if ($count < $limit) {
+            $resultVars = $this->db->executeS(
+                '
                 SELECT p.*, pr.price AS pPrice FROM ' . _DB_PREFIX_ . 'product_attribute p
                 LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
                 LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
                 WHERE l.host_id IS NULL AND p.id_product > 0
                 LIMIT ' . ($limit - $count)
-			);
+            );
 
-			foreach ($resultVars as $data) {
-				$model = $this->mapper->toHost($data);
-				
-				$return[] = $model;
-			}
-		}
+            foreach ($resultVars as $data) {
+                $model = $this->mapper->toHost($data);
+                
+                $return[] = $model;
+            }
+        }
 
-		//Adding Specifics to products
+        //Adding Specifics to products
         /** @var \jtl\Connector\Model\Product $product */
         foreach ($return as $product) {
-		    $product->setSpecifics(ProductSpecific::getInstance()->pullData($product));
+            $product->setSpecifics(ProductSpecific::getInstance()->pullData($product));
         }
-		
-		return $return;
-	}
+        
+        return $return;
+    }
 
     public function postPush($data)
     {
@@ -83,7 +86,7 @@ class Product extends BaseController
      * @throws PrestaShopException
      */
     public function pushData($data)
-	{
+    {
         if (isset(static::$idCache[$data->getMasterProductId()->getHost()])) {
             $data->getMasterProductId()->setEndpoint(static::$idCache[$data->getMasterProductId()->getHost()]);
         }
@@ -91,7 +94,6 @@ class Product extends BaseController
         $masterId = $data->getMasterProductId()->getEndpoint();
 
         if (empty($masterId)) {
-            
             $product = $this->mapper->toEndpoint($data);
             
             $product->save();
@@ -105,7 +107,7 @@ class Product extends BaseController
             $minOrder = ceil($data->getMinimumOrderQuantity());
             $minOrder = $minOrder < 1 ? 1 : $minOrder;
 
-            if(!empty($combiId)) {
+            if (!empty($combiId)) {
                 $product->updateAttribute(
                     $combiId,
                     null,
@@ -143,11 +145,11 @@ class Product extends BaseController
 
             $combi = new Combination($combiId);
 
-            $valIds = array();
+            $valIds = [];
             $attrGrpId = null;
             
             foreach ($data->getVariations() as $variation) {
-                $attrNames = array();
+                $attrNames = [];
                 foreach ($variation->getI18ns() as $varI18n) {
                     $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
 
@@ -172,7 +174,7 @@ class Product extends BaseController
                 $attrGrpId = $attrGrp->id;
 
                 foreach ($variation->getValues() as $value) {
-                    $valNames = array();
+                    $valNames = [];
                     foreach ($value->getI18ns() as $valI18n) {
                         $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
 
@@ -183,7 +185,8 @@ class Product extends BaseController
                         }
 
                         if ($langId == Context::getContext()->language->id) {
-                            $valId = $this->db->getValue('
+                            $valId = $this->db->getValue(
+                                '
                               SELECT l.id_attribute
                               FROM '._DB_PREFIX_.'attribute_lang l
                               LEFT JOIN '._DB_PREFIX_.'attribute a ON a.id_attribute = l.id_attribute
@@ -212,9 +215,9 @@ class Product extends BaseController
             $product->checkDefaultAttributes();
         }
 
-		$data->getId()->setEndpoint($id);
+        $data->getId()->setEndpoint($id);
 
-        if($id) {
+        if ($id) {
             $data->getStockLevel()->getProductId()->setEndpoint($id);
             $stock = new ProductStockLevel();
             $stock->pushData($data->getStockLevel(), $product);
@@ -243,8 +246,8 @@ class Product extends BaseController
 
         static::$idCache[$data->getId()->getHost()] = $id;
 
-		return $data;
-	}
+        return $data;
+    }
     
     /**
      * @param \jtl\Connector\Model\Product $data
@@ -272,9 +275,9 @@ class Product extends BaseController
         return $data;
     }
 
-	public function getStats()
-	{
-		$count = $this->db->getValue('
+    public function getStats()
+    {
+        $count = $this->db->getValue('
 			SELECT COUNT(*) 
 			FROM '._DB_PREFIX_.'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
@@ -289,7 +292,7 @@ class Product extends BaseController
         ');
 
         return ($count + $countVars);
-	}
+    }
     
     /**
      * @param \jtl\Connector\Model\Product $data
@@ -304,7 +307,7 @@ class Product extends BaseController
         foreach ($data->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
                 $name = array_search($i18n->getName(), $specialAttributes);
-                if($name === false) {
+                if ($name === false) {
                     $name = $i18n->getName();
                 }
 
@@ -317,7 +320,7 @@ class Product extends BaseController
         
         foreach ($foundSpecialAttributes as $key => $value) {
             if ($value === 'false' || $value === 'true') {
-                $value = filter_var($value,FILTER_VALIDATE_BOOLEAN);
+                $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
             } elseif (is_numeric($value)) {
                 $value = (int)$value;
             }
@@ -334,7 +337,8 @@ class Product extends BaseController
      * @param $data
      * @param \jtl\Connector\Model\Product $model
      */
-    private function pullSpecialAttributes($data, $model) {
+    private function pullSpecialAttributes($data, $model)
+    {
         foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
             $attribute = new \jtl\Connector\Model\ProductAttr();
             $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();

@@ -1,32 +1,33 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use \jtl\Connector\Model\ManufacturerI18n as ManufacturerI18nModel;
 use jtl\Connector\Presta\Utils\Utils;
 
 class ManufacturerI18n extends BaseController
-{	
-	public function pullData($data, $model)
-	{
-		$manufacturer = new \Manufacturer($data['id_manufacturer']);
+{
+    public function pullData($data, $model)
+    {
+        $manufacturer = new \Manufacturer($data['id_manufacturer']);
 
-		$i18ns = array();
+        $i18ns = [];
 
-		foreach (Utils::getInstance()->getLanguages() as $language) {
-			$i18n = new ManufacturerI18nModel();
+        foreach (Utils::getInstance()->getLanguages() as $language) {
+            $i18n = new ManufacturerI18nModel();
 
-			$i18n->setLanguageISO($language['iso3']);
-			$i18n->setManufacturerId($model->getId());
-			$i18n->setDescription($manufacturer->description[$language['id_lang']]);
-			$i18n->setMetaDescription($manufacturer->meta_description[$language['id_lang']]);
-			$i18n->setMetaKeywords($manufacturer->meta_keywords[$language['id_lang']]);
-			$i18n->setTitleTag($manufacturer->meta_title[$language['id_lang']]);
+            $i18n->setLanguageISO($language['iso3']);
+            $i18n->setManufacturerId($model->getId());
+            $i18n->setDescription($manufacturer->description[$language['id_lang']]);
+            $i18n->setMetaDescription($manufacturer->meta_description[$language['id_lang']]);
+            $i18n->setMetaKeywords($manufacturer->meta_keywords[$language['id_lang']]);
+            $i18n->setTitleTag($manufacturer->meta_title[$language['id_lang']]);
 
-			$i18ns[] = $i18n;
-		}
+            $i18ns[] = $i18n;
+        }
 
-		return $i18ns;
-	}
+        return $i18ns;
+    }
 
     public function pushData($data, $model)
     {

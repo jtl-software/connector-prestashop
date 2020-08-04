@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Presta\Utils\Utils;
@@ -7,10 +8,10 @@ class ProductI18n extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $varNames = array();
+        $varNames = [];
 
         if ($model->getIsMasterProduct() !== true && count($model->getVariations()) > 0) {
-            foreach($model->getVariations() as $variation) {
+            foreach ($model->getVariations() as $variation) {
                 foreach ($variation->getValues() as $value) {
                     foreach ($value->getI18ns() as $i18n) {
                         $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
@@ -23,13 +24,14 @@ class ProductI18n extends BaseController
             }
         }
 
-        $result = $this->db->executeS('
+        $result = $this->db->executeS(
+            '
 			SELECT p.*
 			FROM '._DB_PREFIX_.'product_lang p
 			WHERE p.id_product = '.$data['id_product']
         );
 
-        $return = array();
+        $return = [];
 
         foreach ($result as $data) {
             if (isset($varNames[$data['id_lang']])) {

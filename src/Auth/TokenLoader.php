@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Auth;
 
 use \jtl\Connector\Authentication\ITokenLoader;
