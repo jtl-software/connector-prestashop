@@ -19,7 +19,6 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "config": {
-    "vendor-dir": "vendor",
     "platform": {
       "php": "5.6.4"
     }
@@ -37,6 +36,7 @@
     }
   },
   "require-dev": {
-    "jtl/connector-integration-tests": "dev-develop"
+    "jtl/connector-integration-tests": "dev-develop",
+    "friendsofphp/php-cs-fixer": "^2.16"
   }
 }
