@@ -27,7 +27,8 @@
     "php": ">=5.6.4",
     "jtl/connector": "^2.4.0",
     "symfony/yaml": "^3.4",
-    "ext-json": "*"
+    "ext-json": "*",
+    "phing/phing": "^2.16"
   },
   "autoload": {
     "psr-4": {

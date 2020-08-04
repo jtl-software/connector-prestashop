@@ -2,6 +2,7 @@
 ------
 - CO-854 - Added main category support by product attribute "main_category_id" (Category id from JTL-Wawi [kKategorie] has to be set)
 - CO-974 - Added fix that payments can be pulled only when related order was pulled first into JTL-Wawi
+- CO-1042 - Added importing product image titles as alt text
 - CO-1044 - Fixed problem with translations from deactivated shop languages
 
 1.6.3.1
