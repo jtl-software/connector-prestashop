@@ -87,6 +87,8 @@ class Product extends BaseController
      */
     public function pushData($data)
     {
+        /** \Product $product */
+
         if (isset(static::$idCache[$data->getMasterProductId()->getHost()])) {
             $data->getMasterProductId()->setEndpoint(static::$idCache[$data->getMasterProductId()->getHost()]);
         }
@@ -328,14 +330,15 @@ class Product extends BaseController
                 if ($key === 'main_category_id') {
                     $found = false;
                     foreach ($data->getCategories() as $product2Category) {
-                        if ($product2Category->getCategoryId()->getHost() === $value) {
+                        if ($product2Category->getCategoryId()->getHost() === $value
+                            && $product2Category->getCategoryId()->getEndpoint() !== '') {
                             $value = (int)$product2Category->getCategoryId()->getEndpoint();
                             $found = true;
                             break;
                         }
                     }
 
-                    if(!$found) {
+                    if (!$found) {
                         continue;
                     }
                 }
