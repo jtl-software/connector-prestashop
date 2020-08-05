@@ -359,16 +359,35 @@ class Product extends BaseController
     private function pullSpecialAttributes($data, $model)
     {
         foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
-            $attribute = new \jtl\Connector\Model\ProductAttr();
-            $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
-            $attribute->setId(new Identity($prestaName));
-            $attribute->setProductId($model->getId());
-            $attributeI18n->setProductAttrId($attribute->getId());
-            $attributeI18n->setLanguageISO(Utils::getInstance()->getLanguageIsoById((string)Context::getContext()->language->id));
-            $attributeI18n->setName($wawiName);
-            $attributeI18n->setValue($data[$prestaName]);
-            $attribute->setI18ns([$attributeI18n]);
-            $model->addAttribute($attribute);
+            if(isset($data[$prestaName])) {
+                $attribute = new \jtl\Connector\Model\ProductAttr();
+                $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
+                $attribute->setId(new Identity($prestaName));
+                $attribute->setProductId($model->getId());
+                $attributeI18n->setProductAttrId($attribute->getId());
+                $attributeI18n->setLanguageISO(Utils::getInstance()->getLanguageIsoById((string)Context::getContext()->language->id));
+                $attributeI18n->setName($wawiName);
+
+                $value = $data[$prestaName];
+                if($wawiName === 'main_category_id') {
+                    $value = $this->findCategoryHostIdByEndpoint($data[$prestaName]);
+                }
+
+                if($value !== '') {
+                    $attributeI18n->setValue($value);
+                    $attribute->setI18ns([$attributeI18n]);
+                    $model->addAttribute($attribute);
+                }
+            }
         }
+    }
+
+    /**
+     * @param string $prestaCategoryId
+     * @return string
+     */
+    protected function findCategoryHostIdByEndpoint($prestaCategoryId)
+    {
+        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', (int)$prestaCategoryId));
     }
 }
