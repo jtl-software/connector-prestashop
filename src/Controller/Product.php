@@ -370,7 +370,7 @@ class Product extends BaseController
 
                 $value = $data[$prestaName];
                 if($wawiName === 'main_category_id') {
-                    $value = $this->findCategoryHostIdByEndpoint($data[$prestaName]);
+                    $value = (string)$this->findCategoryHostIdByEndpoint($data[$prestaName]);
                 }
 
                 if($value !== '') {

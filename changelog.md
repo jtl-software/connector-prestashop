@@ -1,3 +1,7 @@
+1.7.1
+------
+- Fixed problem with not existing main category id during product import in JTL-Wawi
+
 1.7.0
 ------
 - CO-854 - Added main category support by product attribute "main_category_id" (Category id from JTL-Wawi [kKategorie] has to be set)
