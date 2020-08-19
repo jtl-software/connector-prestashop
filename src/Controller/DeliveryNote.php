@@ -9,14 +9,13 @@ class DeliveryNote extends BaseController
         $orderId = $data->getCustomerOrderId()->getEndpoint();
 
         if (!empty($orderId)) {
-            foreach ($data->getTrackingLists() as $list) {
-                foreach (\Carrier::getCarriers(null, true) as $carrier) {
-                    if ($list->getName() == $carrier['name']) {
-                        $this->db->execute('UPDATE '._DB_PREFIX_.'order_carrier SET tracking_number="'.implode(', ', $list->getCodes()).'" WHERE id_order='.$orderId);
-                        break;
-                    }
-                }
-            }
+            $trackingIds = implode(', ', $data->getTrackingLists()[0]->getCodes());
+            
+            $this->db->execute(sprintf('UPDATE %sorder_carrier SET tracking_number=%s WHERE id_order=%s',
+                _DB_PREFIX_,
+                $trackingIds,
+                $orderId
+            ));
         }
 
         return $data;
