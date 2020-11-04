@@ -9,6 +9,7 @@ use Context;
 use Exception;
 use jtl\Connector\Model\Identity;
 use jtl\Connector\Presta\Utils\Utils;
+use jtl\Connector\Model\ProductVariation;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
@@ -167,10 +168,16 @@ class Product extends BaseController
                 }
 
                 if($attrGrpId === null) {
+                    $allowedGroupTypes = [
+                        ProductVariation::TYPE_RADIO,
+                        ProductVariation::TYPE_SELECT
+                    ];
+                    $groupType = in_array($variation->getType(), $allowedGroupTypes) ? $variation->getType() : ProductVariation::TYPE_SELECT;
+
                     $attrGrp = new AttributeGroup($attrGrpId);
                     $attrGrp->name = $attrNames;
                     $attrGrp->public_name = $attrNames;
-                    $attrGrp->group_type = 'select';
+                    $attrGrp->group_type = $groupType;
                     $attrGrp->save();
                     $attrGrpId = $attrGrp->id;
                 }
