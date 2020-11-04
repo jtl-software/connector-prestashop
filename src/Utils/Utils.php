@@ -105,4 +105,43 @@ class Utils
         }
         return $groupPrices;
     }
+
+    /**
+     * @param $html
+     * @return string|string[]|null
+     */
+    public static function cleanHtml($html)
+    {
+        $events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
+        $events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend';
+        $events .= '|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove';
+        $events .= '|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel';
+        $events .= '|ondragleave|ondragover|ondragstart|ondrop|onerrorupdate|onfilterchange|onfinish|onfocusin|onfocusout|onhashchange|onhelp|oninput|onlosecapture|onmessage|onmouseup|onmovestart';
+        $events .= '|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange';
+        $events .= '|onselectstart|onstart|onstop';
+
+        $html = preg_replace('/<[\s]*script/ims', '', $html);
+        $html = preg_replace('/('.$events.')[\s]*=/ims', '', $html);
+        $html = preg_replace('/.*script\:/ims', '', $html);
+
+        if ((bool)\Configuration::get('PS_USE_HTMLPURIFIER') === false) {
+            return $html;
+        }
+
+        $iframeCondition = [
+            'i?frame',
+            'form',
+            'input',
+            'embed',
+            'object'
+        ];
+
+        if ((bool)\Configuration::get('PS_ALLOW_HTML_IFRAME') === true) {
+            array_shift($iframeCondition);
+        }
+
+        $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|',$iframeCondition)), '', $html);
+
+        return $html;
+    }
 }
