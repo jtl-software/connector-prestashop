@@ -148,9 +148,9 @@ class Product extends BaseController
             $combi = new Combination($combiId);
 
             $valIds = [];
-            $attrGrpId = null;
 
             foreach ($data->getVariations() as $variation) {
+                $attrGrpId = null;
                 $attrNames = [];
                 foreach ($variation->getI18ns() as $varI18n) {
                     $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
@@ -166,14 +166,14 @@ class Product extends BaseController
                     }
                 }
 
-                $attrGrp = new AttributeGroup($attrGrpId);
-                $attrGrp->name = $attrNames;
-                $attrGrp->public_name = $attrNames;
-                $attrGrp->group_type = 'select';
-
-                $attrGrp->save();
-
-                $attrGrpId = $attrGrp->id;
+                if($attrGrpId === null) {
+                    $attrGrp = new AttributeGroup($attrGrpId);
+                    $attrGrp->name = $attrNames;
+                    $attrGrp->public_name = $attrNames;
+                    $attrGrp->group_type = 'select';
+                    $attrGrp->save();
+                    $attrGrpId = $attrGrp->id;
+                }
 
                 foreach ($variation->getValues() as $value) {
                     $valNames = [];
