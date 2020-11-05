@@ -79,9 +79,4 @@ class ProductI18n extends BaseController
             }
         }
     }
-
-    private function cleanHtml($html)
-    {
-
-    }
 }

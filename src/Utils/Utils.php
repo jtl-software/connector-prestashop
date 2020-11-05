@@ -128,19 +128,18 @@ class Utils
             return $html;
         }
 
-        $iframeCondition = [
-            'i?frame',
+        $removeTags = [
             'form',
             'input',
             'embed',
             'object'
         ];
 
-        if ((bool)\Configuration::get('PS_ALLOW_HTML_IFRAME') === true) {
-            array_shift($iframeCondition);
+        if ((bool)\Configuration::get('PS_ALLOW_HTML_IFRAME') !== true) {
+            $removeTags[] = 'i?frame';
         }
 
-        $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|',$iframeCondition)), '', $html);
+        $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|',$removeTags)), '', $html);
 
         return $html;
     }
