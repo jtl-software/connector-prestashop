@@ -244,6 +244,18 @@ class Product extends BaseController
                 ProductSpecific::getInstance()->pushData($data, $product);
                 $this->pushSpecialAttributes($data, $product);
             }
+
+            if(empty($masterId)){
+                if ($data->getConsiderBasePrice()) {
+                    $basePriceQuantity = $data->getBasePriceQuantity() > 1 ? sprintf('%s/', $data->getBasePriceQuantity()) : '';
+                    $unit = sprintf('%s%s', $basePriceQuantity, $data->getBasePriceUnitCode());
+                } else {
+                    $unit = '';
+                }
+
+                $product->unity = $unit;
+            }
+            $product->save();
         }
 
         static::$idCache[$data->getId()->getHost()] = $id;
