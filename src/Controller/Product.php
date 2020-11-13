@@ -246,11 +246,10 @@ class Product extends BaseController
             }
 
             if(empty($masterId)){
+                $unit = '';
                 if ($data->getConsiderBasePrice()) {
-                    $basePriceQuantity = $data->getBasePriceQuantity() > 1 ? sprintf('%s/', $data->getBasePriceQuantity()) : '';
+                    $basePriceQuantity = $data->getBasePriceQuantity() > 1 ? sprintf('%s', $data->getBasePriceQuantity()) : '';
                     $unit = sprintf('%s%s', $basePriceQuantity, $data->getBasePriceUnitCode());
-                } else {
-                    $unit = '';
                 }
 
                 $product->unity = $unit;
