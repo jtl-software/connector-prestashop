@@ -1,3 +1,8 @@
+1.7.2
+-----
+- CO-1163 Fixed cover image not set
+- CO-621 Fixed setting shipment tracking id
+
 1.7.1
 ------
 - Fixed problem with not existing main category id during product import in JTL-Wawi
