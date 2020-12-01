@@ -1,3 +1,7 @@
+1.7.3
+-----
+- CO-1219 - Allow for save html or just iframe in product and category description (needs to be enabled in presta backend)
+
 1.7.2
 -----
 - CO-1163 Fixed cover image not set
