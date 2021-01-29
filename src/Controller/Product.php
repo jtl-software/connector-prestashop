@@ -210,8 +210,10 @@ class Product extends BaseController
                 }
             }
 
+            $oldVariantImages = $combi->getWsImages();
             $combi->price = 0;
             $combi->setAttributes($valIds);
+            $combi->setWsImages($oldVariantImages);
             $combi->save();
 
             $product->checkDefaultAttributes();
