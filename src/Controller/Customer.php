@@ -1,11 +1,13 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 class Customer extends BaseController
-{	
-	public function pullData($data, $model, $limit = null)
-	{
-        $result = $this->db->executeS('
+{
+    public function pullData($data, $model, $limit = null)
+    {
+        $result = $this->db->executeS(
+            '
 			SELECT c.*, c.id_customer AS cid, a.*, co.iso_code
 			FROM '._DB_PREFIX_.'customer c
 			LEFT JOIN '._DB_PREFIX_.'address a ON a.id_customer=c.id_customer
@@ -16,23 +18,23 @@ class Customer extends BaseController
             LIMIT '.$limit
         );
 
-		$return = array();
+        $return = [];
 
-		foreach ($result as $data) {
-			$model = $this->mapper->toHost($data);
-			
-			$return[] = $model;
-		}
+        foreach ($result as $data) {
+            $model = $this->mapper->toHost($data);
+            
+            $return[] = $model;
+        }
 
-		return $return;
-	}
+        return $return;
+    }
 
     /*
     public function pushData($data)
     {
         $customer = $this->mapper->toEndpoint($data);
 
-		$customer->save();
+        $customer->save();
 
         $id = $customer->id;
 
@@ -42,13 +44,13 @@ class Customer extends BaseController
     }
     */
 
-	public function getStats()
-	{
-		return $this->db->getValue('
+    public function getStats()
+    {
+        return $this->db->getValue('
 			SELECT COUNT(*) 
 			FROM '._DB_PREFIX_.'customer c
 			LEFT JOIN jtl_connector_link_customer l ON c.id_customer = l.endpoint_id
             WHERE l.host_id IS NULL
         ');
-	}
+    }
 }

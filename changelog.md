@@ -1,3 +1,23 @@
+1.7.3
+-----
+- CO-1219 - Allow for save html or just iframe in product and category description (needs to be enabled in presta backend)
+
+1.7.2
+-----
+- CO-1163 Fixed cover image not set
+- CO-621 Fixed setting shipment tracking id
+
+1.7.1
+------
+- Fixed problem with not existing main category id during product import in JTL-Wawi
+
+1.7.0
+------
+- CO-854 - Added main category support by product attribute "main_category_id" (Category id from JTL-Wawi [kKategorie] has to be set)
+- CO-974 - Added fix that payments can be pulled only when related order was pulled first into JTL-Wawi
+- CO-1042 - Added importing product image titles as alt text
+- CO-1044 - Fixed problem with translations from deactivated shop languages
+
 1.6.3.1
 ------
 - CO-1003 - Fixed image alt text wasn't saved on push
@@ -7,9 +27,6 @@
 ------
 - CO-845 - Add sort to product attributes
 - CO-802 - Special prices fix
-- CO-448 - Added Integration tests
-- CO-579 - Added ISBN, keywords, variation->values-> ean, stocklevel and sku are now filled on product pull
-- CO-587 - Added Product price will now be set on the product itself instead of only in customer group prices
 
 1.6.2.1
 ------
@@ -21,7 +38,10 @@
 - CO-620 - Fixed division by zero error on CustomerOrder Pull (price = 0)
 - CO-585 - Fixed default currency detection
 - CO-604 - Fixed connector linking table collation on install/update
+- CO-448 - Added Integrationtests
 - CO-575 - Attributes are no longer pulled as Specifics
+- CO-579 - Added ISBN, keywords, variation->values-> ean, stocklevel and sku are now filled on product pull
+- CO-587 - Added Product price will now be set on the product itself instead of only in customer group prices
 - CO-635 - Fixed ProductPrice push, previously failing on updating multiple prices at once
 
 1.6.1

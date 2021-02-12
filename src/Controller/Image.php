@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Core\Logger\Logger;
@@ -16,7 +17,7 @@ class Image extends BaseController
             $this->manufacturerImages()
         );
 
-        $return = array();
+        $return = [];
 
         foreach ($imgData as $img) {
             $model = $this->mapper->toHost($img);
@@ -42,20 +43,22 @@ class Image extends BaseController
 
                     if (file_exists(_PS_CAT_IMG_DIR_.$id.'.jpg')) {
                         $images_types = \ImageType::getImagesTypes('categories');
-                        foreach ($images_types as $k => $image_type)
-                        {
+                        foreach ($images_types as $k => $image_type) {
                             \ImageManager::resize(
                                 _PS_CAT_IMG_DIR_.$id.'.jpg',
                                 _PS_CAT_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'.jpg',
-                                (int)$image_type['width'], (int)$image_type['height']
+                                (int)$image_type['width'],
+                                (int)$image_type['height']
                             );
 
-                            if ($generate_hight_dpi_images)
+                            if ($generate_hight_dpi_images) {
                                 \ImageManager::resize(
                                     _PS_CAT_IMG_DIR_.$id.'.jpg',
                                     _PS_CAT_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'2x.jpg',
-                                    (int)$image_type['width']*2, (int)$image_type['height']*2
+                                    (int)$image_type['width']*2,
+                                    (int)$image_type['height']*2
                                 );
+                            }
                         }
                     }
 
@@ -68,8 +71,7 @@ class Image extends BaseController
 
                     if (file_exists(_PS_MANU_IMG_DIR_.$id.'.jpg')) {
                         $images_types = \ImageType::getImagesTypes('manufacturers');
-                        foreach ($images_types as $k => $image_type)
-                        {
+                        foreach ($images_types as $k => $image_type) {
                             \ImageManager::resize(
                                 _PS_MANU_IMG_DIR_.$id.'.jpg',
                                 _PS_MANU_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'.jpg',
@@ -77,13 +79,14 @@ class Image extends BaseController
                                 (int)$image_type['height']
                             );
 
-                            if ($generate_hight_dpi_images)
+                            if ($generate_hight_dpi_images) {
                                 \ImageManager::resize(
                                     _PS_MANU_IMG_DIR_.$id.'.jpg',
                                     _PS_MANU_IMG_DIR_.$id.'-'.stripslashes($image_type['name']).'2x.jpg',
                                     (int)$image_type['width']*2,
                                     (int)$image_type['height']*2
                                 );
+                            }
                         }
                     }
 
@@ -109,21 +112,21 @@ class Image extends BaseController
                         }
                     }
 
-                    if($defaultImageLegend !== false){
+                    if ($defaultImageLegend !== false) {
                         $img->legend = $defaultImageLegend;
                     }
 
                     if (empty($combiId) && $img->position == 1) {
                         $img->cover =  1;
+
+                        $coverId = \Product::getCover($productId);
+                        if (isset($coverId['id_image'])) {
+                            $oldCover = new \Image($coverId['id_image']);
+                            $oldCover->cover = 0;
+                            $oldCover->save();
+                        }
                     }
-                    
-                    $coverId = \Product::getCover($productId);
-                    if ($coverId != false ) {
-                        $oldCover = new \Image(reset($coverId));
-                        $oldCover->cover = 0;
-                        $oldCover->save();
-                    }
-                    
+
                     $img->save();
 
                     $new_path = $img->getPathForCreation();
@@ -197,17 +200,17 @@ class Image extends BaseController
           WHERE l.host_id IS NULL
         ');
 
-        $return = array();
+        $return = [];
 
         foreach ($categories as $category) {
             if (file_exists(_PS_CAT_IMG_DIR_.(int)$category['id_category'].'.jpg')) {
-                $return[] = array(
+                $return[] = [
                     'id' => 'c'.$category['id_category'],
                     'foreignKey'=> $category['id_category'],
                     'remoteUrl' => _PS_BASE_URL_._THEME_CAT_DIR_.$category['id_category'].'.jpg',
                     'filename' => $category['id_category'].'.jpg',
                     'relationType' => 'category'
-                );
+                ];
             }
         }
 
@@ -222,17 +225,17 @@ class Image extends BaseController
           WHERE l.host_id IS NULL
         ');
 
-        $return = array();
+        $return = [];
 
         foreach ($manufacturers as $manufacturer) {
             if (file_exists(_PS_MANU_IMG_DIR_.(int)$manufacturer['id_manufacturer'].'.jpg')) {
-                $return[] = array(
+                $return[] = [
                     'id' => 'm'.$manufacturer['id_manufacturer'],
                     'foreignKey'=> $manufacturer['id_manufacturer'],
                     'remoteUrl' => _PS_BASE_URL_._THEME_MANU_DIR_.$manufacturer['id_manufacturer'].'.jpg',
                     'filename' => $manufacturer['id_manufacturer'].'.jpg',
                     'relationType' => 'manufacturer'
-                );
+                ];
             }
         }
 
@@ -247,20 +250,20 @@ class Image extends BaseController
           WHERE l.host_id IS NULL
         ');
 
-        $return = array();
+        $return = [];
 
         foreach ($images as $image) {
             $path = \Image::getImgFolderStatic($image['id_image']);
 
             if (file_exists(_PS_PROD_IMG_DIR_.$path.(int)$image['id_image'].'.jpg')) {
-                $return[] = array(
+                $return[] = [
                     'id' => $image['id_image'],
                     'foreignKey'=> $image['id_product'],
                     'remoteUrl' => _PS_BASE_URL_._THEME_PROD_DIR_.$path.$image['id_image'].'.jpg',
                     'filename' => $image['id_image'].'.jpg',
                     'relationType' => 'product',
                     'sort' => $image['position']
-                );
+                ];
             }
         }
 

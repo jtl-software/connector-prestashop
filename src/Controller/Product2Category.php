@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\Product2Category as Product2CategoryModel;
@@ -8,7 +9,7 @@ class Product2Category extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $return = array();
+        $return = [];
 
         foreach (\Product::getProductCategories($data['id_product']) as $catId) {
             $cat = new Product2CategoryModel();
@@ -27,7 +28,7 @@ class Product2Category extends BaseController
         $id = $data->getId()->getEndpoint();
 
         if (!empty($id)) {
-            $cats = array();
+            $cats = [];
 
             foreach ($data->getCategories() as $category) {
                 $catId = $category->getCategoryId()->getEndpoint();

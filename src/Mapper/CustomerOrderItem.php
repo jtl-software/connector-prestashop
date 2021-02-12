@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Model\Identity;
@@ -6,7 +7,7 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class CustomerOrderItem extends BaseMapper
 {
-    protected $pull = array(
+    protected $pull = [
         'id' => 'id_order_detail',
         'productId' => null,
         'customerOrderId' => 'id_order',
@@ -16,7 +17,7 @@ class CustomerOrderItem extends BaseMapper
         'quantity' => 'product_quantity',
         'sku' => 'product_reference',
         'vat' => null
-    );
+    ];
 
     protected function productId($data)
     {

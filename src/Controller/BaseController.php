@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use \jtl\Connector\Core\Controller\Controller;
@@ -119,5 +120,5 @@ abstract class BaseController extends Controller
         }
 
         return $action;
-    }    
+    }
 }

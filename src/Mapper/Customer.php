@@ -1,16 +1,17 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Presta\Utils\Utils;
 
 class Customer extends BaseMapper
 {
-	protected $endpointModel = '\Customer';
+    protected $endpointModel = '\Customer';
     protected $identity = 'id|id_customer';
 
-	protected $pull = array(
-		'id' => 'cid',
-		'customerGroupId' => 'id_default_group',
+    protected $pull = [
+        'id' => 'cid',
+        'customerGroupId' => 'id_default_group',
         'birthday' => 'birthday',
         'city' => 'city',
         'company' => 'company',
@@ -32,9 +33,9 @@ class Customer extends BaseMapper
         'vatNumber' => 'vat_number',
         'websiteUrl' => 'website',
         'zipCode' => 'postcode'
-	);
+    ];
 
-	protected $push = array(
+    protected $push = [
         'id' => 'id',
         'id_default_group' => 'customerGroupId',
         'birthday' => 'birthday',
@@ -55,7 +56,7 @@ class Customer extends BaseMapper
         'vat_number' => 'vatNumber',
         'website' => 'websiteUrl',
         'postcode' => 'zipCode'
-    );
+    ];
 
     protected function hasCustomerAccount($data)
     {
@@ -70,7 +71,7 @@ class Customer extends BaseMapper
     protected function salutation($data)
     {
         $mappings = ['1' => 'm', '2' => 'w'];
-        if(isset($mappings[$data['id_gender']])) {
+        if (isset($mappings[$data['id_gender']])) {
             return $mappings[$data['id_gender']];
         }
         return '';

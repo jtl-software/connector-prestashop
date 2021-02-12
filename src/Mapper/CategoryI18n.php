@@ -1,11 +1,12 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 use \jtl\Connector\Presta\Utils\Utils;
 
 class CategoryI18n extends BaseMapper
 {
-    protected $pull = array(
+    protected $pull = [
         'categoryId' => 'id_category',
         'description' => 'description',
         'languageISO' => null,
@@ -14,7 +15,7 @@ class CategoryI18n extends BaseMapper
         'name' => 'name',
         'titleTag' => 'meta_title',
         'urlPath' => 'link_rewrite'
-    );
+    ];
 
     protected function languageISO($data)
     {

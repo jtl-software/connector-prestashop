@@ -1,15 +1,17 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use \jtl\Connector\Model\CustomerGroupI18n as CustomerGroupI18nModel;
 use jtl\Connector\Presta\Utils\Utils;
 
-class CustomerGroupI18n extends BaseController {
+class CustomerGroupI18n extends BaseController
+{
     public function pullData($data, $model)
     {
         $group = new \Group($data['id_group']);
 
-        $i18ns = array();
+        $i18ns = [];
 
         foreach (Utils::getInstance()->getLanguages() as $language) {
             if (isset($group->name[$language['id_lang']])) {

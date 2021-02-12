@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Linker\IdentityLinker;
@@ -10,7 +11,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
 {
     protected $db;
     
-    protected static $types = array(
+    protected static $types = [
         IdentityLinker::TYPE_CATEGORY => 'category',
         IdentityLinker::TYPE_CUSTOMER => 'customer',
         IdentityLinker::TYPE_CUSTOMER_ORDER => 'customer_order',
@@ -23,7 +24,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         IdentityLinker::TYPE_PAYMENT => 'payment',
         IdentityLinker::TYPE_CROSSSELLING => 'crossselling',
         IdentityLinker::TYPE_CROSSSELLING_GROUP => 'crossselling_group'
-    );
+    ];
 
     public function __construct()
     {
@@ -64,7 +65,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
             }
         }
         
-        $dbResult = $this->db->getValue(sprintf('SELECT endpoint_id FROM jtl_connector_link_%s WHERE host_id = %s%s', static::$types[$type], $hostId,  $relation));
+        $dbResult = $this->db->getValue(sprintf('SELECT endpoint_id FROM jtl_connector_link_%s WHERE host_id = %s%s', static::$types[$type], $hostId, $relation));
 
         $endpointId = $dbResult ? $dbResult : null;
 
@@ -77,10 +78,12 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
     {
         Logger::write(sprintf('Save link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type), Logger::DEBUG, 'linker');
         
-        $this->db->execute(sprintf('INSERT IGNORE INTO jtl_connector_link_%s (endpoint_id, host_id) VALUES ("%s",%s)',
+        $this->db->execute(sprintf(
+            'INSERT IGNORE INTO jtl_connector_link_%s (endpoint_id, host_id) VALUES ("%s",%s)',
             static::$types[$type],
             $endpointId,
-            $hostId));
+            $hostId
+        ));
     }
 
     public function delete($endpointId = null, $hostId = null, $type)

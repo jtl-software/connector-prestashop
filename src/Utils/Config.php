@@ -48,7 +48,8 @@ class Config
         return self::$instance;
     }
     
-    public static function getData(){
+    public static function getData()
+    {
         self::getInstance();
         
         return self::$data;
@@ -101,7 +102,7 @@ class Config
             unset(self::$data->$name);
             
             return true;
-        }else{
+        } else {
             return false;
         }
     }

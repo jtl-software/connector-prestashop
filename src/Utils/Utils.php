@@ -1,14 +1,16 @@
 <?php
+
 namespace jtl\Connector\Presta\Utils;
 
 use \jtl\Connector\Session\SessionHelper;
 use \jtl\Connector\Core\Utilities\Language;
 
-class Utils {
-	private static $instance;
-	private $session = null;
-	
-	public static function getInstance()
+class Utils
+{
+    private static $instance;
+    private $session = null;
+    
+    public static function getInstance()
     {
         if (!isset(self::$instance)) {
             self::$instance = new self;
@@ -19,34 +21,34 @@ class Utils {
 
     public function __construct()
     {
-    	$this->session = new SessionHelper("prestaConnector");
+        $this->session = new SessionHelper("prestaConnector");
     }
 
-	public function getLanguages()
-	{
-		if (is_null($this->session->languages)) {
-			$languages = \Language::getLanguages();
+    public function getLanguages()
+    {
+        if (is_null($this->session->languages)) {
+            $languages = \Language::getLanguages();
 
-			foreach ($languages as &$lang) {
-				$lang['iso3'] = Language::convert($lang['iso_code']);
-			}
+            foreach ($languages as &$lang) {
+                $lang['iso3'] = Language::convert($lang['iso_code']);
+            }
 
-			$this->session->languages = $languages;
-		}
+            $this->session->languages = $languages;
+        }
 
-		return $this->session->languages;
-	}
+        return $this->session->languages;
+    }
 
-	public function getLanguageIdByIso($iso)
-	{
-		foreach ($this->getLanguages() as $lang) {
-			if ($lang['iso3'] === $iso) {
-				return $lang['id_lang'];
-			}
-		}
+    public function getLanguageIdByIso($iso)
+    {
+        foreach ($this->getLanguages() as $lang) {
+            if ($lang['iso3'] === $iso) {
+                return $lang['id_lang'];
+            }
+        }
 
-		return false;
-	}
+        return false;
+    }
 
     public function getLanguageIsoById($id)
     {
@@ -59,26 +61,26 @@ class Utils {
         return false;
     }
 
-	public function getProductTaxRate($id)
-	{
-		$context = \Context::getContext();
+    public function getProductTaxRate($id)
+    {
+        $context = \Context::getContext();
 
-		$address = new \Address();
-		$address->id_country = (int) $context->country->id;
-		$address->id_state = 0;
-		$address->postcode = 0;
+        $address = new \Address();
+        $address->id_country = (int) $context->country->id;
+        $address->id_state = 0;
+        $address->postcode = 0;
 
-		$tax_manager = \TaxManagerFactory::getManager($address, \Product::getIdTaxRulesGroupByIdProduct((int) $id, $context));
+        $tax_manager = \TaxManagerFactory::getManager($address, \Product::getIdTaxRulesGroupByIdProduct((int) $id, $context));
 
-		return $tax_manager->getTaxCalculator()->getTotalRate();
-	}
+        return $tax_manager->getTaxCalculator()->getTotalRate();
+    }
 
     /**
      * @param $id
      * @param null $padValue
      * @return array
      */
-	public static function explodeProductEndpoint($id, $padValue = null)
+    public static function explodeProductEndpoint($id, $padValue = null)
     {
         return array_pad(explode('_', $id, 2), 2, $padValue);
     }
@@ -102,5 +104,43 @@ class Utils {
             }
         }
         return $groupPrices;
+    }
+
+    /**
+     * @param $html
+     * @return string|string[]|null
+     */
+    public static function cleanHtml($html)
+    {
+        $events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
+        $events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend';
+        $events .= '|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove';
+        $events .= '|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel';
+        $events .= '|ondragleave|ondragover|ondragstart|ondrop|onerrorupdate|onfilterchange|onfinish|onfocusin|onfocusout|onhashchange|onhelp|oninput|onlosecapture|onmessage|onmouseup|onmovestart';
+        $events .= '|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange';
+        $events .= '|onselectstart|onstart|onstop';
+
+        $html = preg_replace('/<[\s]*script/ims', '', $html);
+        $html = preg_replace('/('.$events.')[\s]*=/ims', '', $html);
+        $html = preg_replace('/.*script\:/ims', '', $html);
+
+        if ((bool)\Configuration::get('PS_USE_HTMLPURIFIER') === false) {
+            return $html;
+        }
+
+        $removeTags = [
+            'form',
+            'input',
+            'embed',
+            'object'
+        ];
+
+        if ((bool)\Configuration::get('PS_ALLOW_HTML_IFRAME') !== true) {
+            $removeTags[] = 'i?frame';
+        }
+
+        $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|',$removeTags)), '', $html);
+
+        return $html;
     }
 }

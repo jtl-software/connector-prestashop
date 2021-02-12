@@ -1,17 +1,14 @@
 <?php
-
 namespace jtl\Connector\Presta\Mapper;
 
-use jtl\Connector\Presta\Utils\Utils;
+use \jtl\Connector\Presta\Utils\Utils;
 
-class ProductAttrI18n extends BaseMapper
+class ImageI18n extends BaseMapper
 {
-    protected $pull = [
-        'productAttrId' => 'id_feature',
+    protected $pull = array(
+        'altText' => 'altText',
         'languageISO' => null,
-        'name' => 'name',
-        'value' => 'value'
-    ];
+    );
 
     protected function languageISO($data)
     {

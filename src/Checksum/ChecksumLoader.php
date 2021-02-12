@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Checksum;
 
 use \jtl\Connector\Checksum\IChecksumLoader;

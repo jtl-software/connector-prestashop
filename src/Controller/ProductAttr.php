@@ -14,6 +14,7 @@ class ProductAttr extends BaseController
     protected static $specialAttributes = [
         'online_only' => 'online_only',
         'products_status' => 'active',
+        'main_category_id' => 'id_category_default',
     ];
     
     /**
@@ -27,7 +28,8 @@ class ProductAttr extends BaseController
     {
         $productId = $model->getId()->getEndpoint();
     
-        $attributes = $this->db->executeS(sprintf('
+        $attributes = $this->db->executeS(sprintf(
+            '
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
@@ -47,7 +49,7 @@ class ProductAttr extends BaseController
         
         return $return;
     }
-    
+
     /**
      * @param \jtl\Connector\Model\Product $data
      * @param \Product $model
@@ -64,7 +66,7 @@ class ProductAttr extends BaseController
                 
                 foreach ($attr->getI18ns() as $i18n) {
                     $name = array_search($i18n->getName(), self::$specialAttributes);
-                    if($name === false) {
+                    if ($name === false) {
                         $name = $i18n->getName();
                     }
 
@@ -86,7 +88,8 @@ class ProductAttr extends BaseController
                     }
                     
                     if ($id == Context::getContext()->language->id) {
-                        $fId = $this->db->getValue(sprintf('
+                        $fId = $this->db->getValue(sprintf(
+                            '
                         SELECT id_feature
                         FROM %sfeature_lang
                         WHERE name = "%s"
@@ -129,7 +132,8 @@ class ProductAttr extends BaseController
      */
     protected function removeCurrentAttributes($model)
     {
-        $attributeIds = $this->db->executeS(sprintf('
+        $attributeIds = $this->db->executeS(sprintf(
+            '
 			SELECT id_feature
 			FROM %sfeature_value
             WHERE custom = 1 AND id_feature IN (
@@ -150,7 +154,8 @@ class ProductAttr extends BaseController
         
         foreach ($attributeIds as $attributeId) {
             if ($this->isSpecific($attributeId['id_feature'])) {
-                $attributeValues = $this->db->executeS(sprintf('
+                $attributeValues = $this->db->executeS(sprintf(
+                    '
                     SELECT id_feature_value
                     FROM %sfeature_value
                     WHERE custom = 1 AND id_feature = %s',
@@ -158,19 +163,22 @@ class ProductAttr extends BaseController
                     $attributeId['id_feature']
                 ));
                 foreach ($attributeValues as $attributeValue) {
-                    $this->db->Execute(sprintf('
+                    $this->db->Execute(sprintf(
+                        '
                         DELETE FROM `%sfeature_value`
                         WHERE `id_feature_value` = %s',
                         _DB_PREFIX_,
                         intval($attributeValue['id_feature_value'])
                     ));
-                    $this->db->Execute(sprintf('
+                    $this->db->Execute(sprintf(
+                        '
                         DELETE FROM `%sfeature_value_lang`
                         WHERE `id_feature_value` = %s',
                         _DB_PREFIX_,
                         intval($attributeValue['id_feature_value'])
                     ));
-                    $this->db->Execute(sprintf('
+                    $this->db->Execute(sprintf(
+                        '
                         DELETE FROM `%sfeature_product`
                         WHERE `id_product` = %s AND `id_feature_value` = %s',
                         _DB_PREFIX_,
@@ -197,7 +205,8 @@ class ProductAttr extends BaseController
             return false;
         }
         
-        return (bool)$this->db->getValue(sprintf('
+        return (bool)$this->db->getValue(sprintf(
+            '
             SELECT COUNT(*)
             FROM %sfeature_value
             WHERE custom = 0 AND id_feature = %s',

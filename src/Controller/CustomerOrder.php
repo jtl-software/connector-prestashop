@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\CustomerOrder as CustomerOrderModel;
@@ -22,7 +23,7 @@ class CustomerOrder extends BaseController
             $query . ' LIMIT '.$limit
         );
 
-        $return = array();
+        $return = [];
 
         foreach ($result as $data) {
             $model = $this->mapper->toHost($data);

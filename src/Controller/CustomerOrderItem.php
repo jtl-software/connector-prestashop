@@ -1,4 +1,5 @@
 <?php
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\CustomerOrderItem as CustomerorderItemModel;
@@ -8,13 +9,14 @@ class CustomerOrderItem extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $result = $this->db->executeS('
+        $result = $this->db->executeS(
+            '
 			SELECT i.*
 			FROM '._DB_PREFIX_.'order_detail i
 			WHERE i.id_order = '.$data['id_order']
         );
 
-        $return = array();
+        $return = [];
 
         foreach ($result as $iData) {
             $model = $this->mapper->toHost($iData);
@@ -22,7 +24,8 @@ class CustomerOrderItem extends BaseController
             $return[] = $model;
         }
 
-        $cartRules = $this->db->executeS('
+        $cartRules = $this->db->executeS(
+            '
 			SELECT r.*
 			FROM '._DB_PREFIX_.'order_cart_rule r
 			WHERE r.id_order = '.$data['id_order']
