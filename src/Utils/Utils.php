@@ -143,4 +143,25 @@ class Utils
 
         return $html;
     }
+
+    /**
+     * @param $productAttrs
+     * @param $attributeName
+     * @param $languageISO
+     * @return \jtl\Connector\Model\ProductAttrI18n|null
+     */
+    public static function findAttributeByLanguageISO($productAttrs, $attributeName, $languageISO)
+    {
+        $attribute = null;
+        /** @var \jtl\Connector\Model\ProductAttr $productAttr */
+        foreach ($productAttrs as $productAttr) {
+            foreach ($productAttr->getI18ns() as $productAttrI18n) {
+                if ($productAttrI18n->getLanguageISO() === $languageISO && $attributeName === $productAttrI18n->getName()) {
+                    $attribute = $productAttrI18n;
+                    break 2;
+                }
+            }
+        }
+        return $attribute;
+    }
 }

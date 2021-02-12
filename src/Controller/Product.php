@@ -347,6 +347,8 @@ class Product extends BaseController
             $product->{$specialAttributes[$key]} = $value;
         }
 
+
+
         $prices = $data->getPrices();
         $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
         $product->save();
@@ -358,28 +360,52 @@ class Product extends BaseController
      */
     private function pullSpecialAttributes($data, $model)
     {
-        foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
-            if(isset($data[$prestaName])) {
-                $attribute = new \jtl\Connector\Model\ProductAttr();
-                $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
-                $attribute->setId(new Identity($prestaName));
-                $attribute->setProductId($model->getId());
-                $attributeI18n->setProductAttrId($attribute->getId());
-                $attributeI18n->setLanguageISO(Utils::getInstance()->getLanguageIsoById((string)Context::getContext()->language->id));
-                $attributeI18n->setName($wawiName);
+        $languageId = (string)Context::getContext()->language->id;
+        $languageISO = Utils::getInstance()->getLanguageIsoById($languageId);
 
+        foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
+            if (isset($data[$prestaName])) {
                 $value = $data[$prestaName];
-                if($wawiName === 'main_category_id') {
+                if ($wawiName === 'main_category_id') {
                     $value = (string)$this->findCategoryHostIdByEndpoint($data[$prestaName]);
                 }
 
-                if($value !== '') {
-                    $attributeI18n->setValue($value);
-                    $attribute->setI18ns([$attributeI18n]);
-                    $model->addAttribute($attribute);
+                if ($value !== '') {
+                    $this->addAttribute($wawiName, $prestaName, $model, $value, $languageISO);
                 }
             }
         }
+
+        foreach (Utils::getInstance()->getLanguages() as $language) {
+            $deliveryOutOfStock = $this->findDeliveryOutOfStockText($data['id_product'], $language['id_lang']);
+            if (!empty($deliveryOutOfStock)) {
+                $this->addAttribute(ProductAttrI18n::DELIVERY_OUT_OF_STOCK, ProductAttrI18n::DELIVERY_OUT_OF_STOCK, $model, $deliveryOutOfStock, $language['iso3']);
+            }
+        }
+    }
+
+    /**
+     * @param $wawiName
+     * @param $prestaName
+     * @param $model
+     * @param $value
+     * @param $languageISO
+     */
+    protected function addAttribute($wawiName, $prestaName, $model, $value, $languageISO)
+    {
+        $attribute = (new \jtl\Connector\Model\ProductAttr())
+            ->setId(new Identity($wawiName))
+            ->setProductId($model->getId());
+
+        $attributeI18n = (new \jtl\Connector\Model\ProductAttrI18n())
+            ->setProductAttrId($attribute->getId())
+            ->setLanguageISO($languageISO)
+            ->setName($prestaName)
+            ->setValue($value);
+
+        $attribute->addI18n($attributeI18n);
+
+        $model->addAttribute($attribute);
     }
 
     /**
@@ -389,5 +415,15 @@ class Product extends BaseController
     protected function findCategoryHostIdByEndpoint($prestaCategoryId)
     {
         return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', (int)$prestaCategoryId));
+    }
+
+    /**
+     * @param $productId
+     * @param $languageId
+     * @return false|string|null
+     */
+    protected function findDeliveryOutOfStockText($productId, $languageId)
+    {
+        return $this->db->getValue(sprintf('SELECT delivery_out_stock FROM %s WHERE id_product = %d AND id_lang = %d', _DB_PREFIX_ . 'product_lang', (int)$productId, (int)$languageId));
     }
 }

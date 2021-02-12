@@ -46,6 +46,10 @@ class ProductI18n extends BaseController
         return $return;
     }
 
+    /**
+     * @param \jtl\Connector\Model\Product $data
+     * @param $model
+     */
     public function pushData($data, $model)
     {
         $limit = null;
@@ -70,6 +74,11 @@ class ProductI18n extends BaseController
                 $model->meta_keywords[$id] = $i18n->getMetaKeywords();
                 $model->meta_description[$id] = $i18n->getMetaDescription();
                 $model->available_now[$id] = $i18n->getDeliveryStatus();
+
+                $deliveryOutStock = Utils::findAttributeByLanguageISO($data->getAttributes(), ProductAttrI18n::DELIVERY_OUT_OF_STOCK, $i18n->getLanguageISO());
+                if (!is_null($deliveryOutStock)) {
+                    $model->delivery_out_stock[$id] = $deliveryOutStock->getValue();
+                }
 
                 if (is_null($limit)) {
                     $model->description_short[$id] = $i18n->getShortDescription();

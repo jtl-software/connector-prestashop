@@ -4,6 +4,11 @@ namespace jtl\Connector\Presta\Controller;
 
 class ProductAttrI18n extends BaseController
 {
+    /**
+     * product_lang special attribute
+     */
+    const DELIVERY_OUT_OF_STOCK = 'delivery_out_stock';
+
     public function pullData($data, $model, $limit = null)
     {
         $resultA = $this->db->executeS(
