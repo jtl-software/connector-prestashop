@@ -75,7 +75,7 @@ class ProductI18n extends BaseController
                 $model->meta_description[$id] = $i18n->getMetaDescription();
                 $model->available_now[$id] = $i18n->getDeliveryStatus();
 
-                $deliveryOutStock = Utils::findAttributeByLanguageISO($data->getAttributes(), ProductAttrI18n::DELIVERY_OUT_OF_STOCK, $i18n->getLanguageISO());
+                $deliveryOutStock = Utils::findAttributeByLanguageISO(ProductAttrI18n::DELIVERY_OUT_OF_STOCK, $i18n->getLanguageISO(), ...$data->getAttributes());
                 if (!is_null($deliveryOutStock)) {
                     $model->delivery_out_stock[$id] = $deliveryOutStock->getValue();
                 }

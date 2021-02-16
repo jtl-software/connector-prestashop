@@ -8,6 +8,9 @@ use Combination;
 use Context;
 use Exception;
 use jtl\Connector\Model\Identity;
+use jtl\Connector\Model\ProductAttrI18n as ProductAttrI18nModel;
+use jtl\Connector\Model\ProductAttr as ProductAttrModel;
+use jtl\Connector\Model\Product as ProductModel;
 use jtl\Connector\Presta\Utils\Utils;
 use PrestaShopDatabaseException;
 use PrestaShopException;
@@ -385,19 +388,19 @@ class Product extends BaseController
     }
 
     /**
-     * @param $wawiName
-     * @param $prestaName
-     * @param $model
-     * @param $value
-     * @param $languageISO
+     * @param string $wawiName
+     * @param string $prestaName
+     * @param ProductModel $model
+     * @param string $value
+     * @param string $languageISO
      */
-    protected function addAttribute($wawiName, $prestaName, $model, $value, $languageISO)
+    protected function addAttribute(string $wawiName, string $prestaName, ProductModel $model, string $value, string $languageISO): void
     {
-        $attribute = (new \jtl\Connector\Model\ProductAttr())
+        $attribute = (new ProductAttrModel())
             ->setId(new Identity($wawiName))
             ->setProductId($model->getId());
 
-        $attributeI18n = (new \jtl\Connector\Model\ProductAttrI18n())
+        $attributeI18n = (new ProductAttrI18nModel())
             ->setProductAttrId($attribute->getId())
             ->setLanguageISO($languageISO)
             ->setName($prestaName)
