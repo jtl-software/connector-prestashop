@@ -173,16 +173,18 @@ class Product extends BaseMapper
         return true;
     }
 
+    /**
+     * @param $data
+     * @return false|string|null
+     */
     protected function id_tax_rules_group($data)
     {
-        $group = $this->db->getValue('
+        return $this->db->getValue(sprintf('
             SELECT rg.id_tax_rules_group
-            FROM ' . _DB_PREFIX_ . 'tax_rule r
-            LEFT JOIN ' . _DB_PREFIX_ . 'tax_rules_group rg ON rg.id_tax_rules_group = r.id_tax_rules_group
-            LEFT JOIN ' . _DB_PREFIX_ . 'tax t ON t.id_tax = r.id_tax
-            WHERE t.rate = '.$data->getVat().' && r.id_country = 1 && rg.deleted = 0 && t.active = 1 && rg.active = 1
-        ');
-
-        return $group;
+            FROM %stax_rule r
+            LEFT JOIN %stax_rules_group rg ON rg.id_tax_rules_group = r.id_tax_rules_group
+            LEFT JOIN %stax t ON t.id_tax = r.id_tax
+            WHERE t.rate = %s && r.id_country = %s && rg.deleted = 0 && t.active = 1 && rg.active = 1
+        ', _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $data->getVat(), \Context::getContext()->country->id));
     }
 }
