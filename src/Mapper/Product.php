@@ -102,7 +102,7 @@ class Product extends BaseMapper
     {
         $unit = '';
         if ($data->getConsiderBasePrice()) {
-            $basePriceQuantity = $data->getBasePriceQuantity() > 1 ? sprintf('%s', $data->getBasePriceQuantity()) : '';
+            $basePriceQuantity = $data->getBasePriceQuantity() !== 1. ? (string)$data->getBasePriceQuantity() : '';
             $unit = sprintf('%s%s', $basePriceQuantity, $data->getBasePriceUnitCode());
         }
         return $unit;
