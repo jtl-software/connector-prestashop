@@ -30,7 +30,13 @@ class Utils
             $languages = \Language::getLanguages();
 
             foreach ($languages as &$lang) {
-                $lang['iso3'] = Language::convert($lang['iso_code']);
+                $iso3 = Language::convert($lang['iso_code']);
+                if (empty($iso3)) {
+                    $locale = str_replace('-', '_', $lang['locale']);
+                    $iso3 = Language::map($locale);
+                }
+
+                $lang['iso3'] = $iso3;
             }
 
             $this->session->languages = $languages;
