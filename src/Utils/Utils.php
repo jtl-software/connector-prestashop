@@ -30,7 +30,7 @@ class Utils
             $languages = \Language::getLanguages();
 
             foreach ($languages as &$lang) {
-                $iso3 = Language::convert($lang['iso_code']);
+                $iso3 = Language::convert($lang['language_code']);
                 if (empty($iso3)) {
                     $locale = str_replace('-', '_', $lang['locale']);
                     $iso3 = Language::map($locale);
