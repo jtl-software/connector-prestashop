@@ -1,3 +1,9 @@
+1.8.0
+-----
+- CO-1324 - Fixed image assignments for variations are deleted 
+- CO-1064 - Improved base price handling
+- CO-1050 - Transfer customer order messages in CustomerOrder notes
+
 1.7.3
 -----
 - CO-1219 - Allow for save html or just iframe in product and category description (needs to be enabled in presta backend)
