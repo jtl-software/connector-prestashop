@@ -2,6 +2,7 @@
 
 namespace jtl\Connector\Presta\Utils;
 
+use jtl\Connector\Payment\PaymentTypes;
 use \jtl\Connector\Session\SessionHelper;
 use \jtl\Connector\Core\Utilities\Language;
 
@@ -142,5 +143,32 @@ class Utils
         $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|',$removeTags)), '', $html);
 
         return $html;
+    }
+
+    /**
+     * @param $module
+     * @return mixed|string
+     */
+    public static function mapPaymentModuleCode($module)
+    {
+        $mappedPaymentModuleCode = null;
+
+        switch ($module) {
+            case 'ps_checkpayment':
+            case 'ps_wirepayment':
+                $mappedPaymentModuleCode = PaymentTypes::TYPE_BANK_TRANSFER;
+                break;
+            case 'ps_cashondelivery':
+                $mappedPaymentModuleCode = PaymentTypes::TYPE_CASH_ON_DELIVERY;
+                break;
+            case 'paypal':
+                $mappedPaymentModuleCode = PaymentTypes::TYPE_PAYPAL;
+                break;
+            case 'klarnapaymentsofficial':
+                $mappedPaymentModuleCode = PaymentTypes::TYPE_KLARNA;
+                break;
+        }
+
+        return $mappedPaymentModuleCode === null ? $module : $mappedPaymentModuleCode;
     }
 }

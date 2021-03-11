@@ -2,6 +2,7 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
+use jtl\Connector\Payment\PaymentTypes;
 use jtl\Connector\Presta\Utils\Utils;
 
 class CustomerOrder extends BaseMapper
@@ -15,7 +16,7 @@ class CustomerOrder extends BaseMapper
         'languageISO' => null,
         'orderNumber' => 'reference',
         'paymentDate' => 'invoice_date',
-        'paymentModuleCode' => 'module',
+        'paymentModuleCode' => null,
         'shippingAddress' => 'CustomerOrderShippingAddress',
         'shippingDate' => 'delivery_date',
         'shippingInfo' => 'shipping_number',
@@ -27,6 +28,19 @@ class CustomerOrder extends BaseMapper
         'note' => null
     ];
 
+    /**
+     * @param $data
+     * @return mixed
+     */
+    protected function paymentModuleCode($data)
+    {
+        return Utils::mapPaymentModuleCode($data['module']);
+    }
+
+    /**
+     * @param $data
+     * @return false|mixed
+     */
     protected function languageISO($data)
     {
         return Utils::getInstance()->getLanguageIsoById($data['id_lang']);
