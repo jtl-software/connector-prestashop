@@ -2,7 +2,6 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use jtl\Connector\Payment\PaymentTypes;
 use jtl\Connector\Presta\Utils\Utils;
 
 class CustomerOrder extends BaseMapper
@@ -34,7 +33,7 @@ class CustomerOrder extends BaseMapper
      */
     protected function paymentModuleCode($data)
     {
-        return Utils::mapPaymentModuleCode($data['module']);
+        return Utils::mapPaymentModuleCode($data['module']) ?? $data['payment'];
     }
 
     /**

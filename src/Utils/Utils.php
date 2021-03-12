@@ -169,6 +169,6 @@ class Utils
                 break;
         }
 
-        return $mappedPaymentModuleCode === null ? $module : $mappedPaymentModuleCode;
+        return $mappedPaymentModuleCode;
     }
 }
