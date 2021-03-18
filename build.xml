@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="JTL-Connector-PrestaShop-Endpoint" default="release">
-    <property file="./build-config.yaml" />
+    <property file="./build-config.yaml"/>
     <target name="build">
-        <phingcall target="clean"/>
+        <delete dir="./dist"/>
         <mkdir dir="./dist"/>
-        <mkdir dir="./dist/config"/>
-        <mkdir dir="./dist/db"/>
-        <mkdir dir="./dist/logs"/>
-        <mkdir dir="./dist/plugins"/>
-        <mkdir dir="./dist/tmp"/>
+        <mkdir dir="./dist/jtlconnector"/>
+        <mkdir dir="./dist/jtlconnector/config"/>
+        <mkdir dir="./dist/jtlconnector/db"/>
+        <mkdir dir="./dist/jtlconnector/logs"/>
+        <mkdir dir="./dist/jtlconnector/plugins"/>
+        <mkdir dir="./dist/jtlconnector/tmp"/>
 
-        <delete file="./db/connector.s3db"></delete>
-        <touch file="./db/connector.s3db"></touch>
-        <copy todir="./dist">
+        <delete file="./db/connector.s3db"/>
+        <touch file="./db/connector.s3db"/>
+        <copy todir="./dist/jtlconnector">
             <fileset dir=".">
                 <include name="jtlconnector.php"/>
                 <include name="index.php"/>
@@ -20,7 +21,7 @@
                 <include name="controllers/"/>
                 <include name="translations/"/>
                 <include name="views/"/>
-		<include name="upgrade/"/>
+                <include name="upgrade/"/>
                 <include name="build-config.yaml"/>
                 <include name="config/features.json"/>
                 <include name="config/.htaccess"/>
@@ -34,55 +35,30 @@
                 <include name="plugins/.htaccess"/>
                 <include name="plugins/index.php"/>
                 <include name="tmp/.htaccess"/>
-            </fileset>
-        </copy>
-        <chmod file="./dist/config" mode="0777"/>
-        <chmod file="./dist/db" mode="0777"/>
-        <chmod file="./dist/db/connector.s3db" mode="0777"/>
-        <chmod file="./dist/logs" mode="0777"/>
-        <chmod file="./dist/tmp" mode="0777"/>
-        <mkdir dir="./build"/>
-        <copy todir="./build">
-            <fileset dir=".">
                 <include name="src/"/>
                 <include name="vendor/"/>
                 <include name="build-config.yaml"/>
             </fileset>
         </copy>
+        <chmod file="./dist/jtlconnector/config" mode="0777"/>
+        <chmod file="./dist/jtlconnector/db" mode="0777"/>
+        <chmod file="./dist/jtlconnector/db/connector.s3db" mode="0777"/>
+        <chmod file="./dist/jtlconnector/logs" mode="0777"/>
+        <chmod file="./dist/jtlconnector/tmp" mode="0777"/>
     </target>
 
     <target name="package" depends="build">
-        <delete file="./dist/connector.phar"/>
-        <pharpackage
-                destfile="./dist/connector.phar"
-                basedir="./build"
-                compression="gzip"
-                stub="./stub.php"
-                signature="sha256">
-            <fileset dir="./build">
-                <include name="**/**"/>
-            </fileset>
-        </pharpackage>
+        <fileset dir="./dist/" id="zipFiles">
+            <include name="**/**"/>
+        </fileset>
 
-        <delete dir="./build/vendor" />
-        <delete dir="./build/src" />
+        <delete file="./${zipname}${version}.zip"/>
+        <zip destfile="./${zipname}${version}.zip">
+            <fileset refid="zipFiles"/>
+        </zip>
     </target>
 
     <target name="release" depends="package">
-	<delete file="./${zipname}${version}.zip"/>
-        <zip destfile="./${zipname}${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
-        <delete file="./dist/connector.phar"/>
-        <copy todir="./dist">
-            <fileset dir="./build">
-                <include name="**"></include>
-            </fileset>
-        </copy>
-        <zip destfile="./${zipname}${version}.zip" basedir="./dist" prefix="jtlconnector/"/>
-        <phingcall target="clean"/>
-    </target>
-
-    <target name="clean">
-        <delete dir="./build"/>
         <delete dir="./dist"/>
     </target>
 </project>
