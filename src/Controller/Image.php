@@ -2,29 +2,11 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-use jtl\Connector\Core\Logger\Logger;
-use jtl\Connector\Formatter\ExceptionFormatter;
-use jtl\Connector\Linker\IdentityLinker;
-use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\Utils;
 use Context;
 
 class Image extends BaseController
 {
-    /**
-     * @var PrimaryKeyMapper|null
-     */
-    protected $primaryKeyMapper = null;
-
-    /**
-     * Image constructor.
-     */
-    public function __construct()
-    {
-        parent::__construct();
-        $this->primaryKeyMapper = new PrimaryKeyMapper();
-    }
-
     public function pullData($data, $model, $limit = null)
     {
         $imgData = array_merge(
@@ -117,7 +99,7 @@ class Image extends BaseController
                     list($productId, $combiId) = Utils::explodeProductEndpoint($id);
 
                     $identity = $data->getId();
-                    $isUpdate = $identity->getEndpoint() === "" ? false : true;
+                    $isUpdate = $identity->getEndpoint() !== "";
 
                     $img = new \Image($isUpdate ? (int)$identity->getEndpoint() : null);
                     $img->id_product = $productId;
