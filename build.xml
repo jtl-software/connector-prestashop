@@ -45,7 +45,7 @@
         <copy todir="./build">
             <fileset dir=".">
                 <include name="src/"/>
-                <include name="vendor/"/>
+                <include name="lib/"/>
                 <include name="build-config.yaml"/>
             </fileset>
         </copy>
@@ -64,7 +64,7 @@
             </fileset>
         </pharpackage>
 
-        <delete dir="./build/vendor" />
+        <delete dir="./build/lib" />
         <delete dir="./build/src" />
     </target>
 

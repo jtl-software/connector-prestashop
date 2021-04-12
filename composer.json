@@ -22,7 +22,7 @@
     "platform": {
       "php": "7.1.3"
     },
-    "prepend-autoloader": false
+    "vendor-dir": "lib"
   },
   "require": {
     "php": ">=7.1.3",
