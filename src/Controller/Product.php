@@ -217,8 +217,10 @@ class Product extends BaseController
                 }
             }
 
+            $oldVariantImages = $combi->getWsImages();
             $combi->price = 0;
             $combi->setAttributes($valIds);
+            $combi->setWsImages($oldVariantImages);
             $combi->save();
 
             $product->checkDefaultAttributes();
@@ -366,7 +368,7 @@ class Product extends BaseController
     private function pullSpecialAttributes($data, $model)
     {
         foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
-            if(isset($data[$prestaName])) {
+            if (isset($data[$prestaName])) {
                 $attribute = new \jtl\Connector\Model\ProductAttr();
                 $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
                 $attribute->setId(new Identity($prestaName));
@@ -376,11 +378,11 @@ class Product extends BaseController
                 $attributeI18n->setName($wawiName);
 
                 $value = $data[$prestaName];
-                if($wawiName === 'main_category_id') {
+                if ($wawiName === 'main_category_id') {
                     $value = (string)$this->findCategoryHostIdByEndpoint($data[$prestaName]);
                 }
 
-                if($value !== '') {
+                if ($value !== '') {
                     $attributeI18n->setValue($value);
                     $attribute->setI18ns([$attributeI18n]);
                     $model->addAttribute($attribute);

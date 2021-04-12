@@ -118,15 +118,15 @@ class Image extends BaseController
 
                     if (empty($combiId) && $img->position == 1) {
                         $img->cover =  1;
+
+                        $coverId = \Product::getCover($productId);
+                        if (isset($coverId['id_image'])) {
+                            $oldCover = new \Image($coverId['id_image']);
+                            $oldCover->cover = 0;
+                            $oldCover->save();
+                        }
                     }
-                    
-                    $coverId = \Product::getCover($productId);
-                    if ($coverId != false) {
-                        $oldCover = new \Image(reset($coverId));
-                        $oldCover->cover = 0;
-                        $oldCover->save();
-                    }
-                    
+
                     $img->save();
 
                     $new_path = $img->getPathForCreation();
