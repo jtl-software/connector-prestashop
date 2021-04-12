@@ -22,7 +22,6 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
         }
 
         $connector = \jtl\Connector\Presta\Presta::getInstance();
-
         $application = \jtl\Connector\Application\Application::getInstance();
         $application->register($connector);
         $application->run();

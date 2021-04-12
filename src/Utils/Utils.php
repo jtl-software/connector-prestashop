@@ -154,7 +154,6 @@ class Utils
         $mappedPaymentModuleCode = null;
 
         switch ($module) {
-            case 'ps_checkpayment':
             case 'ps_wirepayment':
                 $mappedPaymentModuleCode = PaymentTypes::TYPE_BANK_TRANSFER;
                 break;
