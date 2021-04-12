@@ -17,7 +17,8 @@ class DeliveryNote extends BaseController
             $codesString = implode(', ', $trackingCodes);
 
             if (count($trackingCodes) > 0) {
-                $this->db->execute(sprintf('UPDATE %sorder_carrier SET tracking_number=
+                $this->db->execute(sprintf(
+                    'UPDATE %sorder_carrier SET tracking_number=
                     IF(LENGTH(tracking_number) > 0, CONCAT_WS(", ", tracking_number, "%s"), "%s") WHERE id_order=%s',
                     _DB_PREFIX_,
                     $codesString,
@@ -30,5 +31,3 @@ class DeliveryNote extends BaseController
         return $data;
     }
 }
-
-

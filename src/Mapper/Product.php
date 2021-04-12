@@ -100,7 +100,12 @@ class Product extends BaseMapper
 
     protected function unity($data)
     {
-        return $data->getBasePriceQuantity().' '.$data->getBasePriceUnitName();
+        $unit = '';
+        if ($data->getConsiderBasePrice()) {
+            $basePriceQuantity = $data->getBasePriceQuantity() !== 1. ? (string)$data->getBasePriceQuantity() : '';
+            $unit = sprintf('%s%s', $basePriceQuantity, $data->getBasePriceUnitCode());
+        }
+        return $unit;
     }
 
     protected function isActive($data)
