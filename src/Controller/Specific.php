@@ -182,34 +182,34 @@ class Specific extends BaseController
     {
         $specificValuesToRemove = $this->db->executeS(
             sprintf(
-            '
+                '
             SELECT id_feature_value
             FROM %sfeature_value
             WHERE id_feature = %s AND custom = 0 AND id_feature_value NOT IN (%s)',
-            _DB_PREFIX_,
-            $specific->getId()->getEndpoint(),
-            implode(',', array_merge($existingSpecificValues, [0]))
-        )
+                _DB_PREFIX_,
+                $specific->getId()->getEndpoint(),
+                implode(',', array_merge($existingSpecificValues, [0]))
+            )
         );
         
         foreach ($specificValuesToRemove as $value) {
             $this->db->Execute(
                 sprintf(
-                '
+                    '
                     DELETE FROM `%sfeature_value`
                     WHERE `id_feature_value` = %s',
-                _DB_PREFIX_,
-                $value['id_feature_value']
-            )
+                    _DB_PREFIX_,
+                    $value['id_feature_value']
+                )
             );
             $this->db->Execute(
                 sprintf(
-                '
+                    '
                     DELETE FROM `%sfeature_value_lang`
                     WHERE `id_feature_value` = %s',
-                _DB_PREFIX_,
-                $value['id_feature_value']
-            )
+                    _DB_PREFIX_,
+                    $value['id_feature_value']
+                )
             );
             (new PrimaryKeyMapper())->delete($value['id_feature_value'], null, 256);
         }

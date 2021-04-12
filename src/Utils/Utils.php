@@ -140,7 +140,7 @@ class Utils
             $removeTags[] = 'i?frame';
         }
 
-        $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|',$removeTags)), '', $html);
+        $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|', $removeTags)), '', $html);
 
         return $html;
     }
