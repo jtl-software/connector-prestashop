@@ -213,8 +213,10 @@ class Product extends BaseController
                 }
             }
 
+            $oldVariantImages = $combi->getWsImages();
             $combi->price = 0;
             $combi->setAttributes($valIds);
+            $combi->setWsImages($oldVariantImages);
             $combi->save();
 
             $product->checkDefaultAttributes();
@@ -415,7 +417,7 @@ class Product extends BaseController
      * @param string $prestaCategoryId
      * @return string
      */
-    protected function findCategoryHostIdByEndpoint($prestaCategoryId)
+    protected function findCategoryHostIdByEndpoint($prestaCategoryId): string
     {
         return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', (int)$prestaCategoryId));
     }

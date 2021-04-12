@@ -23,11 +23,26 @@ class CustomerOrder extends BaseMapper
         'totalSum' => 'total_paid',
         'totalSumGross' => 'total_paid_tax_incl',
         'items' => 'CustomerOrderItem',
-        'attributes' => 'CustomerOrderAttr'
+        'attributes' => 'CustomerOrderAttr',
+        'note' => null
     ];
 
     protected function languageISO($data)
     {
         return Utils::getInstance()->getLanguageIsoById($data['id_lang']);
+    }
+
+    /**
+     * @param $data
+     * @return mixed|string
+     */
+    protected function note($data)
+    {
+        $result = $this->db->getRow(sprintf("SELECT GROUP_CONCAT(CONCAT(cm.date_add, ' - ', cm.message) SEPARATOR '\r\n') as messages 
+        FROM "._DB_PREFIX_."customer_thread ct
+        LEFT JOIN "._DB_PREFIX_."customer_message cm ON cm.id_customer_thread = ct.id_customer_thread
+        WHERE ct.id_order = %s", $data['id_order']));
+
+        return isset($result['messages']) ? $result['messages'] : '';
     }
 }
