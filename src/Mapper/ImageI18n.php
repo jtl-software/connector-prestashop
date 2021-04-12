@@ -1,14 +1,15 @@
 <?php
+
 namespace jtl\Connector\Presta\Mapper;
 
 use \jtl\Connector\Presta\Utils\Utils;
 
 class ImageI18n extends BaseMapper
 {
-    protected $pull = array(
+    protected $pull = [
         'altText' => 'altText',
         'languageISO' => null,
-    );
+    ];
 
     protected function languageISO($data)
     {

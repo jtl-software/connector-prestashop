@@ -85,7 +85,7 @@ class ProductSpecific extends BaseController
     {
         $specificValuesToRemove = $this->db->executeS(
             sprintf(
-            '
+                '
             SELECT id_feature_value, id_product
             FROM %sfeature_product
             WHERE id_product = "%s" AND id_feature_value NOT IN (%s) AND id_feature_value NOT IN (
@@ -93,24 +93,24 @@ class ProductSpecific extends BaseController
                 FROM %sfeature_value
                 WHERE custom = 1
             )',
-            _DB_PREFIX_,
-            $product->getId()->getEndpoint(),
-            implode(',', array_merge($existingSpecificValues, [0])),
-            _DB_PREFIX_
-        )
+                _DB_PREFIX_,
+                $product->getId()->getEndpoint(),
+                implode(',', array_merge($existingSpecificValues, [0])),
+                _DB_PREFIX_
+            )
         );
         
         if (is_array($specificValuesToRemove)) {
             foreach ($specificValuesToRemove as $value) {
                 $this->db->Execute(
                     sprintf(
-                    '
+                        '
                     DELETE FROM `%sfeature_product`
                     WHERE `id_feature_value` = "%s" AND `id_product` = "%s"',
-                    _DB_PREFIX_,
-                    $value['id_feature_value'],
-                    $value['id_product']
-                )
+                        _DB_PREFIX_,
+                        $value['id_feature_value'],
+                        $value['id_product']
+                    )
                 );
             }
         }
