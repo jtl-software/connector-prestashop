@@ -184,12 +184,13 @@ class Product extends BaseMapper
      */
     protected function id_tax_rules_group($data)
     {
-        return $this->db->getValue(sprintf('
-            SELECT rg.id_tax_rules_group
-            FROM %stax_rule r
-            LEFT JOIN %stax_rules_group rg ON rg.id_tax_rules_group = r.id_tax_rules_group
-            LEFT JOIN %stax t ON t.id_tax = r.id_tax
-            WHERE t.rate = %s && r.id_country = %s && rg.deleted = 0 && t.active = 1 && rg.active = 1
-        ', _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $data->getVat(), \Context::getContext()->country->id));
+        $sql =
+            'SELECT rg.id_tax_rules_group' . "\n" .
+            'FROM %stax_rule r' . "\n" .
+            'LEFT JOIN %stax_rules_group rg ON rg.id_tax_rules_group = r.id_tax_rules_group' . "\n" .
+            'LEFT JOIN %stax t ON t.id_tax = r.id_tax' . "\n" .
+            'WHERE t.rate = %s && r.id_country = %s && rg.deleted = 0 && t.active = 1 && rg.active = 1';
+
+        return $this->db->getValue(sprintf($sql, _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $data->getVat(), \Context::getContext()->country->id));
     }
 }
