@@ -1,6 +1,5 @@
 tests/test-config.json
-vendor/**
-library/**
+lib/**
 composer.lock
 config/config.json
 build/**

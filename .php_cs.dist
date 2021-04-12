@@ -1,6 +1,6 @@
 <?php
 $finder = PhpCsFixer\Finder::create()
-    ->exclude(__DIR__ . '/vendor')
+    ->exclude(__DIR__ . '/lib')
     ->in([
         __DIR__ . '/src',
         __DIR__ . '/upgrade',

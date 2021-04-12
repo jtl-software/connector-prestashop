@@ -17,25 +17,30 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
     define("JTL_CONNECTOR_DATABASE_COLLATION", "utf8_general_ci");
 }
 use jtl\Connector\Presta\Utils\Config;
+use Composer\Autoload\ClassLoader;
+use Symfony\Component\Yaml\Yaml;
 
 class JTLConnector extends Module
 {
+    /**
+     * JTLConnector constructor.
+     */
     public function __construct()
     {
-        if (file_exists(CONNECTOR_DIR . '/vendor/autoload.php')) {
-            $loader = require_once CONNECTOR_DIR . '/vendor/autoload.php';
+        if (file_exists(CONNECTOR_DIR . '/lib/autoload.php')) {
+            $loader = require_once CONNECTOR_DIR . '/lib/autoload.php';
         } else {
-            $loader = include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/vendor/autoload.php';
+            $loader = include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/lib/autoload.php';
         }
-        
-        if ($loader instanceof \Composer\Autoload\ClassLoader) {
+
+        if ($loader instanceof ClassLoader) {
             $loader->add('', CONNECTOR_DIR . '/plugins');
         }
-        
+
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
         try {
-            $this->version = \Symfony\Component\Yaml\Yaml::parseFile(__DIR__ . '/build-config.yaml')['version'];
+            $this->version = Yaml::parseFile(__DIR__ . '/build-config.yaml')['version'];
         } catch (\Exception $e) {
             $this->version = 'Unknown';
         }
