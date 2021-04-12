@@ -269,18 +269,17 @@ class Product extends BaseController
      */
     public function deleteData($data)
     {
-        $isCombi = (strpos($data->getId()->getEndpoint(), '_') === false) ? false : true;
+        $endpoint = $data->getId()->getEndpoint();
+        if($endpoint !== '') {
+            $isCombi = strpos($data->getId()->getEndpoint(), '_') !== false;
+            if (!$isCombi) {
+                $obj = new \Product($endpoint);
+            } else {
+                list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
+                $obj = new Combination($combiId);
+            }
 
-        if (!$isCombi) {
-            $obj = new \Product($data->getId()->getEndpoint());
-        } else {
-            list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
-
-            $obj = new Combination($combiId);
-        }
-
-        if (!$obj->delete()) {
-            throw new Exception('Error deleting product with id: ' . $data->getId()->getEndpoint());
+            $obj->delete();
         }
 
         return $data;
