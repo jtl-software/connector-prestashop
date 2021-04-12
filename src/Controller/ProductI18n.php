@@ -24,15 +24,14 @@ class ProductI18n extends BaseController
             }
         }
 
-        $result = $this->db->executeS(
-            '
-			SELECT p.*
-			FROM '._DB_PREFIX_.'product_lang p
-			WHERE p.id_product = '.$data['id_product']
-        );
+        $sql =
+            'SELECT p.*' . "\n" .
+            'FROM '._DB_PREFIX_.'product_lang p' . "\n" .
+            'WHERE p.id_product = %d';
+
+        $result = $this->db->executeS(sprintf($sql, $data['id_product']));
 
         $return = [];
-
         foreach ($result as $data) {
             if (isset($varNames[$data['id_lang']])) {
                 $data['name'] .= $varNames[$data['id_lang']];
@@ -75,15 +74,17 @@ class ProductI18n extends BaseController
                 $model->meta_description[$id] = $i18n->getMetaDescription();
                 $model->available_now[$id] = $i18n->getDeliveryStatus();
 
-                $deliveryOutStock = Utils::findAttributeByLanguageISO(ProductAttrI18n::DELIVERY_OUT_OF_STOCK, $i18n->getLanguageISO(), ...$data->getAttributes());
-                if (!is_null($deliveryOutStock)) {
-                    $model->delivery_out_stock[$id] = $deliveryOutStock->getValue();
-                }
-
                 if (is_null($limit)) {
                     $model->description_short[$id] = $i18n->getShortDescription();
                 } else {
                     $model->description_short[$id] = substr($i18n->getShortDescription(), 0, $limit);
+                }
+
+                foreach(ProductAttr::getI18nAttributes() as $wawiName => $prestaProperty) {
+                    $value = Utils::findAttributeByLanguageISO($wawiName, $i18n->getLanguageISO(), ...$data->getAttributes());
+                    if (!is_null($value) && property_exists($model, $prestaProperty)) {
+                        $model->{$prestaProperty}[$id] = $value->getValue();
+                    }
                 }
             }
         }

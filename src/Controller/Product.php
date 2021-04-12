@@ -372,7 +372,7 @@ class Product extends BaseController
             if (isset($data[$prestaName])) {
                 $value = $data[$prestaName];
                 if ($wawiName === 'main_category_id') {
-                    $value = (string)$this->findCategoryHostIdByEndpoint($data[$prestaName]);
+                    $value = (string)$this->findCategoryHostIdByEndpoint((int)$value);
                 }
 
                 if ($value !== '') {
@@ -384,7 +384,7 @@ class Product extends BaseController
         foreach (Utils::getInstance()->getLanguages() as $language) {
             $deliveryOutOfStock = $this->findDeliveryOutOfStockText($data['id_product'], $language['id_lang']);
             if (!empty($deliveryOutOfStock)) {
-                $this->addAttribute(ProductAttrI18n::DELIVERY_OUT_OF_STOCK, ProductAttrI18n::DELIVERY_OUT_OF_STOCK, $model, $deliveryOutOfStock, $language['iso3']);
+                $this->addAttribute(ProductAttr::DELIVERY_OUT_STOCK, ProductAttr::DELIVERY_OUT_STOCK, $model, $deliveryOutOfStock, $language['iso3']);
             }
         }
     }
@@ -414,12 +414,12 @@ class Product extends BaseController
     }
 
     /**
-     * @param string $prestaCategoryId
+     * @param integer $prestaCategoryId
      * @return string
      */
-    protected function findCategoryHostIdByEndpoint($prestaCategoryId): string
+    protected function findCategoryHostIdByEndpoint(int $prestaCategoryId): string
     {
-        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', (int)$prestaCategoryId));
+        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', $prestaCategoryId));
     }
 
     /**
