@@ -148,35 +148,35 @@ class Product extends BaseController
 
             $combi = new Combination($combiId);
 
-            $valIds = [];
+            $allowedGroupTypes = [
+                ProductVariation::TYPE_RADIO,
+                ProductVariation::TYPE_SELECT
+            ];
 
+            $valIds = [];
             foreach ($data->getVariations() as $variation) {
+                $groupType = in_array($variation->getType(), $allowedGroupTypes) ? $variation->getType() : ProductVariation::TYPE_SELECT;
                 $attrGrpId = null;
+                $attrPublicNames = [];
                 $attrNames = [];
                 foreach ($variation->getI18ns() as $varI18n) {
                     $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
-
                     $varName = $varI18n->getName();
-
                     if (!empty($varName)) {
-                        $attrNames[$langId] = $varName;
+                        $attrNames[$langId] = sprintf('%s (%s)', $varName, ucfirst($groupType));
+                        $attrPublicNames[$langId] = $varName;
                     }
 
                     if ($langId == Context::getContext()->language->id) {
-                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM ' . _DB_PREFIX_ . 'attribute_group_lang WHERE name="' . $varName . '"');
+                        $sql = sprintf('SELECT id_attribute_group FROM %sattribute_group_lang WHERE name = "%s"', _DB_PREFIX_, $attrNames[$langId]);
+                        $attrGrpId = $this->db->getValue($sql);
                     }
                 }
 
-                if($attrGrpId === null) {
-                    $allowedGroupTypes = [
-                        ProductVariation::TYPE_RADIO,
-                        ProductVariation::TYPE_SELECT
-                    ];
-                    $groupType = in_array($variation->getType(), $allowedGroupTypes) ? $variation->getType() : ProductVariation::TYPE_SELECT;
-
+                if (in_array($attrGrpId, [false, null], true) || in_array($variation->getType(), $allowedGroupTypes)) {
                     $attrGrp = new AttributeGroup($attrGrpId);
                     $attrGrp->name = $attrNames;
-                    $attrGrp->public_name = $attrNames;
+                    $attrGrp->public_name = $attrPublicNames;
                     $attrGrp->group_type = $groupType;
                     $attrGrp->save();
                     $attrGrpId = $attrGrp->id;
@@ -270,7 +270,7 @@ class Product extends BaseController
     public function deleteData($data)
     {
         $endpoint = $data->getId()->getEndpoint();
-        if($endpoint !== '') {
+        if ($endpoint !== '') {
             $isCombi = strpos($data->getId()->getEndpoint(), '_') !== false;
             if (!$isCombi) {
                 $obj = new \Product($endpoint);
