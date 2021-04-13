@@ -11,10 +11,23 @@ use PrestaShopException;
 
 class ProductAttr extends BaseController
 {
+    public const
+        DELIVERY_OUT_STOCK = 'delivery_out_stock';
+
+    /**
+     * @var array<string>
+     */
     protected static $specialAttributes = [
         'online_only' => 'online_only',
         'products_status' => 'active',
         'main_category_id' => 'id_category_default',
+    ];
+
+    /**
+     * @var array<string>
+     */
+    protected static $i18nAttributes = [
+        'delivery_out_stock' => 'delivery_out_stock',
     ];
     
     /**
@@ -58,19 +71,23 @@ class ProductAttr extends BaseController
      */
     public function pushData($data, $model)
     {
+        $attributesToIgnore = self::getAttributesToIgnore();
+
         $this->removeCurrentAttributes($model);
         foreach ($data->getAttributes() as $attr) {
             $isIgnoredAttribute = false;
             if ($attr->getIsCustomProperty() === false || Configuration::get('jtlconnector_custom_fields')) {
                 $featureData = [];
+
+
                 
                 foreach ($attr->getI18ns() as $i18n) {
-                    $name = array_search($i18n->getName(), self::$specialAttributes);
+                    $name = array_search($i18n->getName(), $attributesToIgnore);
                     if ($name === false) {
                         $name = $i18n->getName();
                     }
 
-                    if (isset(self::$specialAttributes[$name])) {
+                    if (isset($attributesToIgnore[$name])) {
                         $isIgnoredAttribute = true;
                         break;
                     }
@@ -204,7 +221,7 @@ class ProductAttr extends BaseController
         if (!$attributeId) {
             return false;
         }
-        
+
         return (bool)$this->db->getValue(sprintf(
             '
             SELECT COUNT(*)
@@ -216,10 +233,26 @@ class ProductAttr extends BaseController
     }
 
     /**
-     * @return string[]
+     * @return array<string>
      */
-    public static function getSpecialAttributes()
+    public static function getSpecialAttributes(): array
     {
         return self::$specialAttributes;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public static function getI18nAttributes(): array
+    {
+        return self::$i18nAttributes;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getAttributesToIgnore(): array
+    {
+        return array_merge(self::$specialAttributes, self::$i18nAttributes);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace jtl\Connector\Presta\Utils;
 
+use jtl\Connector\Model\ProductAttr;
+use jtl\Connector\Model\ProductAttrI18n;
 use jtl\Connector\Payment\PaymentTypes;
 use \jtl\Connector\Session\SessionHelper;
 use \jtl\Connector\Core\Utilities\Language;
@@ -143,6 +145,26 @@ class Utils
         $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|', $removeTags)), '', $html);
 
         return $html;
+    }
+
+    /**
+     * @param string $attributeName
+     * @param string $languageISO
+     * @param ProductAttr ...$productAttrs
+     * @return ProductAttrI18n|null
+     */
+    public static function findAttributeByLanguageISO(string $attributeName, string $languageISO, ProductAttr ...$productAttrs): ?ProductAttrI18n
+    {
+        $attribute = null;
+        foreach ($productAttrs as $productAttr) {
+            foreach ($productAttr->getI18ns() as $productAttrI18n) {
+                if ($productAttrI18n->getLanguageISO() === $languageISO && $attributeName === $productAttrI18n->getName()) {
+                    $attribute = $productAttrI18n;
+                    break 2;
+                }
+            }
+        }
+        return $attribute;
     }
 
     /**

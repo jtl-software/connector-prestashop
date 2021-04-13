@@ -8,6 +8,9 @@ use Combination;
 use Context;
 use Exception;
 use jtl\Connector\Model\Identity;
+use jtl\Connector\Model\ProductAttrI18n as ProductAttrI18nModel;
+use jtl\Connector\Model\ProductAttr as ProductAttrModel;
+use jtl\Connector\Model\Product as ProductModel;
 use jtl\Connector\Presta\Utils\Utils;
 use PrestaShopDatabaseException;
 use PrestaShopException;
@@ -349,6 +352,8 @@ class Product extends BaseController
             $product->{$specialAttributes[$key]} = $value;
         }
 
+
+
         $prices = $data->getPrices();
         $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
         $product->save();
@@ -360,36 +365,70 @@ class Product extends BaseController
      */
     private function pullSpecialAttributes($data, $model)
     {
+        $languageId = (string)Context::getContext()->language->id;
+        $languageISO = Utils::getInstance()->getLanguageIsoById($languageId);
+
         foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
             if (isset($data[$prestaName])) {
-                $attribute = new \jtl\Connector\Model\ProductAttr();
-                $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
-                $attribute->setId(new Identity($prestaName));
-                $attribute->setProductId($model->getId());
-                $attributeI18n->setProductAttrId($attribute->getId());
-                $attributeI18n->setLanguageISO(Utils::getInstance()->getLanguageIsoById((string)Context::getContext()->language->id));
-                $attributeI18n->setName($wawiName);
-
                 $value = $data[$prestaName];
                 if ($wawiName === 'main_category_id') {
-                    $value = (string)$this->findCategoryHostIdByEndpoint($data[$prestaName]);
+                    $value = (string)$this->findCategoryHostIdByEndpoint((int)$value);
                 }
 
                 if ($value !== '') {
-                    $attributeI18n->setValue($value);
-                    $attribute->setI18ns([$attributeI18n]);
-                    $model->addAttribute($attribute);
+                    $this->addAttribute($wawiName, $prestaName, $model, $value, $languageISO);
                 }
+            }
+        }
+
+        foreach (Utils::getInstance()->getLanguages() as $language) {
+            $deliveryOutOfStock = $this->findDeliveryOutOfStockText($data['id_product'], $language['id_lang']);
+            if (!empty($deliveryOutOfStock)) {
+                $this->addAttribute(ProductAttr::DELIVERY_OUT_STOCK, ProductAttr::DELIVERY_OUT_STOCK, $model, $deliveryOutOfStock, $language['iso3']);
             }
         }
     }
 
     /**
-     * @param string $prestaCategoryId
+     * @param string $wawiName
+     * @param string $prestaName
+     * @param ProductModel $model
+     * @param string $value
+     * @param string $languageISO
+     */
+    protected function addAttribute(string $wawiName, string $prestaName, ProductModel $model, string $value, string $languageISO): void
+    {
+        $attribute = (new ProductAttrModel())
+            ->setId(new Identity($wawiName))
+            ->setProductId($model->getId());
+
+        $attributeI18n = (new ProductAttrI18nModel())
+            ->setProductAttrId($attribute->getId())
+            ->setLanguageISO($languageISO)
+            ->setName($prestaName)
+            ->setValue($value);
+
+        $attribute->addI18n($attributeI18n);
+
+        $model->addAttribute($attribute);
+    }
+
+    /**
+     * @param integer $prestaCategoryId
      * @return string
      */
-    protected function findCategoryHostIdByEndpoint($prestaCategoryId)
+    protected function findCategoryHostIdByEndpoint(int $prestaCategoryId): string
     {
-        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', (int)$prestaCategoryId));
+        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', $prestaCategoryId));
+    }
+
+    /**
+     * @param $productId
+     * @param $languageId
+     * @return false|string|null
+     */
+    protected function findDeliveryOutOfStockText($productId, $languageId)
+    {
+        return $this->db->getValue(sprintf('SELECT delivery_out_stock FROM %s WHERE id_product = %d AND id_lang = %d', _DB_PREFIX_ . 'product_lang', (int)$productId, (int)$languageId));
     }
 }

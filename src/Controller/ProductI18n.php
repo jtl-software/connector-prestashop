@@ -24,15 +24,14 @@ class ProductI18n extends BaseController
             }
         }
 
-        $result = $this->db->executeS(
-            '
-			SELECT p.*
-			FROM '._DB_PREFIX_.'product_lang p
-			WHERE p.id_product = '.$data['id_product']
-        );
+        $sql =
+            'SELECT p.*' . "\n" .
+            'FROM '._DB_PREFIX_.'product_lang p' . "\n" .
+            'WHERE p.id_product = %d';
+
+        $result = $this->db->executeS(sprintf($sql, $data['id_product']));
 
         $return = [];
-
         foreach ($result as $data) {
             if (isset($varNames[$data['id_lang']])) {
                 $data['name'] .= $varNames[$data['id_lang']];
@@ -46,6 +45,10 @@ class ProductI18n extends BaseController
         return $return;
     }
 
+    /**
+     * @param \jtl\Connector\Model\Product $data
+     * @param $model
+     */
     public function pushData($data, $model)
     {
         $limit = null;
@@ -75,6 +78,13 @@ class ProductI18n extends BaseController
                     $model->description_short[$id] = $i18n->getShortDescription();
                 } else {
                     $model->description_short[$id] = substr($i18n->getShortDescription(), 0, $limit);
+                }
+
+                foreach(ProductAttr::getI18nAttributes() as $wawiName => $prestaProperty) {
+                    $value = Utils::findAttributeByLanguageISO($wawiName, $i18n->getLanguageISO(), ...$data->getAttributes());
+                    if (!is_null($value) && property_exists($model, $prestaProperty)) {
+                        $model->{$prestaProperty}[$id] = $value->getValue();
+                    }
                 }
             }
         }
