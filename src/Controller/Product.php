@@ -12,6 +12,7 @@ use jtl\Connector\Model\ProductAttrI18n as ProductAttrI18nModel;
 use jtl\Connector\Model\ProductAttr as ProductAttrModel;
 use jtl\Connector\Model\Product as ProductModel;
 use jtl\Connector\Presta\Utils\Utils;
+use jtl\Connector\Model\ProductVariation;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
@@ -150,33 +151,39 @@ class Product extends BaseController
 
             $combi = new Combination($combiId);
 
-            $valIds = [];
-            $attrGrpId = null;
+            $allowedGroupTypes = [
+                ProductVariation::TYPE_RADIO,
+                ProductVariation::TYPE_SELECT
+            ];
 
+            $valIds = [];
             foreach ($data->getVariations() as $variation) {
+                $groupType = in_array($variation->getType(), $allowedGroupTypes) ? $variation->getType() : ProductVariation::TYPE_SELECT;
+                $attrGrpId = null;
+                $attrPublicNames = [];
                 $attrNames = [];
                 foreach ($variation->getI18ns() as $varI18n) {
                     $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
-
                     $varName = $varI18n->getName();
-
                     if (!empty($varName)) {
-                        $attrNames[$langId] = $varName;
+                        $attrNames[$langId] = sprintf('%s (%s)', $varName, ucfirst($groupType));
+                        $attrPublicNames[$langId] = $varName;
                     }
 
                     if ($langId == Context::getContext()->language->id) {
-                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM ' . _DB_PREFIX_ . 'attribute_group_lang WHERE name="' . $varName . '"');
+                        $sql = sprintf('SELECT id_attribute_group FROM %sattribute_group_lang WHERE name = "%s"', _DB_PREFIX_, $attrNames[$langId]);
+                        $attrGrpId = $this->db->getValue($sql);
                     }
                 }
 
-                $attrGrp = new AttributeGroup($attrGrpId);
-                $attrGrp->name = $attrNames;
-                $attrGrp->public_name = $attrNames;
-                $attrGrp->group_type = 'select';
-
-                $attrGrp->save();
-
-                $attrGrpId = $attrGrp->id;
+                if (in_array($attrGrpId, [false, null], true) || in_array($variation->getType(), $allowedGroupTypes)) {
+                    $attrGrp = new AttributeGroup($attrGrpId);
+                    $attrGrp->name = $attrNames;
+                    $attrGrp->public_name = $attrPublicNames;
+                    $attrGrp->group_type = $groupType;
+                    $attrGrp->save();
+                    $attrGrpId = $attrGrp->id;
+                }
 
                 foreach ($variation->getValues() as $value) {
                     $valNames = [];
@@ -265,18 +272,17 @@ class Product extends BaseController
      */
     public function deleteData($data)
     {
-        $isCombi = (strpos($data->getId()->getEndpoint(), '_') === false) ? false : true;
+        $endpoint = $data->getId()->getEndpoint();
+        if ($endpoint !== '') {
+            $isCombi = strpos($data->getId()->getEndpoint(), '_') !== false;
+            if (!$isCombi) {
+                $obj = new \Product($endpoint);
+            } else {
+                list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
+                $obj = new Combination($combiId);
+            }
 
-        if (!$isCombi) {
-            $obj = new \Product($data->getId()->getEndpoint());
-        } else {
-            list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
-
-            $obj = new Combination($combiId);
-        }
-
-        if (!$obj->delete()) {
-            throw new Exception('Error deleting product with id: ' . $data->getId()->getEndpoint());
+            $obj->delete();
         }
 
         return $data;
