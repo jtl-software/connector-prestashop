@@ -14,14 +14,18 @@ class DeliveryNote extends BaseController
                 $trackingCodes = array_merge($trackingCodes, $trackingList->getCodes());
             }
 
-            $codesString = implode(', ', $trackingCodes);
-
             if (count($trackingCodes) > 0) {
-                $this->db->execute(sprintf(
-                    'UPDATE %sorder_carrier SET tracking_number=
-                    IF(LENGTH(tracking_number) > 0, CONCAT_WS(", ", tracking_number, "%s"), "%s") WHERE id_order=%s',
+                $sql = sprintf('SELECT tracking_number FROM %sorder_carrier WHERE id_order = %s', _DB_PREFIX_, $orderId);
+                $existingTrackingCodes = $this->db->getValue($sql);
+
+                if (!empty($existingTrackingCodes)) {
+                    $trackingCodes = array_merge($trackingCodes, array_map('trim', explode(',', $existingTrackingCodes)));
+                }
+
+                $codesString = implode(',', array_unique($trackingCodes));
+
+                $this->db->execute(sprintf('UPDATE %sorder_carrier SET tracking_number = "%s" WHERE id_order = %s',
                     _DB_PREFIX_,
-                    $codesString,
                     $codesString,
                     $orderId
                 ));
