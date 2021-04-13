@@ -1,3 +1,13 @@
+1.9.0
+-----
+- Increased minimum PHP version to 7.1.3, updated connector core to version 3 
+- CO-1450 - Feature do not allow saving duplicated tracking codes
+- CO-1395 - Feature added payment mappings
+- CO-1309 - Feature added attribute 'delivery_out_stock' to control delivery time that are not in stock
+- CO-1096 - Fixed use language code instead of country code 
+- CO-817 - Fixed find tax rule for non german rates
+- CO-418 - Added support for radio and select variation types
+
 1.8.0
 -----
 - CO-1324 - Fixed image assignments for variations are deleted 
