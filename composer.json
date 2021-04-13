@@ -39,6 +39,7 @@
   },
   "require-dev": {
     "jtl/connector-integration-tests": "dev-develop",
-    "friendsofphp/php-cs-fixer": "^2.16"
+    "friendsofphp/php-cs-fixer": "^2.16",
+    "symfony/polyfill-php80": "<=1.18.1"
   }
 }
