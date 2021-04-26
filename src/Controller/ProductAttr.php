@@ -12,7 +12,9 @@ use PrestaShopException;
 class ProductAttr extends BaseController
 {
     public const
-        DELIVERY_OUT_STOCK = 'delivery_out_stock';
+        DELIVERY_OUT_STOCK = 'delivery_out_stock',
+        DELIVERY_IN_STOCK = 'delivery_in_stock',
+        AVAILABLE_LATER = 'available_later';
 
     /**
      * @var array<string>
@@ -27,9 +29,11 @@ class ProductAttr extends BaseController
      * @var array<string>
      */
     protected static $i18nAttributes = [
-        'delivery_out_stock' => 'delivery_out_stock',
+        self::DELIVERY_OUT_STOCK => self::DELIVERY_OUT_STOCK,
+        self::DELIVERY_IN_STOCK => self::DELIVERY_IN_STOCK,
+        self::AVAILABLE_LATER => self::AVAILABLE_LATER,
     ];
-    
+
     /**
      * @param $data
      * @param \jtl\Connector\Model\Product $model
@@ -40,7 +44,7 @@ class ProductAttr extends BaseController
     public function pullData($data, $model, $limit = null)
     {
         $productId = $model->getId()->getEndpoint();
-    
+
         $attributes = $this->db->executeS(sprintf(
             '
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
@@ -51,15 +55,15 @@ class ProductAttr extends BaseController
             _DB_PREFIX_,
             $productId
         ));
-        
+
         $return = [];
-        
+
         foreach ($attributes as $attribute) {
             $model = $this->mapper->toHost($attribute);
-            
+
             $return[] = $model;
         }
-        
+
         return $return;
     }
 
@@ -80,7 +84,6 @@ class ProductAttr extends BaseController
                 $featureData = [];
 
 
-                
                 foreach ($attr->getI18ns() as $i18n) {
                     $name = array_search($i18n->getName(), $attributesToIgnore);
                     if ($name === false) {
@@ -93,17 +96,17 @@ class ProductAttr extends BaseController
                     }
 
                     $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
-                    
+
                     if (is_null($id)) {
                         $id = Context::getContext()->language->id;
                     }
-                    
+
                     $name = $i18n->getName();
                     if (!empty($name)) {
                         $featureData['names'][$id] = $name;
                         $featureData['values'][$id] = $i18n->getValue();
                     }
-                    
+
                     if ($id == Context::getContext()->language->id) {
                         $fId = $this->db->getValue(sprintf(
                             '
@@ -119,18 +122,18 @@ class ProductAttr extends BaseController
                 if ($isIgnoredAttribute || !isset($featureData['names'])) {
                     continue;
                 }
-                
+
                 $feature = new \Feature($fId);
-                
+
                 foreach ($featureData['names'] as $lang => $fName) {
                     $feature->name[$lang] = $fName;
                 }
-                
+
                 $feature->save();
-                
+
                 if (!empty($feature->id)) {
                     $valueId = $model->addFeaturesToDB($feature->id, null, true);
-                    
+
                     if (!empty($valueId)) {
                         foreach ($featureData['values'] as $lang => $fValue) {
                             $model->addFeaturesCustomToDB($valueId, $lang, $fValue);
@@ -140,7 +143,7 @@ class ProductAttr extends BaseController
             }
         }
     }
-    
+
     /**
      * @param $model
      * @throws PrestaShopDatabaseException
@@ -164,11 +167,11 @@ class ProductAttr extends BaseController
             _DB_PREFIX_,
             $model->id
         ));
-        
+
         if (!is_array($attributeIds)) {
             return;
         }
-        
+
         foreach ($attributeIds as $attributeId) {
             if ($this->isSpecific($attributeId['id_feature'])) {
                 $attributeValues = $this->db->executeS(sprintf(

@@ -371,8 +371,9 @@ class Product extends BaseController
      */
     private function pullSpecialAttributes($data, $model)
     {
+        $utils = Utils::getInstance();
         $languageId = (string)Context::getContext()->language->id;
-        $languageISO = Utils::getInstance()->getLanguageIsoById($languageId);
+        $languageISO = $utils->getLanguageIsoById($languageId);
 
         foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
             if (isset($data[$prestaName])) {
@@ -387,10 +388,24 @@ class Product extends BaseController
             }
         }
 
-        foreach (Utils::getInstance()->getLanguages() as $language) {
-            $deliveryOutOfStock = $this->findDeliveryOutOfStockText($data['id_product'], $language['id_lang']);
-            if (!empty($deliveryOutOfStock)) {
-                $this->addAttribute(ProductAttr::DELIVERY_OUT_STOCK, ProductAttr::DELIVERY_OUT_STOCK, $model, $deliveryOutOfStock, $language['iso3']);
+        foreach(ProductAttr::getI18nAttributes() as $wawiName => $prestaName) {
+            $attribute = (new ProductAttrModel())
+                ->setId(new Identity($prestaName))
+                ->setProductId($model->getId())
+                ->setIsTranslated(true);
+
+            foreach ($this->getProductTranslations($data['id_product']) as $productTranslation) {
+                if(isset($productTranslation[$prestaName]) && !empty($productTranslation[$prestaName])) {
+                    $attribute->addI18n((new ProductAttrI18nModel())
+                        ->setProductAttrId($attribute->getId())
+                        ->setLanguageISO($utils->getLanguageIsoById($productTranslation['id_lang']))
+                        ->setName($wawiName)
+                        ->setValue($productTranslation[$prestaName]));
+                }
+            }
+
+            if(count($attribute->getI18ns()) > 0) {
+                $model->addAttribute($attribute);
             }
         }
     }
@@ -429,12 +444,17 @@ class Product extends BaseController
     }
 
     /**
-     * @param $productId
-     * @param $languageId
-     * @return false|string|null
+     * @param int $productId
+     * @return array|null
+     * @throws PrestaShopDatabaseException
      */
-    protected function findDeliveryOutOfStockText($productId, $languageId)
+    protected function getProductTranslations(int $productId): array
     {
-        return $this->db->getValue(sprintf('SELECT delivery_out_stock FROM %s WHERE id_product = %d AND id_lang = %d', _DB_PREFIX_ . 'product_lang', (int)$productId, (int)$languageId));
+        $sql =
+            'SELECT p.*' . "\n" .
+            'FROM %sproduct_lang p' . "\n" .
+            'WHERE p.id_product = %d';
+
+        return $this->db->executeS(sprintf($sql, _DB_PREFIX_, $productId));
     }
 }
