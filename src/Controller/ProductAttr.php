@@ -29,9 +29,9 @@ class ProductAttr extends BaseController
      * @var array<string>
      */
     protected static $i18nAttributes = [
-        self::DELIVERY_OUT_STOCK => self::DELIVERY_OUT_STOCK,
-        self::DELIVERY_IN_STOCK => self::DELIVERY_IN_STOCK,
-        self::AVAILABLE_LATER => self::AVAILABLE_LATER,
+        self::DELIVERY_OUT_STOCK,
+        self::DELIVERY_IN_STOCK,
+        self::AVAILABLE_LATER,
     ];
 
     /**
@@ -256,6 +256,6 @@ class ProductAttr extends BaseController
      */
     public function getAttributesToIgnore(): array
     {
-        return array_merge(self::$specialAttributes, self::$i18nAttributes);
+        return array_merge(self::$specialAttributes, array_combine(array_values(self::$i18nAttributes), array_values(self::$i18nAttributes)));
     }
 }

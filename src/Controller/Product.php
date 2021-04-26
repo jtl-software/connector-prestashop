@@ -388,19 +388,19 @@ class Product extends BaseController
             }
         }
 
-        foreach(ProductAttr::getI18nAttributes() as $wawiName => $prestaName) {
+        foreach(ProductAttr::getI18nAttributes() as $attributeName) {
             $attribute = (new ProductAttrModel())
-                ->setId(new Identity($prestaName))
+                ->setId(new Identity($attributeName))
                 ->setProductId($model->getId())
                 ->setIsTranslated(true);
 
             foreach ($this->getProductTranslations($data['id_product']) as $productTranslation) {
-                if(isset($productTranslation[$prestaName]) && !empty($productTranslation[$prestaName])) {
+                if(isset($productTranslation[$attributeName]) && !empty($productTranslation[$attributeName])) {
                     $attribute->addI18n((new ProductAttrI18nModel())
                         ->setProductAttrId($attribute->getId())
                         ->setLanguageISO($utils->getLanguageIsoById($productTranslation['id_lang']))
-                        ->setName($wawiName)
-                        ->setValue($productTranslation[$prestaName]));
+                        ->setName($attributeName)
+                        ->setValue($productTranslation[$attributeName]));
                 }
             }
 

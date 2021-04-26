@@ -80,10 +80,10 @@ class ProductI18n extends BaseController
                     $model->description_short[$id] = substr($i18n->getShortDescription(), 0, $limit);
                 }
 
-                foreach(ProductAttr::getI18nAttributes() as $wawiName => $prestaProperty) {
-                    $value = Utils::findAttributeByLanguageISO($wawiName, $i18n->getLanguageISO(), ...$data->getAttributes());
-                    if (!is_null($value) && property_exists($model, $prestaProperty)) {
-                        $model->{$prestaProperty}[$id] = $value->getValue();
+                foreach(ProductAttr::getI18nAttributes() as $attributeName) {
+                    $value = Utils::findAttributeByLanguageISO($attributeName, $i18n->getLanguageISO(), ...$data->getAttributes());
+                    if (!is_null($value) && property_exists($model, $attributeName)) {
+                        $model->{$attributeName}[$id] = $value->getValue();
                     }
                 }
             }
