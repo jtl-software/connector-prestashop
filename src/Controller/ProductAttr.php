@@ -76,13 +76,15 @@ class ProductAttr extends BaseController
     public function pushData($data, $model)
     {
         $attributesToIgnore = self::getAttributesToIgnore();
+        $defaultIdLang = Context::getContext()->language->id;
 
-        $this->removeCurrentAttributes($model);
+        $this->removeCurrentAttributes($model, ...$data->getAttributes());
         foreach ($data->getAttributes() as $attr) {
             $isIgnoredAttribute = false;
             if ($attr->getIsCustomProperty() === false || Configuration::get('jtlconnector_custom_fields')) {
-                $featureData = [];
 
+                $featureData = [];
+                $defaultName = '';
 
                 foreach ($attr->getI18ns() as $i18n) {
                     $name = array_search($i18n->getName(), $attributesToIgnore);
@@ -95,10 +97,10 @@ class ProductAttr extends BaseController
                         break;
                     }
 
-                    $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
+                    $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO()) ?? $defaultIdLang;
 
-                    if (is_null($id)) {
-                        $id = Context::getContext()->language->id;
+                    if((int) $id === $defaultIdLang){
+                        $defaultName = $i18n->getName();
                     }
 
                     $name = $i18n->getName();
@@ -106,22 +108,12 @@ class ProductAttr extends BaseController
                         $featureData['names'][$id] = $name;
                         $featureData['values'][$id] = $i18n->getValue();
                     }
-
-                    if ($id == Context::getContext()->language->id) {
-                        $fId = $this->db->getValue(sprintf(
-                            '
-                        SELECT id_feature
-                        FROM %sfeature_lang
-                        WHERE name = "%s"
-                        GROUP BY id_feature',
-                            _DB_PREFIX_,
-                            $name
-                        ));
-                    }
                 }
                 if ($isIgnoredAttribute || !isset($featureData['names'])) {
                     continue;
                 }
+
+                $fId = $this->db->getValue(sprintf('SELECT id_feature FROM %sfeature_lang WHERE name = "%s" AND id_lang = %s', _DB_PREFIX_, $defaultName, $defaultIdLang));
 
                 $feature = new \Feature($fId);
 
@@ -146,16 +138,13 @@ class ProductAttr extends BaseController
 
     /**
      * @param $model
+     * @param $jtlProductAttributes
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
-     * @throws Exception
      */
-    protected function removeCurrentAttributes($model)
+    protected function removeCurrentAttributes($model, \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes)
     {
-        $attributeIds = $this->db->executeS(sprintf(
-            '
-			SELECT id_feature
-			FROM %sfeature_value
+        $attributeIds = $this->db->executeS(sprintf('SELECT id_feature FROM %sfeature_value
             WHERE custom = 1 AND id_feature IN (
                 SELECT id_feature
                 FROM %sfeature_product
@@ -172,44 +161,29 @@ class ProductAttr extends BaseController
             return;
         }
 
-        foreach ($attributeIds as $attributeId) {
-            if ($this->isSpecific($attributeId['id_feature'])) {
-                $attributeValues = $this->db->executeS(sprintf(
-                    '
-                    SELECT id_feature_value
-                    FROM %sfeature_value
-                    WHERE custom = 1 AND id_feature = %s',
-                    _DB_PREFIX_,
-                    $attributeId['id_feature']
-                ));
-                foreach ($attributeValues as $attributeValue) {
-                    $this->db->Execute(sprintf(
-                        '
-                        DELETE FROM `%sfeature_value`
-                        WHERE `id_feature_value` = %s',
-                        _DB_PREFIX_,
-                        intval($attributeValue['id_feature_value'])
-                    ));
-                    $this->db->Execute(sprintf(
-                        '
-                        DELETE FROM `%sfeature_value_lang`
-                        WHERE `id_feature_value` = %s',
-                        _DB_PREFIX_,
-                        intval($attributeValue['id_feature_value'])
-                    ));
-                    $this->db->Execute(sprintf(
-                        '
-                        DELETE FROM `%sfeature_product`
-                        WHERE `id_product` = %s AND `id_feature_value` = %s',
-                        _DB_PREFIX_,
-                        intval($model->id),
-                        intval($attributeValue['id_feature_value'])
-                    ));
+        $jtlAttributes = [];
+        $psLanguageId = Context::getContext()->language->id;
+        foreach($jtlProductAttributes as $jtlProductAttribute){
+            foreach($jtlProductAttribute->getI18ns() as $productAttrI18n){
+                $languageId = (int)Utils::getInstance()->getLanguageIdByIso($productAttrI18n->getLanguageISO());
+                if ($languageId === $psLanguageId) {
+                    $jtlAttributes[] = $productAttrI18n->getName();
                 }
-            } else {
-                $feature = new \Feature($attributeId['id_feature']);
-                if (!$feature->delete()) {
-                    throw new Exception('Error deleting attribute with id: ' . $attributeId['id_feature']);
+            }
+        }
+
+        foreach ($attributeIds as $attributeId) {
+            $featureName = $this->db->getValue(sprintf('SELECT name FROM %sfeature_lang WHERE id_feature = "%s" AND id_lang = %d', _DB_PREFIX_, $attributeId['id_feature'], $psLanguageId));
+
+            if ((bool)\Configuration::get(\JTLConnector::CONFIG_DELETE_UNKNOWN_ATTRIBUTES) === true || in_array($featureName, $jtlAttributes)) {
+                $attributeValues = $this->db->executeS(
+                    sprintf('SELECT id_feature_value FROM %sfeature_value WHERE custom = 1 AND id_feature = %s', _DB_PREFIX_, $attributeId['id_feature'] )
+                );
+
+                foreach ($attributeValues as $attributeValue) {
+                    $this->db->Execute(
+                        sprintf('DELETE FROM `%sfeature_product`WHERE `id_product` = %s AND `id_feature_value` = %s',_DB_PREFIX_,intval($model->id),intval($attributeValue['id_feature_value']))
+                    );
                 }
             }
         }

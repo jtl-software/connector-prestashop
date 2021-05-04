@@ -36,3 +36,5 @@ $_MODULE['<{jtlconnector}prestashop>jtlconnector_2b100896fd5ace4912e319bc7463b16
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_801ab24683a4a8c433c6eb40c48bcd9d'] = 'Download';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_63aaa7896b57c9957f21fc870ac384ed'] = 'Lädt die Developer-Logs herunter.';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_c9cc8cce247e49bae79f15173ce97354'] = 'Speichern';
+$_MODULE['<{jtlconnector}prestashop>jtlconnector_89c447992fa48e2b7d566f0a42beb46a'] = 'Unbekannte Attribute löschen';
+$_MODULE['<{jtlconnector}prestashop>jtlconnector_30af19334009b376198ab269bbff9052'] = 'Aktivieren Sie diese Option, um das Löschen von unbekannten benutzerdefinierten Feldern zu ermöglichen (default:false)';

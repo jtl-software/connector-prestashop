@@ -17,26 +17,18 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
     define("JTL_CONNECTOR_DATABASE_COLLATION", "utf8_general_ci");
 }
 use jtl\Connector\Presta\Utils\Config;
-use Composer\Autoload\ClassLoader;
 use Symfony\Component\Yaml\Yaml;
 
 class JTLConnector extends Module
 {
+    public const
+        CONFIG_DELETE_UNKNOWN_ATTRIBUTES = 'jtlconnector_delete_unknown_attributes';
+
     /**
      * JTLConnector constructor.
      */
     public function __construct()
     {
-        if (file_exists(CONNECTOR_DIR . '/lib/autoload.php')) {
-            $loader = require_once CONNECTOR_DIR . '/lib/autoload.php';
-        } else {
-            $loader = include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/lib/autoload.php';
-        }
-
-        if ($loader instanceof ClassLoader) {
-            $loader->add('', CONNECTOR_DIR . '/plugins');
-        }
-
         $this->name = 'jtlconnector';
         $this->tab = 'payments_gateways';
         try {
@@ -144,6 +136,12 @@ class JTLConnector extends Module
     
     public function getContent()
     {
+        if (file_exists(CONNECTOR_DIR . '/lib/autoload.php')) {
+            require_once CONNECTOR_DIR . '/lib/autoload.php';
+        } else {
+            include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/lib/autoload.php';
+        }
+
         $output = null;
         
         if (Tools::isSubmit('submit' . $this->name)) {
@@ -173,10 +171,9 @@ class JTLConnector extends Module
                     $output .= $this->displayError($this->l('Password must have a minimum length of 8 chars!'));
                 } else {
                     Configuration::updateValue('jtlconnector_pass', $pass);
-                    Configuration::updateValue('jtlconnector_truncate_desc',
-                        Tools::getValue('jtlconnector_truncate_desc'));
-                    Configuration::updateValue('jtlconnector_custom_fields',
-                        Tools::getValue('jtlconnector_custom_fields'));
+                    Configuration::updateValue('jtlconnector_truncate_desc', Tools::getValue('jtlconnector_truncate_desc'));
+                    Configuration::updateValue('jtlconnector_custom_fields', Tools::getValue('jtlconnector_custom_fields'));
+                    Configuration::updateValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES, Tools::getValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES));
                     Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
                     Config::set('developer_logging', Tools::getValue('jtlconnector_developer_logging'));
                     
@@ -316,6 +313,25 @@ class JTLConnector extends Module
                     ],
                 ],
                 [
+                    'type'    => 'switch',
+                    'label'   => $this->l('Delete unknown attributes'),
+                    'name'    => self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES,
+                    'is_bool' => true,
+                    'desc'    => $this->l('Enable this option to allow deleting unknown attributes on product (default:false)'),
+                    'values'  => [
+                        [
+                            'id'    => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled'),
+                        ],
+                        [
+                            'id'    => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled'),
+                        ],
+                    ],
+                ],
+                [
                     'type'     => 'date',
                     'label'    => $this->l('Date treshold'),
                     'name'     => 'jtlconnector_from_date',
@@ -400,6 +416,7 @@ class JTLConnector extends Module
         $helper->fields_value['jtlconnector_pass'] = Configuration::get('jtlconnector_pass');
         $helper->fields_value['jtlconnector_truncate_desc'] = Configuration::get('jtlconnector_truncate_desc');
         $helper->fields_value['jtlconnector_custom_fields'] = Configuration::get('jtlconnector_custom_fields');
+        $helper->fields_value[self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES] = Configuration::get(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES);
         $helper->fields_value['jtlconnector_from_date'] = Configuration::get('jtlconnector_from_date');
         $helper->fields_value['jtlconnector_remove_inconsistency'] = false;
         $helper->fields_value['jtlconnector_developer_logging'] = Config::get('developer_logging');
