@@ -76,7 +76,7 @@ class ProductAttr extends BaseController
     public function pushData($data, $model)
     {
         $attributesToIgnore = self::getAttributesToIgnore();
-        $defaultIdLang = Context::getContext()->language->id;
+        $defaultLanguageId = Context::getContext()->language->id;
 
         $this->removeCurrentAttributes($model, ...$data->getAttributes());
         foreach ($data->getAttributes() as $attr) {
@@ -97,9 +97,9 @@ class ProductAttr extends BaseController
                         break;
                     }
 
-                    $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO()) ?? $defaultIdLang;
+                    $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO()) ?? $defaultLanguageId;
 
-                    if((int) $id === $defaultIdLang){
+                    if((int) $id === $defaultLanguageId){
                         $defaultName = $i18n->getName();
                     }
 
@@ -113,9 +113,9 @@ class ProductAttr extends BaseController
                     continue;
                 }
 
-                $fId = $this->db->getValue(sprintf('SELECT id_feature FROM %sfeature_lang WHERE name = "%s" AND id_lang = %s', _DB_PREFIX_, $defaultName, $defaultIdLang));
+                $featureId = $this->db->getValue(sprintf('SELECT id_feature FROM %sfeature_lang WHERE name = "%s" AND id_lang = %s', _DB_PREFIX_, $defaultName, $defaultLanguageId));
 
-                $feature = new \Feature($fId);
+                $feature = new \Feature($featureId);
 
                 foreach ($featureData['names'] as $lang => $fName) {
                     $feature->name[$lang] = $fName;
