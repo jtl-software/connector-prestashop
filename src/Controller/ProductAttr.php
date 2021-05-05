@@ -144,49 +144,50 @@ class ProductAttr extends BaseController
      */
     protected function removeCurrentAttributes($model, \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes)
     {
-        $attributeIds = $this->db->executeS(sprintf('SELECT id_feature FROM %sfeature_value
-            WHERE custom = 1 AND id_feature IN (
-                SELECT id_feature
-                FROM %sfeature_product
-                WHERE id_product = %s
-                GROUP BY id_feature
-            )
-            GROUP BY id_feature',
-            _DB_PREFIX_,
-            _DB_PREFIX_,
-            $model->id
-        ));
+        $psLanguageId = (int)Context::getContext()->language->id;
 
-        if (!is_array($attributeIds)) {
-            return;
+        $sql = sprintf('SELECT fp.*, fl.name FROM %sfeature_product fp 
+            LEFT JOIN %sfeature_value fv ON fp.id_feature = fv.id_feature AND fp.id_feature_value = fv.id_feature_value 
+            LEFT JOIN %sfeature_lang fl ON fp.id_feature = fl.id_feature 
+            WHERE fp.id_product = %d AND fl.id_lang = %d AND fv.custom = 1', _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $model->id, $psLanguageId);
+
+        $psProductAttributes = $this->db->executeS($sql);
+        if (is_array($psProductAttributes)) {
+            $jtlProductAttributeNames = $this->getJtlProductAttributeNames($psLanguageId, ...$jtlProductAttributes);
+
+            $psAttributesToDelete = $psProductAttributes;
+            if ((bool)\Configuration::get(\JTLConnector::CONFIG_DELETE_UNKNOWN_ATTRIBUTES) === false) {
+                $psAttributesToDelete = array_filter($psAttributesToDelete, function ($psProductAttribute) use ($jtlProductAttributeNames) {
+                    return in_array($psProductAttribute['name'], $jtlProductAttributeNames);
+                });
+            }
+
+            if (!empty($psAttributesToDelete)) {
+                $featureValuesIds = array_column($psAttributesToDelete, 'id_feature_value');
+                $this->db->Execute(
+                    sprintf('DELETE FROM `%sfeature_product`WHERE `id_product` = %s AND `id_feature_value` IN (%s)', _DB_PREFIX_, $model->id, join(',', $featureValuesIds))
+                );
+            }
         }
+    }
 
-        $jtlAttributes = [];
-        $psLanguageId = Context::getContext()->language->id;
+    /**
+     * @param int $psLanguageId
+     * @param \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes
+     * @return array
+     */
+    protected function getJtlProductAttributeNames(int $psLanguageId, \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes): array
+    {
+        $jtlProductAttributeNames = [];
         foreach($jtlProductAttributes as $jtlProductAttribute){
             foreach($jtlProductAttribute->getI18ns() as $productAttrI18n){
                 $languageId = (int)Utils::getInstance()->getLanguageIdByIso($productAttrI18n->getLanguageISO());
                 if ($languageId === $psLanguageId) {
-                    $jtlAttributes[] = $productAttrI18n->getName();
+                    $jtlProductAttributeNames[] = $productAttrI18n->getName();
                 }
             }
         }
-
-        foreach ($attributeIds as $attributeId) {
-            $featureName = $this->db->getValue(sprintf('SELECT name FROM %sfeature_lang WHERE id_feature = "%s" AND id_lang = %d', _DB_PREFIX_, $attributeId['id_feature'], $psLanguageId));
-
-            if ((bool)\Configuration::get(\JTLConnector::CONFIG_DELETE_UNKNOWN_ATTRIBUTES) === true || in_array($featureName, $jtlAttributes)) {
-                $attributeValues = $this->db->executeS(
-                    sprintf('SELECT id_feature_value FROM %sfeature_value WHERE custom = 1 AND id_feature = %s', _DB_PREFIX_, $attributeId['id_feature'] )
-                );
-
-                foreach ($attributeValues as $attributeValue) {
-                    $this->db->Execute(
-                        sprintf('DELETE FROM `%sfeature_product`WHERE `id_product` = %s AND `id_feature_value` = %s',_DB_PREFIX_,intval($model->id),intval($attributeValue['id_feature_value']))
-                    );
-                }
-            }
-        }
+        return $jtlProductAttributeNames;
     }
 
     /**
