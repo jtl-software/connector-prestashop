@@ -9,7 +9,7 @@ class CustomerOrder extends BaseController
     public function pullData($data, $model, $limit = null)
     {
         $query = '
-            SELECT IF((SELECT COUNT(`reference`)FROM `ps_orders` WHERE `reference` = `o`.`reference`) > 1, CONCAT(`o`.`reference`, "-", `o`.`id_order`), `o`.`reference`) `order_number`, 
+            SELECT IF((SELECT COUNT(`reference`) FROM `ps_orders` WHERE `reference` = `o`.`reference`) > 1, CONCAT(`o`.`reference`, "-", `o`.`id_order`), `o`.`reference`) `order_number`, 
                 o.*, c.iso_code AS currency, s.name AS shippingMethod
 			FROM '._DB_PREFIX_.'orders o
 			LEFT JOIN '._DB_PREFIX_.'currency c ON c.id_currency = o.id_currency
