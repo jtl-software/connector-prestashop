@@ -1,4 +1,8 @@
 <?php
+
+use jtl\Connector\Application\Application;
+use jtl\Connector\Presta\Presta;
+
 /**
  * JTL Connector Module
  *
@@ -21,8 +25,10 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
             session_destroy();
         }
 
-        $connector = \jtl\Connector\Presta\Presta::getInstance();
-        $application = \jtl\Connector\Application\Application::getInstance();
+        $connector = Presta::getInstance();
+        /** @var Application $application */
+        $application = Application::getInstance();
+        $application->createFeaturesFileIfNecessary(sprintf('%s/config/features.example.json', CONNECTOR_DIR));
         $application->register($connector);
         $application->run();
 

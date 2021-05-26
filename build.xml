@@ -22,7 +22,7 @@
                 <include name="views/"/>
                 <include name="upgrade/"/>
                 <include name="build-config.yaml"/>
-                <include name="config/features.json"/>
+                <include name="config/features.example.json"/>
                 <include name="config/.htaccess"/>
                 <include name="config/index.php"/>
                 <include name="config/config.json"/>
