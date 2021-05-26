@@ -14,7 +14,8 @@ class ProductAttr extends BaseController
     public const
         DELIVERY_OUT_STOCK = 'delivery_out_stock',
         DELIVERY_IN_STOCK = 'delivery_in_stock',
-        AVAILABLE_LATER = 'available_later';
+        AVAILABLE_LATER = 'available_later',
+        TAGS = 'tags';
 
     /**
      * @var array<string>
