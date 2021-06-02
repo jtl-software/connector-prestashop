@@ -23,7 +23,8 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         IdentityLinker::TYPE_SPECIFIC_VALUE => 'specific_value',
         IdentityLinker::TYPE_PAYMENT => 'payment',
         IdentityLinker::TYPE_CROSSSELLING => 'crossselling',
-        IdentityLinker::TYPE_CROSSSELLING_GROUP => 'crossselling_group'
+        IdentityLinker::TYPE_CROSSSELLING_GROUP => 'crossselling_group',
+        IdentityLinker::TYPE_TAX_CLASS => 'tax_class'
     ];
 
     public function __construct()
