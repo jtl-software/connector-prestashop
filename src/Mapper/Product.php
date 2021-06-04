@@ -213,23 +213,8 @@ class Product extends BaseMapper
      */
     protected function findTaxClassId(\jtl\Connector\Model\TaxRate ...$jtlTaxRates)
     {
-        $prestaTaxRates = $this->db->query(sprintf(
-            'SELECT rate, iso_code
-                    FROM %stax_rule
-                    LEFT JOIN %stax ON %stax.id_tax = %stax_rule.id_tax
-                    LEFT JOIN %scountry ON %scountry.id_country = %stax_rule.id_country', ...array_fill(0,7,_DB_PREFIX_)
-        ))->fetchAll(\PDO::FETCH_ASSOC);
-
-        $prestaTaxRates = array_combine(array_column($prestaTaxRates, 'iso_code'), $prestaTaxRates);
-
-        $jtlTaxRates = array_combine(array_map(function (\jtl\Connector\Model\TaxRate $taxRate) {
-            return $taxRate->getCountryIso();
-        }, $jtlTaxRates), $jtlTaxRates);
-
-        $commonTaxRates = array_values(array_intersect_key($jtlTaxRates, $prestaTaxRates));
-
         $conditions = [];
-        foreach($commonTaxRates as $taxRate){
+        foreach($jtlTaxRates as $taxRate){
             $conditions[] = sprintf("(iso_code = '%s' AND rate='%s')", $taxRate->getCountryIso(), number_format($taxRate->getRate(), 3));
         }
 
