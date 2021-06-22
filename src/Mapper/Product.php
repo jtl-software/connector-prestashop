@@ -199,7 +199,7 @@ class Product extends BaseMapper
 
             if (count($product->getTaxRates()) > 0 && !is_null($product->getTaxClassId())) {
                 $taxRulesGroupId = $this->findTaxClassId(...$product->getTaxRates()) ?? $taxRulesGroupId;
-                $product->getTaxClassId()->setEndpoint($taxRulesGroupId);
+                //$product->getTaxClassId()->setEndpoint($taxRulesGroupId);
             }
         }
 

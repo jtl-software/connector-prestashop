@@ -5,7 +5,7 @@ config/config.json
 build/**
 dist/**
 zip/**
-db/connector.s3db
+db/connector.s3db*
 .idea/**
 config_de.xml
 config.xml
