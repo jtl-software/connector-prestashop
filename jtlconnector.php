@@ -317,7 +317,7 @@ class JTLConnector extends Module
                     'label'   => $this->l('Delete unknown attributes'),
                     'name'    => self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES,
                     'is_bool' => true,
-                    'desc'    => $this->l('Enable this option to allow deleting unknown attributes on product (default:false)'),
+                    'desc'    => $this->l('Enable this option when not in JTL-Wawi defined product attributes should get deleted'),
                     'values'  => [
                         [
                             'id'    => 'active_on',
@@ -333,7 +333,7 @@ class JTLConnector extends Module
                 ],
                 [
                     'type'     => 'date',
-                    'label'    => $this->l('Date treshold'),
+                    'label'    => $this->l('Import orders from'),
                     'name'     => 'jtlconnector_from_date',
                     'desc'     => $this->l('If this option is set, only orders are pulled that are newer then this date.'),
                     'size'     => 5,
@@ -341,7 +341,7 @@ class JTLConnector extends Module
                 ],
                 [
                     'type'  => 'button',
-                    'label' => $this->l('Remove inconsistant specifics from the database'),
+                    'label' => $this->l('Remove inconsistent specifics database entries'),
                     'text'  => $this->l('Remove'),
                     'name'  => 'jtlconnector_remove_inconsistency',
                     'icon'  => 'delete',
