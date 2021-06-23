@@ -319,8 +319,15 @@ class Product extends BaseController
         $specialAttributes = ProductAttr::getSpecialAttributes();
 
         $foundSpecialAttributes = [];
+        $tags = [];
         foreach ($data->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
+
+                if ($i18n->getName() === ProductAttr::TAGS) {
+                    $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
+                    $tags[$id] = explode(',', $i18n->getValue());
+                }
+
                 $name = array_search($i18n->getName(), $specialAttributes);
                 if ($name === false) {
                     $name = $i18n->getName();
@@ -358,7 +365,10 @@ class Product extends BaseController
             $product->{$specialAttributes[$key]} = $value;
         }
 
-
+        \Tag::deleteTagsForProduct($product->id_product);
+        foreach ($tags as $languageId => $tagList) {
+            \Tag::addTags($languageId, $product->id_product, $tagList);
+        }
 
         $prices = $data->getPrices();
         $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
@@ -407,6 +417,25 @@ class Product extends BaseController
             if(count($attribute->getI18ns()) > 0) {
                 $model->addAttribute($attribute);
             }
+        }
+
+        $productTags = \Tag::getProductTags($model->getId()->getEndpoint());
+        if (!empty($productTags)) {
+            $productTagsAttribute = (new ProductAttrModel())
+                ->setId(new Identity(ProductAttr::TAGS))
+                ->setProductId($model->getId())
+                ->setIsTranslated(true);
+
+            foreach ($productTags as $languageId => $productTag) {
+                $languageIso = Utils::getInstance()->getLanguageIsoById((string)$languageId);
+                $productTagsAttribute->addI18n((new ProductAttrI18nModel())
+                    ->setProductAttrId($productTagsAttribute->getId())
+                    ->setLanguageISO($languageIso)
+                    ->setName('tags')
+                    ->setValue(join(',', $productTag)));
+            }
+
+            $model->addAttribute($productTagsAttribute);
         }
     }
 

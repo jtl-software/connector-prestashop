@@ -14,7 +14,8 @@ class ProductAttr extends BaseController
     public const
         DELIVERY_OUT_STOCK = 'delivery_out_stock',
         DELIVERY_IN_STOCK = 'delivery_in_stock',
-        AVAILABLE_LATER = 'available_later';
+        AVAILABLE_LATER = 'available_later',
+        TAGS = 'tags';
 
     /**
      * @var array<string>
@@ -109,6 +110,7 @@ class ProductAttr extends BaseController
                         $featureData['values'][$id] = $i18n->getValue();
                     }
                 }
+
                 if ($isIgnoredAttribute || !isset($featureData['names'])) {
                     continue;
                 }
@@ -231,6 +233,6 @@ class ProductAttr extends BaseController
      */
     public function getAttributesToIgnore(): array
     {
-        return array_merge(self::$specialAttributes, array_combine(array_values(self::$i18nAttributes), array_values(self::$i18nAttributes)));
+        return array_merge(self::$specialAttributes, array_combine(array_values(self::$i18nAttributes), array_values(self::$i18nAttributes)), [self::TAGS => self::TAGS]);
     }
 }
