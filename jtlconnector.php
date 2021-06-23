@@ -16,6 +16,8 @@ if (!defined('CONNECTOR_DIR')) {
 if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
     define("JTL_CONNECTOR_DATABASE_COLLATION", "utf8_general_ci");
 }
+
+use jtl\Connector\Linker\IdentityLinker;
 use jtl\Connector\Presta\Utils\Config;
 use Symfony\Component\Yaml\Yaml;
 
@@ -450,6 +452,7 @@ class JTLConnector extends Module
                 512  => 'payment',
                 1024 => 'crossselling',
                 2048 => 'crossselling_group',
+                IdentityLinker::TYPE_TAX_CLASS => 'tax_class'
             ];
             
             $queryInt = 'CREATE TABLE IF NOT EXISTS %s (

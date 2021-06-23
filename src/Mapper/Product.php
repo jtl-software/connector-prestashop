@@ -179,18 +179,55 @@ class Product extends BaseMapper
     }
 
     /**
-     * @param $data
-     * @return false|string|null
+     * @param \jtl\Connector\Model\Product $product
+     * @return false|mixed|string|null
+     * @throws \PrestaShopDatabaseException
      */
-    protected function id_tax_rules_group($data)
+    protected function id_tax_rules_group(\jtl\Connector\Model\Product $product)
     {
-        $sql =
-            'SELECT rg.id_tax_rules_group' . "\n" .
-            'FROM %stax_rule r' . "\n" .
-            'LEFT JOIN %stax_rules_group rg ON rg.id_tax_rules_group = r.id_tax_rules_group' . "\n" .
-            'LEFT JOIN %stax t ON t.id_tax = r.id_tax' . "\n" .
-            'WHERE t.rate = %s && r.id_country = %s && rg.deleted = 0 && t.active = 1 && rg.active = 1';
+        if (!is_null($product->getTaxClassId()) && !empty($product->getTaxClassId()->getEndpoint())) {
+            $taxRulesGroupId = $product->getTaxClassId()->getEndpoint();
+        } else {
+            $sql =
+                'SELECT rg.id_tax_rules_group' . "\n" .
+                'FROM %stax_rule r' . "\n" .
+                'LEFT JOIN %stax_rules_group rg ON rg.id_tax_rules_group = r.id_tax_rules_group' . "\n" .
+                'LEFT JOIN %stax t ON t.id_tax = r.id_tax' . "\n" .
+                'WHERE t.rate = %s && r.id_country = %s && rg.deleted = 0 && t.active = 1 && rg.active = 1';
 
-        return $this->db->getValue(sprintf($sql, _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $data->getVat(), \Context::getContext()->country->id));
+            $taxRulesGroupId = $this->db->getValue(sprintf($sql, _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $product->getVat(), \Context::getContext()->country->id));
+
+            if (count($product->getTaxRates()) > 0 && !is_null($product->getTaxClassId())) {
+                $taxRulesGroupId = $this->findTaxClassId(...$product->getTaxRates()) ?? $taxRulesGroupId;
+                //$product->getTaxClassId()->setEndpoint($taxRulesGroupId);
+            }
+        }
+
+        return $taxRulesGroupId;
+    }
+
+    /**
+     * @param \jtl\Connector\Model\TaxRate ...$jtlTaxRates
+     * @return mixed|null
+     * @throws \PrestaShopDatabaseException
+     */
+    protected function findTaxClassId(\jtl\Connector\Model\TaxRate ...$jtlTaxRates)
+    {
+        $conditions = [];
+        foreach($jtlTaxRates as $taxRate){
+            $conditions[] = sprintf("(iso_code = '%s' AND rate='%s')", $taxRate->getCountryIso(), number_format($taxRate->getRate(), 3));
+        }
+
+        $foundTaxClasses = $this->db->query(sprintf(
+            'SELECT id_tax_rules_group, COUNT(id_tax_rules_group) AS hits
+                    FROM %stax_rule
+                    LEFT JOIN %stax ON %stax.id_tax = %stax_rule.id_tax
+                    LEFT JOIN %scountry ON %scountry.id_country = %stax_rule.id_country
+                    WHERE %s 
+                    GROUP BY id_tax_rules_group
+                    ORDER BY hits DESC', ...array_merge(array_fill(0,7,_DB_PREFIX_), [join(' OR ',$conditions)])
+        ))->fetchAll(\PDO::FETCH_ASSOC);
+
+        return $foundTaxClasses[0]['id_tax_rules_group'] ?? null;
     }
 }

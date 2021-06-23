@@ -1,5 +1,7 @@
 <?php
 
+use jtl\Connector\Linker\IdentityLinker;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -21,6 +23,7 @@ function jtl_connector_migration($object)
         512  => 'payment',
         1024 => 'crossselling',
         2048 => 'crossselling_group',
+        IdentityLinker::TYPE_TAX_CLASS => 'tax_class'
     ];
     
     $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
