@@ -1,3 +1,11 @@
+1.10.0
+-----
+- CO-314  - Added config option to decide if unknown product attributes should get deleted or not
+- CO-1224 - Fixed problem with importing splitted orders
+- CO-1463 - Added product tax class guessing on product push
+- CO-1500 - Added support for not overriding features.json file on connector update
+- CO-1525 - Added product tags handling support by using "tags" attribute
+
 1.9.0
 -----
 - Increased minimum PHP version to 7.1.3, updated connector core to version 3 

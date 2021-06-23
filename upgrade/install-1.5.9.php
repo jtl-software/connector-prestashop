@@ -22,8 +22,7 @@ function jtl_connector_migration($object)
         256  => 'specific_value',
         512  => 'payment',
         1024 => 'crossselling',
-        2048 => 'crossselling_group',
-        IdentityLinker::TYPE_TAX_CLASS => 'tax_class'
+        2048 => 'crossselling_group'
     ];
     
     $queryInt = 'CREATE TABLE IF NOT EXISTS %s (

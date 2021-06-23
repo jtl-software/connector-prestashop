@@ -4,7 +4,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-function upgrade_module_1_9_0($object)
+function upgrade_module_1_10_0($object)
 {
     $link = \Db::getInstance()->getLink();
     
