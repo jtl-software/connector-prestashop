@@ -35,8 +35,11 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
             session_destroy();
         }
 
+        $connector = Presta::getInstance();
+        /** @var Application $application */
         $application = Application::getInstance();
-        $application->register(Presta::getInstance());
+        $application->createFeaturesFileIfNecessary(sprintf('%s/config/features.example.json', CONNECTOR_DIR));
+        $application->register($connector);
         $application->run();
 
         exit();
