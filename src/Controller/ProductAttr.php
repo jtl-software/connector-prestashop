@@ -120,6 +120,7 @@ class ProductAttr extends BaseController
                         ));
                     }
                 }
+
                 if ($isIgnoredAttribute || !isset($featureData['names'])) {
                     continue;
                 }
@@ -257,6 +258,6 @@ class ProductAttr extends BaseController
      */
     public function getAttributesToIgnore(): array
     {
-        return array_merge(self::$specialAttributes, array_combine(array_values(self::$i18nAttributes), array_values(self::$i18nAttributes)));
+        return array_merge(self::$specialAttributes, array_combine(array_values(self::$i18nAttributes), array_values(self::$i18nAttributes)), [self::TAGS => self::TAGS]);
     }
 }
