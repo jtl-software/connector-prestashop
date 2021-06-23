@@ -13,7 +13,7 @@ class CustomerOrder extends BaseMapper
         'creationDate' => 'date_add',
         'currencyIso' => 'currency',
         'languageISO' => null,
-        'orderNumber' => 'reference',
+        'orderNumber' => 'order_number',
         'paymentDate' => 'invoice_date',
         'paymentModuleCode' => null,
         'shippingAddress' => 'CustomerOrderShippingAddress',
