@@ -8,7 +8,11 @@ use Combination;
 use Context;
 use Exception;
 use jtl\Connector\Model\Identity;
+use jtl\Connector\Model\ProductAttrI18n as ProductAttrI18nModel;
+use jtl\Connector\Model\ProductAttr as ProductAttrModel;
+use jtl\Connector\Model\Product as ProductModel;
 use jtl\Connector\Presta\Utils\Utils;
+use jtl\Connector\Model\ProductVariation;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
@@ -147,33 +151,39 @@ class Product extends BaseController
 
             $combi = new Combination($combiId);
 
-            $valIds = [];
-            $attrGrpId = null;
+            $allowedGroupTypes = [
+                ProductVariation::TYPE_RADIO,
+                ProductVariation::TYPE_SELECT
+            ];
 
+            $valIds = [];
             foreach ($data->getVariations() as $variation) {
+                $groupType = in_array($variation->getType(), $allowedGroupTypes) ? $variation->getType() : ProductVariation::TYPE_SELECT;
+                $attrGrpId = null;
+                $attrPublicNames = [];
                 $attrNames = [];
                 foreach ($variation->getI18ns() as $varI18n) {
                     $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
-
                     $varName = $varI18n->getName();
-
                     if (!empty($varName)) {
-                        $attrNames[$langId] = $varName;
+                        $attrNames[$langId] = sprintf('%s (%s)', $varName, ucfirst($groupType));
+                        $attrPublicNames[$langId] = $varName;
                     }
 
                     if ($langId == Context::getContext()->language->id) {
-                        $attrGrpId = $this->db->getValue('SELECT id_attribute_group FROM ' . _DB_PREFIX_ . 'attribute_group_lang WHERE name="' . $varName . '"');
+                        $sql = sprintf('SELECT id_attribute_group FROM %sattribute_group_lang WHERE name = "%s"', _DB_PREFIX_, $attrNames[$langId]);
+                        $attrGrpId = $this->db->getValue($sql);
                     }
                 }
 
-                $attrGrp = new AttributeGroup($attrGrpId);
-                $attrGrp->name = $attrNames;
-                $attrGrp->public_name = $attrNames;
-                $attrGrp->group_type = 'select';
-
-                $attrGrp->save();
-
-                $attrGrpId = $attrGrp->id;
+                if (in_array($attrGrpId, [false, null], true) || in_array($variation->getType(), $allowedGroupTypes)) {
+                    $attrGrp = new AttributeGroup($attrGrpId);
+                    $attrGrp->name = $attrNames;
+                    $attrGrp->public_name = $attrPublicNames;
+                    $attrGrp->group_type = $groupType;
+                    $attrGrp->save();
+                    $attrGrpId = $attrGrp->id;
+                }
 
                 foreach ($variation->getValues() as $value) {
                     $valNames = [];
@@ -262,18 +272,17 @@ class Product extends BaseController
      */
     public function deleteData($data)
     {
-        $isCombi = (strpos($data->getId()->getEndpoint(), '_') === false) ? false : true;
+        $endpoint = $data->getId()->getEndpoint();
+        if ($endpoint !== '') {
+            $isCombi = strpos($data->getId()->getEndpoint(), '_') !== false;
+            if (!$isCombi) {
+                $obj = new \Product($endpoint);
+            } else {
+                list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
+                $obj = new Combination($combiId);
+            }
 
-        if (!$isCombi) {
-            $obj = new \Product($data->getId()->getEndpoint());
-        } else {
-            list($productId, $combiId) = explode('_', $data->getId()->getEndpoint());
-
-            $obj = new Combination($combiId);
-        }
-
-        if (!$obj->delete()) {
-            throw new Exception('Error deleting product with id: ' . $data->getId()->getEndpoint());
+            $obj->delete();
         }
 
         return $data;
@@ -310,8 +319,15 @@ class Product extends BaseController
         $specialAttributes = ProductAttr::getSpecialAttributes();
 
         $foundSpecialAttributes = [];
+        $tags = [];
         foreach ($data->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
+
+                if ($i18n->getName() === ProductAttr::TAGS) {
+                    $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
+                    $tags[$id] = explode(',', $i18n->getValue());
+                }
+
                 $name = array_search($i18n->getName(), $specialAttributes);
                 if ($name === false) {
                     $name = $i18n->getName();
@@ -349,6 +365,11 @@ class Product extends BaseController
             $product->{$specialAttributes[$key]} = $value;
         }
 
+        \Tag::deleteTagsForProduct($product->id_product);
+        foreach ($tags as $languageId => $tagList) {
+            \Tag::addTags($languageId, $product->id_product, $tagList);
+        }
+
         $prices = $data->getPrices();
         $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
         $product->save();
@@ -360,36 +381,109 @@ class Product extends BaseController
      */
     private function pullSpecialAttributes($data, $model)
     {
+        $utils = Utils::getInstance();
+        $languageId = (string)Context::getContext()->language->id;
+        $languageISO = $utils->getLanguageIsoById($languageId);
+
         foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
             if (isset($data[$prestaName])) {
-                $attribute = new \jtl\Connector\Model\ProductAttr();
-                $attributeI18n = new \jtl\Connector\Model\ProductAttrI18n();
-                $attribute->setId(new Identity($prestaName));
-                $attribute->setProductId($model->getId());
-                $attributeI18n->setProductAttrId($attribute->getId());
-                $attributeI18n->setLanguageISO(Utils::getInstance()->getLanguageIsoById((string)Context::getContext()->language->id));
-                $attributeI18n->setName($wawiName);
-
                 $value = $data[$prestaName];
                 if ($wawiName === 'main_category_id') {
-                    $value = (string)$this->findCategoryHostIdByEndpoint($data[$prestaName]);
+                    $value = (string)$this->findCategoryHostIdByEndpoint((int)$value);
                 }
 
                 if ($value !== '') {
-                    $attributeI18n->setValue($value);
-                    $attribute->setI18ns([$attributeI18n]);
-                    $model->addAttribute($attribute);
+                    $this->addAttribute($wawiName, $prestaName, $model, $value, $languageISO);
                 }
             }
+        }
+
+        foreach(ProductAttr::getI18nAttributes() as $attributeName) {
+            $attribute = (new ProductAttrModel())
+                ->setId(new Identity($attributeName))
+                ->setProductId($model->getId())
+                ->setIsTranslated(true);
+
+            foreach ($this->getProductTranslations($data['id_product']) as $productTranslation) {
+                if(isset($productTranslation[$attributeName]) && !empty($productTranslation[$attributeName])) {
+                    $attribute->addI18n((new ProductAttrI18nModel())
+                        ->setProductAttrId($attribute->getId())
+                        ->setLanguageISO($utils->getLanguageIsoById($productTranslation['id_lang']))
+                        ->setName($attributeName)
+                        ->setValue($productTranslation[$attributeName]));
+                }
+            }
+
+            if(count($attribute->getI18ns()) > 0) {
+                $model->addAttribute($attribute);
+            }
+        }
+
+        $productTags = \Tag::getProductTags($model->getId()->getEndpoint());
+        if (!empty($productTags)) {
+            $productTagsAttribute = (new ProductAttrModel())
+                ->setId(new Identity(ProductAttr::TAGS))
+                ->setProductId($model->getId())
+                ->setIsTranslated(true);
+
+            foreach ($productTags as $languageId => $productTag) {
+                $languageIso = Utils::getInstance()->getLanguageIsoById((string)$languageId);
+                $productTagsAttribute->addI18n((new ProductAttrI18nModel())
+                    ->setProductAttrId($productTagsAttribute->getId())
+                    ->setLanguageISO($languageIso)
+                    ->setName('tags')
+                    ->setValue(join(',', $productTag)));
+            }
+
+            $model->addAttribute($productTagsAttribute);
         }
     }
 
     /**
-     * @param string $prestaCategoryId
+     * @param string $wawiName
+     * @param string $prestaName
+     * @param ProductModel $model
+     * @param string $value
+     * @param string $languageISO
+     */
+    protected function addAttribute(string $wawiName, string $prestaName, ProductModel $model, string $value, string $languageISO): void
+    {
+        $attribute = (new ProductAttrModel())
+            ->setId(new Identity($wawiName))
+            ->setProductId($model->getId());
+
+        $attributeI18n = (new ProductAttrI18nModel())
+            ->setProductAttrId($attribute->getId())
+            ->setLanguageISO($languageISO)
+            ->setName($prestaName)
+            ->setValue($value);
+
+        $attribute->addI18n($attributeI18n);
+
+        $model->addAttribute($attribute);
+    }
+
+    /**
+     * @param integer $prestaCategoryId
      * @return string
      */
-    protected function findCategoryHostIdByEndpoint($prestaCategoryId)
+    protected function findCategoryHostIdByEndpoint(int $prestaCategoryId): string
     {
-        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', (int)$prestaCategoryId));
+        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', $prestaCategoryId));
+    }
+
+    /**
+     * @param int $productId
+     * @return array|null
+     * @throws PrestaShopDatabaseException
+     */
+    protected function getProductTranslations(int $productId): array
+    {
+        $sql =
+            'SELECT p.*' . "\n" .
+            'FROM %sproduct_lang p' . "\n" .
+            'WHERE p.id_product = %d';
+
+        return $this->db->executeS(sprintf($sql, _DB_PREFIX_, $productId));
     }
 }
