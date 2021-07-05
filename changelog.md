@@ -1,3 +1,9 @@
+1.11.0
+------
+- CO-1340 - Fixed multiple creation of images
+- CO-1244 - Feature replaced composer.phar by lib folder
+- Fixed table prefix in order pull
+
 1.10.0
 -----
 - CO-314  - Added config option to decide if unknown product attributes should get deleted or not
