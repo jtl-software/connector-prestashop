@@ -2,8 +2,6 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-use jtl\Connector\Core\Logger\Logger;
-use jtl\Connector\Formatter\ExceptionFormatter;
 use jtl\Connector\Presta\Utils\Utils;
 use Context;
 
@@ -30,11 +28,14 @@ class Image extends BaseController
 
     public function pushData($data)
     {
-        $this->deleteData($data);
-
         $id = $data->getForeignKey()->getEndpoint();
 
         if (!empty($id)) {
+
+            if (in_array($data->getRelationType(), ['category', 'manufacturer'])) {
+                $this->deleteData($data);
+            }
+
             $generate_hight_dpi_images = (bool)\Configuration::get('PS_HIGHT_DPI');
 
             switch ($data->getRelationType()) {
@@ -97,7 +98,10 @@ class Image extends BaseController
                 case 'product':
                     list($productId, $combiId) = Utils::explodeProductEndpoint($id);
 
-                    $img = new \Image();
+                    $identity = $data->getId();
+                    $isUpdate = $identity->getEndpoint() !== "";
+
+                    $img = new \Image($isUpdate ? (int)$identity->getEndpoint() : null);
                     $img->id_product = $productId;
                     $img->position = $data->getSort();
 
@@ -139,11 +143,11 @@ class Image extends BaseController
                         }
                     }
 
-                    $data->getId()->setEndpoint($img->id);
-
-                    if (!is_null($combiId)) {
+                    if (!is_null($combiId) && $isUpdate === false) {
                         $this->db->execute('INSERT INTO '._DB_PREFIX_.'product_attribute_image SET id_product_attribute='.$combiId.', id_image='.$img->id);
                     }
+
+                    $data->getId()->setEndpoint($img->id);
 
                     break;
             }
@@ -171,7 +175,7 @@ class Image extends BaseController
                 case 'product':
                     $id = $data->getId()->getEndpoint();
                     if (!empty($id)) {
-                        $img = new \Image($id);
+                        $img = new \Image((int)$id);
                         $img->delete();
                     }
                     break;
