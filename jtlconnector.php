@@ -17,7 +17,6 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
     define("JTL_CONNECTOR_DATABASE_COLLATION", "utf8_general_ci");
 }
 
-use jtl\Connector\Linker\IdentityLinker;
 use jtl\Connector\Presta\Utils\Config;
 use Symfony\Component\Yaml\Yaml;
 
@@ -138,11 +137,7 @@ class JTLConnector extends Module
 
     public function getContent()
     {
-        if (file_exists(CONNECTOR_DIR . '/lib/autoload.php')) {
-            require_once CONNECTOR_DIR . '/lib/autoload.php';
-        } else {
-            include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/lib/autoload.php';
-        }
+        require_once CONNECTOR_DIR . '/lib/autoload.php';
 
         $output = null;
 

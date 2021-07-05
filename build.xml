@@ -36,7 +36,7 @@
                 <include name="plugins/index.php"/>
                 <include name="tmp/.htaccess"/>
                 <include name="src/"/>
-                <include name="vendor/"/>
+                <include name="lib/"/>
                 <include name="build-config.yaml"/>
             </fileset>
         </copy>
