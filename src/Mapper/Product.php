@@ -214,7 +214,7 @@ class Product extends BaseMapper
     protected function findTaxClassId(\jtl\Connector\Model\TaxRate ...$jtlTaxRates)
     {
         $conditions = [];
-        foreach($jtlTaxRates as $taxRate){
+        foreach ($jtlTaxRates as $taxRate) {
             $conditions[] = sprintf("(iso_code = '%s' AND rate='%s')", $taxRate->getCountryIso(), number_format($taxRate->getRate(), 3));
         }
 
@@ -225,7 +225,8 @@ class Product extends BaseMapper
                     LEFT JOIN %scountry ON %scountry.id_country = %stax_rule.id_country
                     WHERE %s 
                     GROUP BY id_tax_rules_group
-                    ORDER BY hits DESC', ...array_merge(array_fill(0,7,_DB_PREFIX_), [join(' OR ',$conditions)])
+                    ORDER BY hits DESC',
+            ...array_merge(array_fill(0, 7, _DB_PREFIX_), [join(' OR ', $conditions)])
         ))->fetchAll(\PDO::FETCH_ASSOC);
 
         return $foundTaxClasses[0]['id_tax_rules_group'] ?? null;

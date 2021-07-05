@@ -24,7 +24,8 @@ class DeliveryNote extends BaseController
 
                 $codesString = implode(',', array_unique($trackingCodes));
 
-                $this->db->execute(sprintf('UPDATE %sorder_carrier SET tracking_number = "%s" WHERE id_order = %s',
+                $this->db->execute(sprintf(
+                    'UPDATE %sorder_carrier SET tracking_number = "%s" WHERE id_order = %s',
                     _DB_PREFIX_,
                     $codesString,
                     $orderId

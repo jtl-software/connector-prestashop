@@ -1,4 +1,5 @@
 <?php
+
 use jtl\Connector\Application\Application;
 use jtl\Connector\Presta\Presta;
 
