@@ -1,7 +1,7 @@
 1.11.0
 ------
 - CO-1340 - Fixed multiple creation of images
-- CO-1244 - Feature replaced composer.phar by lib folder
+- CO-1244 - Feature replaced connector.phar by lib/ folder
 - Fixed table prefix in order pull
 
 1.10.0
