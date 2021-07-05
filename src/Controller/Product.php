@@ -322,7 +322,6 @@ class Product extends BaseController
         $tags = [];
         foreach ($data->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
-
                 if ($i18n->getName() === ProductAttr::TAGS) {
                     $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
                     $tags[$id] = explode(',', $i18n->getValue());
@@ -398,14 +397,14 @@ class Product extends BaseController
             }
         }
 
-        foreach(ProductAttr::getI18nAttributes() as $attributeName) {
+        foreach (ProductAttr::getI18nAttributes() as $attributeName) {
             $attribute = (new ProductAttrModel())
                 ->setId(new Identity($attributeName))
                 ->setProductId($model->getId())
                 ->setIsTranslated(true);
 
             foreach ($this->getProductTranslations($data['id_product']) as $productTranslation) {
-                if(isset($productTranslation[$attributeName]) && !empty($productTranslation[$attributeName])) {
+                if (isset($productTranslation[$attributeName]) && !empty($productTranslation[$attributeName])) {
                     $attribute->addI18n((new ProductAttrI18nModel())
                         ->setProductAttrId($attribute->getId())
                         ->setLanguageISO($utils->getLanguageIsoById($productTranslation['id_lang']))
@@ -414,7 +413,7 @@ class Product extends BaseController
                 }
             }
 
-            if(count($attribute->getI18ns()) > 0) {
+            if (count($attribute->getI18ns()) > 0) {
                 $model->addAttribute($attribute);
             }
         }

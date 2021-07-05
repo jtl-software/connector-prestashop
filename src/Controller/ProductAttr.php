@@ -83,7 +83,6 @@ class ProductAttr extends BaseController
         foreach ($data->getAttributes() as $attr) {
             $isIgnoredAttribute = false;
             if ($attr->getIsCustomProperty() === false || Configuration::get('jtlconnector_custom_fields')) {
-
                 $featureData = [];
                 $defaultName = '';
 
@@ -100,7 +99,7 @@ class ProductAttr extends BaseController
 
                     $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO()) ?? $defaultLanguageId;
 
-                    if((int) $id === $defaultLanguageId){
+                    if ((int) $id === $defaultLanguageId) {
                         $defaultName = $i18n->getName();
                     }
 
@@ -181,8 +180,8 @@ class ProductAttr extends BaseController
     protected function getJtlProductAttributeNames(int $psLanguageId, \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes): array
     {
         $jtlProductAttributeNames = [];
-        foreach($jtlProductAttributes as $jtlProductAttribute){
-            foreach($jtlProductAttribute->getI18ns() as $productAttrI18n){
+        foreach ($jtlProductAttributes as $jtlProductAttribute) {
+            foreach ($jtlProductAttribute->getI18ns() as $productAttrI18n) {
                 $languageId = (int)Utils::getInstance()->getLanguageIdByIso($productAttrI18n->getLanguageISO());
                 if ($languageId === $psLanguageId) {
                     $jtlProductAttributeNames[] = $productAttrI18n->getName();

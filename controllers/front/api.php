@@ -3,6 +3,8 @@
 use jtl\Connector\Application\Application;
 use jtl\Connector\Presta\Presta;
 
+require_once CONNECTOR_DIR . '/lib/autoload.php';
+
 /**
  * JTL Connector Module
  *
@@ -21,16 +23,6 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
 {
     public function initContent()
     {
-        if (file_exists(CONNECTOR_DIR . '/lib/autoload.php')) {
-            $loader = require_once CONNECTOR_DIR . '/lib/autoload.php';
-        } else {
-            $loader = include_once 'phar://' . CONNECTOR_DIR . '/connector.phar/lib/autoload.php';
-        }
-
-        if ($loader instanceof \Composer\Autoload\ClassLoader) {
-            $loader->add('', CONNECTOR_DIR . '/plugins');
-        }
-
         if (isset($_SESSION)) {
             session_destroy();
         }

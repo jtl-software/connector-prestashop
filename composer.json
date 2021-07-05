@@ -35,6 +35,9 @@
     "psr-4": {
       "jtl\\Connector\\Presta\\": "src/",
       "Tests\\": "tests/"
+    },
+    "psr-0": {
+      "": "plugins/"
     }
   },
   "require-dev": {
