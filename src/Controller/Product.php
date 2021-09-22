@@ -11,6 +11,7 @@ use jtl\Connector\Model\Identity;
 use jtl\Connector\Model\ProductAttrI18n as ProductAttrI18nModel;
 use jtl\Connector\Model\ProductAttr as ProductAttrModel;
 use jtl\Connector\Model\Product as ProductModel;
+use jtl\Connector\Presta\Mapper\ProductAttr as ProductAttrMapper;
 use jtl\Connector\Presta\Utils\Utils;
 use jtl\Connector\Model\ProductVariation;
 use PrestaShopDatabaseException;
@@ -19,6 +20,17 @@ use PrestaShopException;
 class Product extends BaseController
 {
     private static $idCache = [];
+
+    protected $productAttrMapper;
+
+    /**
+     * Product constructor.
+     */
+    public function __construct()
+    {
+        $this->productAttrMapper = new ProductAttrMapper();
+        parent::__construct();
+    }
 
     public function pullData($data, $model, $limit = null)
     {
@@ -371,7 +383,34 @@ class Product extends BaseController
 
         $prices = $data->getPrices();
         $product->price = round(end($prices)->getItems()[0]->getNetPrice(), 6);
+
+        $rrp = $data->getRecommendedRetailPrice();
+        if ($rrp > $product->price) {
+            $this->saveRecommendedRetailPriceAsFeature($product, $rrp);
+        }
+
         $product->save();
+    }
+
+    /**
+     * @param \Product $prestaProduct
+     * @param float $rrp
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     */
+    protected function saveRecommendedRetailPriceAsFeature(\Product $prestaProduct, float $rrp)
+    {
+        $defaultLanguageId = Context::getContext()->language->id;
+
+        $translations = [];
+        foreach (Utils::getInstance()->getLanguages() as $language) {
+            $translations[$language['id_lang']] = [
+                'name' => ProductAttr::RECOMMENDED_RETAIL_PRICE,
+                'value' => $rrp
+            ];
+        }
+
+        $this->productAttrMapper->saveCustomAttribute($prestaProduct, $defaultLanguageId, $translations, true);
     }
 
     /**
