@@ -8,16 +8,18 @@ class ProductAttrI18n extends BaseController
     {
         $resultA = $this->db->executeS(
             '
-			SELECT l.*
-			FROM '._DB_PREFIX_.'feature_lang l
-			WHERE l.id_feature = '.$data['id_feature']
+			SELECT fl.*
+			FROM '._DB_PREFIX_.'feature_lang fl
+			LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = fl.id_lang
+			WHERE l.id_lang IS NOT NULL AND fl.id_feature = '.$data['id_feature']
         );
 
         $resultV = $this->db->executeS(
             '
-			SELECT l.*
-			FROM '._DB_PREFIX_.'feature_value_lang l
-			WHERE l.id_feature_value = '.$data['id_feature_value']
+			SELECT vl.*
+			FROM '._DB_PREFIX_.'feature_value_lang vl
+			LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = vl.id_lang
+			WHERE l.id_lang IS NOT NULL AND vl.id_feature_value = '.$data['id_feature_value']
         );
 
         $return = [];
@@ -28,7 +30,9 @@ class ProductAttrI18n extends BaseController
         }
 
         foreach ($resultV as $vData) {
-            $i18ns[$vData['id_lang']]['value'] = $vData['value'];
+            if (isset($i18ns[$vData['id_lang']])) {
+                $i18ns[$vData['id_lang']]['value'] = $vData['value'];
+            }
         }
 
         foreach ($i18ns as $i18n) {

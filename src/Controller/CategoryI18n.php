@@ -10,9 +10,10 @@ class CategoryI18n extends BaseController
     {
         $result = $this->db->executeS(
             '
-			SELECT c.*
-			FROM '._DB_PREFIX_.'category_lang c
-			WHERE c.id_category = '.$data['id_category']
+			SELECT cl.*
+			FROM '._DB_PREFIX_.'category_lang cl
+			LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = cl.id_lang
+			WHERE cl.id_category = '.$data['id_category']
         );
 
         $return = [];

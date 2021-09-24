@@ -26,6 +26,84 @@ class Image extends BaseController
         return $return;
     }
 
+    private function categoryImages()
+    {
+        $categories = $this->db->executeS('
+          SELECT c.id_category FROM '._DB_PREFIX_.'category c
+          LEFT JOIN jtl_connector_link_image l ON CONCAT("c", c.id_category) = l.endpoint_id
+          WHERE l.host_id IS NULL
+        ');
+
+        $return = [];
+
+        foreach ($categories as $category) {
+            if (file_exists(_PS_CAT_IMG_DIR_.(int)$category['id_category'].'.jpg')) {
+                $return[] = [
+                    'id' => 'c'.$category['id_category'],
+                    'foreignKey'=> $category['id_category'],
+                    'remoteUrl' => _PS_BASE_URL_._THEME_CAT_DIR_.$category['id_category'].'.jpg',
+                    'filename' => $category['id_category'].'.jpg',
+                    'relationType' => 'category'
+                ];
+            }
+        }
+
+        return $return;
+    }
+
+    private function manufacturerImages()
+    {
+        $manufacturers = $this->db->executeS('
+          SELECT m.id_manufacturer FROM '._DB_PREFIX_.'manufacturer m
+          LEFT JOIN jtl_connector_link_image l ON CONCAT("m", m.id_manufacturer) = l.endpoint_id
+          WHERE l.host_id IS NULL
+        ');
+
+        $return = [];
+
+        foreach ($manufacturers as $manufacturer) {
+            if (file_exists(_PS_MANU_IMG_DIR_.(int)$manufacturer['id_manufacturer'].'.jpg')) {
+                $return[] = [
+                    'id' => 'm'.$manufacturer['id_manufacturer'],
+                    'foreignKey'=> $manufacturer['id_manufacturer'],
+                    'remoteUrl' => _PS_BASE_URL_._THEME_MANU_DIR_.$manufacturer['id_manufacturer'].'.jpg',
+                    'filename' => $manufacturer['id_manufacturer'].'.jpg',
+                    'relationType' => 'manufacturer'
+                ];
+            }
+        }
+
+        return $return;
+    }
+
+    private function productImages()
+    {
+        $images = $this->db->executeS('
+          SELECT i.* FROM '._DB_PREFIX_.'image i
+          LEFT JOIN jtl_connector_link_image l ON i.id_image = l.endpoint_id
+          WHERE l.host_id IS NULL
+        ');
+
+        $return = [];
+
+        foreach ($images as $image) {
+            $path = \Image::getImgFolderStatic($image['id_image']);
+
+            if (file_exists(_PS_PROD_IMG_DIR_.$path.(int)$image['id_image'].'.jpg')) {
+                $return[] = [
+                    'id' => $image['id_image'],
+                    'foreignKey'=> $image['id_product'],
+                    'remoteUrl' => _PS_BASE_URL_._THEME_PROD_DIR_.$path.$image['id_image'].'.jpg',
+                    'filename' => $image['id_image'].'.jpg',
+                    'relationType' => 'product',
+                    'sort' => $image['position']
+                ];
+            }
+        }
+
+        return $return;
+    }
+
     public function pushData($data)
     {
         $id = $data->getForeignKey()->getEndpoint();
@@ -194,83 +272,5 @@ class Image extends BaseController
         );
 
         return count($imgData);
-    }
-
-    private function categoryImages()
-    {
-        $categories = $this->db->executeS('
-          SELECT c.id_category FROM '._DB_PREFIX_.'category c
-          LEFT JOIN jtl_connector_link_image l ON CONCAT("c", c.id_category) = l.endpoint_id
-          WHERE l.host_id IS NULL
-        ');
-
-        $return = [];
-
-        foreach ($categories as $category) {
-            if (file_exists(_PS_CAT_IMG_DIR_.(int)$category['id_category'].'.jpg')) {
-                $return[] = [
-                    'id' => 'c'.$category['id_category'],
-                    'foreignKey'=> $category['id_category'],
-                    'remoteUrl' => _PS_BASE_URL_._THEME_CAT_DIR_.$category['id_category'].'.jpg',
-                    'filename' => $category['id_category'].'.jpg',
-                    'relationType' => 'category'
-                ];
-            }
-        }
-
-        return $return;
-    }
-
-    private function manufacturerImages()
-    {
-        $manufacturers = $this->db->executeS('
-          SELECT m.id_manufacturer FROM '._DB_PREFIX_.'manufacturer m
-          LEFT JOIN jtl_connector_link_image l ON CONCAT("m", m.id_manufacturer) = l.endpoint_id
-          WHERE l.host_id IS NULL
-        ');
-
-        $return = [];
-
-        foreach ($manufacturers as $manufacturer) {
-            if (file_exists(_PS_MANU_IMG_DIR_.(int)$manufacturer['id_manufacturer'].'.jpg')) {
-                $return[] = [
-                    'id' => 'm'.$manufacturer['id_manufacturer'],
-                    'foreignKey'=> $manufacturer['id_manufacturer'],
-                    'remoteUrl' => _PS_BASE_URL_._THEME_MANU_DIR_.$manufacturer['id_manufacturer'].'.jpg',
-                    'filename' => $manufacturer['id_manufacturer'].'.jpg',
-                    'relationType' => 'manufacturer'
-                ];
-            }
-        }
-
-        return $return;
-    }
-
-    private function productImages()
-    {
-        $images = $this->db->executeS('
-          SELECT i.* FROM '._DB_PREFIX_.'image i
-          LEFT JOIN jtl_connector_link_image l ON i.id_image = l.endpoint_id
-          WHERE l.host_id IS NULL
-        ');
-
-        $return = [];
-
-        foreach ($images as $image) {
-            $path = \Image::getImgFolderStatic($image['id_image']);
-
-            if (file_exists(_PS_PROD_IMG_DIR_.$path.(int)$image['id_image'].'.jpg')) {
-                $return[] = [
-                    'id' => $image['id_image'],
-                    'foreignKey'=> $image['id_product'],
-                    'remoteUrl' => _PS_BASE_URL_._THEME_PROD_DIR_.$path.$image['id_image'].'.jpg',
-                    'filename' => $image['id_image'].'.jpg',
-                    'relationType' => 'product',
-                    'sort' => $image['position']
-                ];
-            }
-        }
-
-        return $return;
     }
 }

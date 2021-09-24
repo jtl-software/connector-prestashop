@@ -8,9 +8,10 @@ class ProductVariationI18n extends BaseController
     {
         $result = $this->db->executeS(
             '
-			SELECT l.*
-			FROM '._DB_PREFIX_.'attribute_group_lang l
-			WHERE l.id_attribute_group = '.$data['id']
+			SELECT agl.*
+			FROM '._DB_PREFIX_.'attribute_group_lang agl
+			LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = agl.id_lang
+            WHERE l.id_lang IS NOT NULL AND agl.id_attribute_group = '.$data['id']
         );
 
         $return = [];

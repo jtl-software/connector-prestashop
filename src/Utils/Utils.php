@@ -30,7 +30,7 @@ class Utils
     public function getLanguages()
     {
         if (is_null($this->session->languages)) {
-            $languages = \Language::getLanguages();
+            $languages = \Language::getLanguages(false);
 
             foreach ($languages as &$lang) {
                 $iso3 = Language::convert($lang['language_code']);
