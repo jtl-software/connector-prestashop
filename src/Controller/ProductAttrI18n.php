@@ -6,21 +6,8 @@ class ProductAttrI18n extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $resultA = $this->db->executeS(
-            '
-			SELECT fl.*
-			FROM '._DB_PREFIX_.'feature_lang fl
-			LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = fl.id_lang
-			WHERE l.id_lang IS NOT NULL AND fl.id_feature = '.$data['id_feature']
-        );
-
-        $resultV = $this->db->executeS(
-            '
-			SELECT vl.*
-			FROM '._DB_PREFIX_.'feature_value_lang vl
-			LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = vl.id_lang
-			WHERE l.id_lang IS NOT NULL AND vl.id_feature_value = '.$data['id_feature_value']
-        );
+        $resultA = $this->getLanguageData('feature_lang', 'id_feature', (int)$data['id_feature']);
+        $resultV = $this->getLanguageData('feature_value_lang', 'id_feature_value', (int)$data['id_feature_value']);
 
         $return = [];
         $i18ns = [];

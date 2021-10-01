@@ -28,11 +28,7 @@ class Image extends BaseController
 
     private function categoryImages()
     {
-        $categories = $this->db->executeS('
-          SELECT c.id_category FROM '._DB_PREFIX_.'category c
-          LEFT JOIN jtl_connector_link_image l ON CONCAT("c", c.id_category) = l.endpoint_id
-          WHERE l.host_id IS NULL
-        ');
+        $categories = $this->getNotLinedImages('category');
 
         $return = [];
 
@@ -53,11 +49,7 @@ class Image extends BaseController
 
     private function manufacturerImages()
     {
-        $manufacturers = $this->db->executeS('
-          SELECT m.id_manufacturer FROM '._DB_PREFIX_.'manufacturer m
-          LEFT JOIN jtl_connector_link_image l ON CONCAT("m", m.id_manufacturer) = l.endpoint_id
-          WHERE l.host_id IS NULL
-        ');
+        $manufacturers = $this->getNotLinedImages('manufacturer');
 
         $return = [];
 
@@ -78,11 +70,7 @@ class Image extends BaseController
 
     private function productImages()
     {
-        $images = $this->db->executeS('
-          SELECT i.* FROM '._DB_PREFIX_.'image i
-          LEFT JOIN jtl_connector_link_image l ON i.id_image = l.endpoint_id
-          WHERE l.host_id IS NULL
-        ');
+        $images = $this->getNotLinedImages('image');
 
         $return = [];
 
@@ -272,5 +260,34 @@ class Image extends BaseController
         );
 
         return count($imgData);
+    }
+
+    /**
+     * @param string $table
+     * @return array|bool|\mysqli_result|\PDOStatement|resource|null
+     * @throws \PrestaShopDatabaseException
+     * @throws \Exception
+     */
+    protected function getNotLinedImages(string $table)
+    {
+        switch ($table) {
+            case 'manufacturer':
+                $endpointPrefix = 'm';
+                break;
+            case 'category':
+                $endpointPrefix = 'c';
+                break;
+            case 'image':
+                $endpointPrefix = '';
+                break;
+            default:
+                throw new \Exception(sprintf('Unknown table `%s` to handle.', $table));
+        }
+
+        return $this->db->executeS(sprintf('
+          SELECT i.* FROM %s%s AS i
+          LEFT JOIN jtl_connector_link_image l ON CONCAT("%s", i.id_%s) = l.endpoint_id
+          WHERE l.host_id IS NULL
+        ', _DB_PREFIX_, $table, $endpointPrefix, $table));
     }
 }
