@@ -28,7 +28,7 @@ class Image extends BaseController
 
     private function categoryImages()
     {
-        $categories = $this->getNotLinedImages('category');
+        $categories = $this->getNotLinkedImages('category');
 
         $return = [];
 
@@ -49,7 +49,7 @@ class Image extends BaseController
 
     private function manufacturerImages()
     {
-        $manufacturers = $this->getNotLinedImages('manufacturer');
+        $manufacturers = $this->getNotLinkedImages('manufacturer');
 
         $return = [];
 
@@ -70,7 +70,7 @@ class Image extends BaseController
 
     private function productImages()
     {
-        $images = $this->getNotLinedImages('image');
+        $images = $this->getNotLinkedImages('image');
 
         $return = [];
 
@@ -268,7 +268,7 @@ class Image extends BaseController
      * @throws \PrestaShopDatabaseException
      * @throws \Exception
      */
-    protected function getNotLinedImages(string $table)
+    protected function getNotLinkedImages(string $table)
     {
         switch ($table) {
             case 'manufacturer':
