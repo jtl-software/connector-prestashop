@@ -2,60 +2,100 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-use jtl\Connector\Model\CustomerOrderItem as CustomerorderItemModel;
+use jtl\Connector\Model\CustomerOrderItem as CustomerOrderItemModel;
 use jtl\Connector\Model\Identity;
 
+/**
+ * Class CustomerOrderItem
+ * @package jtl\Connector\Presta\Controller
+ */
 class CustomerOrderItem extends BaseController
 {
+    /**
+     * @param $data
+     * @param $model
+     * @param null $limit
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
     public function pullData($data, $model, $limit = null)
     {
-        $result = $this->db->executeS(
-            '
-			SELECT i.*
-			FROM '._DB_PREFIX_.'order_detail i
-			WHERE i.id_order = '.$data['id_order']
-        );
+        $customerOrderItems = [];
 
-        $return = [];
+        $orderId = (int) $data['id_order'];
 
-        foreach ($result as $iData) {
-            $model = $this->mapper->toHost($iData);
-
-            $return[] = $model;
+        $orderDetails = $this->fetchOrderItems('order_detail', $orderId);
+        foreach ($orderDetails as $detail) {
+            $customerOrderItems[] = $this->mapper->toHost($detail);
         }
 
-        $cartRules = $this->db->executeS(
-            '
-			SELECT r.*
-			FROM '._DB_PREFIX_.'order_cart_rule r
-			WHERE r.id_order = '.$data['id_order']
-        );
+        $highestVatRate = $this->getHighestVatRate(...$customerOrderItems);
 
-        foreach ($cartRules as $rule) {
-            $item = new CustomerorderItemModel();
-            $item->setId(new Identity('rule_'.$rule['id_order_cart_rule']));
-            $item->setCustomerOrderId(new Identity($data['id_order']));
-            $item->setName($rule['name']);
-            $item->setPrice(floatval(-$rule['value_tax_excl']));
-            $item->setPriceGross(floatval(-$rule['value']));
-            $item->setQuantity(1);
-            $item->setType(CustomerorderItemModel::TYPE_COUPON);
-
-            $return[] = $item;
+        $orderCartRules = $this->fetchOrderItems('order_cart_rule', $orderId);
+        foreach ($orderCartRules as $cartRule) {
+            $customerOrderItems[] = $this->createDiscountItem($cartRule, $orderId, $highestVatRate);
         }
 
-        $shipping = new CustomerOrderItemModel();
-        $shipping->setId(new Identity('shipping_'.$data['id_order']));
-        $shipping->setCustomerOrderId(new Identity($data['id_order']));
-        $shipping->setType(CustomerorderItemModel::TYPE_SHIPPING);
-        $shipping->setName($data['shippingMethod']);
-        $shipping->setPrice(floatval($data['total_shipping_tax_excl']));
-        $shipping->setPriceGross(floatval($data['total_shipping_tax_incl']));
-        $shipping->setVat(floatval($data['carrier_tax_rate']));
-        $shipping->setQuantity(1);
+        $customerOrderItems[] = $this->createShippingItem($data);
 
-        $return[] = $shipping;
+        return $customerOrderItems;
+    }
 
-        return $return;
+    /**
+     * @param array $cartRule
+     * @param int $orderId
+     * @param float $highestVatRate
+     * @return CustomerOrderItemModel
+     */
+    protected function createDiscountItem(array $cartRule, int $orderId, float $highestVatRate): CustomerOrderItemModel
+    {
+        return (new CustomerOrderItemModel())
+            ->setId(new Identity('rule_' . $cartRule['id_order_cart_rule']))
+            ->setCustomerOrderId(new Identity($orderId))
+            ->setType(CustomerOrderItemModel::TYPE_COUPON)
+            ->setName($cartRule['name'])
+            ->setPrice(floatval(-$cartRule['value_tax_excl']))
+            ->setPriceGross(floatval(-$cartRule['value']))
+            ->setVat($highestVatRate)
+            ->setQuantity(1);
+    }
+
+    /**
+     * @param array $data
+     * @return CustomerOrderItemModel
+     */
+    protected function createShippingItem(array $data): CustomerOrderItemModel
+    {
+        return (new CustomerOrderItemModel())
+            ->setId(new Identity('shipping_' . $data['id_order']))
+            ->setCustomerOrderId(new Identity($data['id_order']))
+            ->setType(CustomerOrderItemModel::TYPE_SHIPPING)
+            ->setName($data['shippingMethod'])
+            ->setPrice(floatval($data['total_shipping_tax_excl']))
+            ->setPriceGross(floatval($data['total_shipping_tax_incl']))
+            ->setVat(floatval($data['carrier_tax_rate']))
+            ->setQuantity(1);
+    }
+
+    /**
+     * @param string $tableName
+     * @param int $orderId
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
+    protected function fetchOrderItems(string $tableName, int $orderId): array
+    {
+        return $this->db->executeS(sprintf(' SELECT r.* FROM %s%s r WHERE r.id_order = %s',_DB_PREFIX_, $tableName, $orderId));
+    }
+
+    /**
+     * @param CustomerOrderItemModel ...$customerOrderItems
+     * @return float
+     */
+    protected function getHighestVatRate(CustomerOrderItemModel ...$customerOrderItems): float
+    {
+        return max(array_map(function (CustomerOrderItemModel $customerOrderItem) {
+            return $customerOrderItem->getVat();
+        }, $customerOrderItems));
     }
 }
