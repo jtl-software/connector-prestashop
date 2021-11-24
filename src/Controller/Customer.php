@@ -29,20 +29,26 @@ class Customer extends BaseController
         return $return;
     }
 
-    /*
+
     public function pushData($data)
     {
-        $customer = $this->mapper->toEndpoint($data);
+        /** @var $data \jtl\Connector\Model\Customer */
+        $customerId = $data->getId()->getEndpoint();
 
-        $customer->save();
+        if ($customerId !== '' || $data->getHasCustomerAccount() !== false) {
 
-        $id = $customer->id;
+            $customerObj = new \Customer($customerId);
+            if ($customerObj->id === (int)$customerId) {
 
-        $data->getId()->setEndpoint($id);
+                $customer = $this->mapper->toEndpoint($data);
+                $customer->save();
+                $data->getId()->setEndpoint($customer->id);
+            }
+        }
 
         return $data;
     }
-    */
+
 
     public function getStats()
     {
