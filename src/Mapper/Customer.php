@@ -38,7 +38,7 @@ class Customer extends BaseMapper
     protected $push = [
         'id' => 'id',
         'id_default_group' => 'customerGroupId',
-        'birthday' => 'birthday',
+        'birthday' => null,
         'city' => 'city',
         'company' => 'company',
         'date_add' => 'creationDate',
@@ -85,5 +85,10 @@ class Customer extends BaseMapper
     protected function id_gender($data)
     {
         return $data->getSalutation() === 'm' ? 1 : 0;
+    }
+
+    protected function birthday($data)
+    {
+        return ($data->getBirthday() === null ? '0000-00-00' : $data->getBirthday()->format('Y-m-d'));
     }
 }
