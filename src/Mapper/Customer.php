@@ -89,10 +89,9 @@ class Customer extends BaseMapper
 
     protected function birthday($data)
     {
-        if (gettype($data) === 'array') {
-            return ($data['birthday'] === '0000-00-00' ? null : $data['birthday']);
-        } else {
-            return ($data->getBirthday() === null ? '0000-00-00' : $data->getBirthday()->format('Y-m-d'));
+        if (is_array($data)) {
+            return ($data['birthday'] === '0000-00-00' ? null : new \DateTime($data['birthday']));
         }
+        return ($data->getBirthday() === null ? '0000-00-00' : $data->getBirthday()->format('Y-m-d'));
     }
 }
