@@ -12,7 +12,7 @@ class Customer extends BaseMapper
     protected $pull = [
         'id' => 'cid',
         'customerGroupId' => 'id_default_group',
-        'birthday' => 'birthday',
+        'birthday' => null,
         'city' => 'city',
         'company' => 'company',
         'countryIso' => 'iso_code',
@@ -89,6 +89,10 @@ class Customer extends BaseMapper
 
     protected function birthday($data)
     {
-        return ($data->getBirthday() === null ? '0000-00-00' : $data->getBirthday()->format('Y-m-d'));
+        if (gettype($data) === 'array') {
+            return ($data['birthday'] === '0000-00-00' ? null : $data['birthday']);
+        } else {
+            return ($data->getBirthday() === null ? '0000-00-00' : $data->getBirthday()->format('Y-m-d'));
+        }
     }
 }
