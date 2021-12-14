@@ -40,7 +40,8 @@ class Product extends BaseMapper
         'isActive' => null,
         'isTopProduct' => 'on_sale',
         'purchasePrice' => 'wholesale_price',
-        'minimumOrderQuantity' => 'minimal_quantity'
+        'minimumOrderQuantity' => 'minimal_quantity',
+        'manufacturerNumber' => 'mpn'
     ];
 
     protected $push = [
@@ -65,7 +66,8 @@ class Product extends BaseMapper
         'on_sale' => 'isTopProduct',
         'minimal_quantity' => null,
         'ProductI18n' => 'i18ns',
-        'wholesale_price' => null
+        'wholesale_price' => null,
+        'mpn' => 'manufacturerNumber'
     ];
 
     protected function wholesale_price($data)
