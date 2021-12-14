@@ -13,7 +13,7 @@ class Customer extends BaseController
 			LEFT JOIN ' . _DB_PREFIX_ . 'address a ON a.id_customer=c.id_customer
 			LEFT JOIN ' . _DB_PREFIX_ . 'country co ON co.id_country=a.id_country
 			LEFT JOIN jtl_connector_link_customer l ON c.id_customer = l.endpoint_id
-            WHERE l.host_id IS NULL
+            WHERE l.host_id IS NULL AND a.id_address IS NOT NULL
             GROUP BY c.id_customer
             LIMIT ' . $limit
         );
@@ -21,10 +21,8 @@ class Customer extends BaseController
         $return = [];
 
         foreach ($result as $data) {
-            if (!is_null($data['lastname'])) {
-                $model = $this->mapper->toHost($data);
-                $return[] = $model;
-            }
+            $model = $this->mapper->toHost($data);
+            $return[] = $model;
         }
 
         return $return;
@@ -51,7 +49,8 @@ class Customer extends BaseController
 			SELECT COUNT(*) 
 			FROM ' . _DB_PREFIX_ . 'customer c
 			LEFT JOIN jtl_connector_link_customer l ON c.id_customer = l.endpoint_id
-            WHERE l.host_id IS NULL
+			LEFT JOIN ' . _DB_PREFIX_ . 'address a ON c.id_customer = a.id_customer
+            WHERE l.host_id IS NULL AND a.id_address IS NOT NULL
         ');
     }
 }
