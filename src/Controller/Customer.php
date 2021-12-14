@@ -9,21 +9,22 @@ class Customer extends BaseController
         $result = $this->db->executeS(
             '
 			SELECT c.*, c.id_customer AS cid, a.*, co.iso_code
-			FROM '._DB_PREFIX_.'customer c
-			LEFT JOIN '._DB_PREFIX_.'address a ON a.id_customer=c.id_customer
-			LEFT JOIN '._DB_PREFIX_.'country co ON co.id_country=a.id_country
+			FROM ' . _DB_PREFIX_ . 'customer c
+			LEFT JOIN ' . _DB_PREFIX_ . 'address a ON a.id_customer=c.id_customer
+			LEFT JOIN ' . _DB_PREFIX_ . 'country co ON co.id_country=a.id_country
 			LEFT JOIN jtl_connector_link_customer l ON c.id_customer = l.endpoint_id
             WHERE l.host_id IS NULL
             GROUP BY c.id_customer
-            LIMIT '.$limit
+            LIMIT ' . $limit
         );
 
         $return = [];
 
         foreach ($result as $data) {
-            $model = $this->mapper->toHost($data);
-            
-            $return[] = $model;
+            if (!is_null($data['lastname'])) {
+                $model = $this->mapper->toHost($data);
+                $return[] = $model;
+            }
         }
 
         return $return;
@@ -48,7 +49,7 @@ class Customer extends BaseController
     {
         return $this->db->getValue('
 			SELECT COUNT(*) 
-			FROM '._DB_PREFIX_.'customer c
+			FROM ' . _DB_PREFIX_ . 'customer c
 			LEFT JOIN jtl_connector_link_customer l ON c.id_customer = l.endpoint_id
             WHERE l.host_id IS NULL
         ');
