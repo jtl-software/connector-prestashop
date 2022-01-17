@@ -23,7 +23,7 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
 {
     public function initContent()
     {
-        if (isset($_SESSION)) {
+        if (session_status() === \PHP_SESSION_ACTIVE) {
             session_destroy();
         }
 
