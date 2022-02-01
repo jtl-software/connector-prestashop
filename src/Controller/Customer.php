@@ -52,12 +52,11 @@ class Customer extends BaseController
     public function getStats()
     {
         return $this->db->getValue('
-			SELECT COUNT(*) 
+			SELECT COUNT(DISTINCT(c.id_customer))
 			FROM ' . _DB_PREFIX_ . 'customer c
 			LEFT JOIN jtl_connector_link_customer l ON c.id_customer = l.endpoint_id
 			LEFT JOIN ' . _DB_PREFIX_ . 'address a ON c.id_customer = a.id_customer
             WHERE l.host_id IS NULL AND a.id_address IS NOT NULL
-            GROUP BY c.id_customer
         ');
     }
 }
