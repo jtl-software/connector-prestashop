@@ -6,12 +6,7 @@ class ProductVariationI18n extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $result = $this->db->executeS(
-            '
-			SELECT l.*
-			FROM '._DB_PREFIX_.'attribute_group_lang l
-			WHERE l.id_attribute_group = '.$data['id']
-        );
+        $result = $this->getLanguageData('attribute_group_lang', 'id_attribute_group', (int)$data['id']);
 
         $return = [];
 

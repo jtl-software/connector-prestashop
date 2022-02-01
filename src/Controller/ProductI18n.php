@@ -24,12 +24,14 @@ class ProductI18n extends BaseController
             }
         }
 
-        $sql =
-            'SELECT p.*' . "\n" .
-            'FROM '._DB_PREFIX_.'product_lang p' . "\n" .
-            'WHERE p.id_product = %d';
+        $sql = sprintf('    
+            SELECT p.*
+            FROM '._DB_PREFIX_.'product_lang AS p
+            LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = p.id_lang
+            WHERE p.id_product = %s AND p.id_shop = %s AND l.id_lang IS NOT NULL
+        ', $data['id_product'], \Context::getContext()->shop->id);
 
-        $result = $this->db->executeS(sprintf($sql, $data['id_product']));
+        $result = $this->db->executeS($sql);
 
         $return = [];
         foreach ($result as $data) {

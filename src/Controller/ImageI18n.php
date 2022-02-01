@@ -15,12 +15,13 @@ class ImageI18n extends BaseController
         $i18ns = [];
 
         if ($data['relationType'] === 'product') {
-            $imageLang = $this->db->executeS(
-                sprintf(
-                    'SELECT i.id_lang, i.legend as altText FROM ' . _DB_PREFIX_ . 'image_lang i WHERE i.id_image = %s',
-                    $data['id']
-                )
-            );
+            $imageLang = $this->db->executeS(sprintf(
+                'SELECT il.id_lang, il.legend as altText 
+                         FROM ' . _DB_PREFIX_ . 'image_lang il
+                         LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = il.id_lang
+                         WHERE l.id_lang IS NOT NULL AND il.id_image = %s',
+                $data['id']
+            ));
 
             if (is_array($imageLang)) {
                 foreach ($imageLang as $data) {
