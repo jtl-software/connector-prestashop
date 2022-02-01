@@ -1,3 +1,12 @@
+1.12.0
+------
+- CO-1881 - Added saving manufacturer part number in shop
+- CO-1216 - Added recommended retail price as attribute in shop
+- CO-1839 - Enabled updating customer data in shop
+- CO-1877 - Fixed importing customer data
+- CO-1804 - Fixed tax rate value when importing coupons in customer order
+- CO-1776 - Fixed import articles with inactive languages
+
 1.11.0
 ------
 - CO-1340 - Fixed multiple creation of images
