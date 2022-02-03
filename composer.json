@@ -43,6 +43,17 @@
   "require-dev": {
     "jtl/connector-integration-tests": "dev-develop",
     "friendsofphp/php-cs-fixer": "^2.16",
-    "symfony/polyfill-php80": "<=1.18.1"
+    "symfony/polyfill-php80": "<=1.18.1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7",
+    "phpcompatibility/php-compatibility": "dev-develop"
+  },
+  "scripts": {
+    "build": [
+      "@composer update",
+      "./lib/bin/phpcs src/ --extensions=php -p --standard=phpcs.xml.dist",
+      "@composer update --no-dev",
+      "php ./lib/bin/phing release",
+      "@composer update"
+    ]
   }
 }

@@ -6,8 +6,6 @@ class GlobalData extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $model = $this->mapper->toHost($data);
-
-        return [$model];
+        return [$this->mapper->toHost($data)];
     }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<ruleset name="Prestashop Connector Ruleset">
+    <description>PHP CodeSniffer</description>
+    <arg name="colors"/>
+    <config name="testVersion" value="7.1-"/>
+    <rule ref="PHPCompatibility"/>
+</ruleset>
