@@ -85,6 +85,8 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
             $endpointId,
             $hostId
         ));
+
+        return true;
     }
 
     public function delete($endpointId, $hostId, $type)
@@ -102,6 +104,8 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         }
     
         $this->db->execute(sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], implode(' AND ', $where)));
+
+        return true;
     }
 
     public function clear()

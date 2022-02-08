@@ -11,12 +11,15 @@ class BaseMapper
     private $type;
     protected $endpointModel = null;
 
+    protected $pull = [];
+    protected $push = [];
+
     public function __construct()
     {
         $reflect = new \ReflectionClass($this);
         $typeClass = "\\jtl\\Connector\\Type\\{$reflect->getShortName()}";
 
-        $this->db = \DB::getInstance();
+        $this->db = \Db::getInstance();
         $this->model = "\\jtl\\Connector\\Model\\{$reflect->getShortName()}";
         $this->type = new $typeClass();
     }

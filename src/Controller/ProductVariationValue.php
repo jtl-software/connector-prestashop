@@ -6,6 +6,7 @@ class ProductVariationValue extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
+        $return = [];
         foreach ($data['values'] as $valueData) {
             $model = $this->mapper->toHost($valueData);
 

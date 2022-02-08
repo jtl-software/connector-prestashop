@@ -9,7 +9,6 @@ use jtl\Connector\Model\Product;
 use \jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use \jtl\Connector\Result\Action;
 use \jtl\Connector\Presta\Auth\TokenLoader;
-use \jtl\Connector\Presta\Checksum\ChecksumLoader;
 
 class Presta extends BaseConnector
 {
@@ -20,7 +19,6 @@ class Presta extends BaseConnector
     {
         $this->setPrimaryKeyMapper(new PrimaryKeyMapper());
         $this->setTokenLoader(new TokenLoader());
-        $this->setChecksumLoader(new ChecksumLoader());
     }
     
     public function canHandle()
@@ -37,7 +35,11 @@ class Presta extends BaseConnector
         
         return false;
     }
-    
+
+    /**
+     * @throws \PrestaShopDatabaseException
+     * @throws \Exception
+     */
     public function handle(RequestPacket $requestpacket)
     {
         if (!empty(\Db::getInstance()->executeS('SHOW TABLES LIKE "jtl_connector_link"'))) {
@@ -74,7 +76,9 @@ class Presta extends BaseConnector
             if (method_exists($this->controller, 'initPush')) {
                 $this->controller->initPush($requestpacket->getParams());
             }
-            
+
+            $result = new Action();
+
             foreach ($requestpacket->getParams() as $param) {
                 $currentItem = $param;
                 $result = $this->controller->{$this->action}($param);
@@ -84,9 +88,9 @@ class Presta extends BaseConnector
                     if (method_exists($currentItem, 'getId')) {
                         if ($currentItem instanceof Product) {
                             throw new \Exception(sprintf('Type: Product Host-Id: %s SKU: %s %s', $currentItem->getId()->getHost(), $currentItem->getSku(), $result->getError()->getMessage()));
-                        } else {
-                            throw new \Exception(sprintf('Type: %s Host-Id: %s %s', get_class($currentItem), $currentItem->getId()->getHost(), $result->getError()->getMessage()));
                         }
+
+                        throw new \Exception(sprintf('Type: %s Host-Id: %s %s', get_class($currentItem), $currentItem->getId()->getHost(), $result->getError()->getMessage()));
                     }
     
                     throw new \Exception(sprintf('Type: %s %s', get_class($currentItem), $result->getError()->getMessage()));

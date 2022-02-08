@@ -14,6 +14,8 @@ class TaxRate extends BaseController
           GROUP BY r.id_tax
         ');
 
+        $return = [];
+
         foreach ($rates as $rate) {
             $model = $this->mapper->toHost($rate);
 

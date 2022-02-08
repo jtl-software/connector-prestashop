@@ -35,7 +35,7 @@ class ProductSpecific extends BaseController
         
         return $productSpecifics;
     }
-    
+
     public function pushData(ProductModel $product, \Product $endpointProduct)
     {
         $currentValues = [];

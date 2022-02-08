@@ -199,6 +199,7 @@ class Product extends BaseController
 
                 foreach ($variation->getValues() as $value) {
                     $valNames = [];
+                    $valId = null;
                     foreach ($value->getI18ns() as $valI18n) {
                         $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
 

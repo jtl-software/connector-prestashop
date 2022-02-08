@@ -1,0 +1,10 @@
+parameters:
+	level: 1
+	phpVersion: 80100
+	scanFiles:
+	    - jtlconnector.php
+	    - lib/jtl/connector/src/bootstrap.php
+	bootstrapFiles:
+	    - tests/phpstan-stubs.php
+	paths:
+		- src
