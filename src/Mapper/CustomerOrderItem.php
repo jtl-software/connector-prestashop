@@ -16,12 +16,18 @@ class CustomerOrderItem extends BaseMapper
         'priceGross' => 'unit_price_tax_incl',
         'quantity' => 'product_quantity',
         'sku' => 'product_reference',
+        'type' => null,
         'vat' => null
     ];
 
     protected function productId($data)
     {
         return new Identity($data['product_attribute_id'] == 0 ? $data['product_id'] :  $data['product_id'].'_'.$data['product_attribute_id']);
+    }
+
+    protected function type($data)
+    {
+        return \jtl\Connector\Model\CustomerOrderItem::TYPE_PRODUCT;
     }
 
     protected function vat($data)

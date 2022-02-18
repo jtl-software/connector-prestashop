@@ -1,3 +1,7 @@
+note released
+------
+- Added set product type on customer order line item
+
 1.12.0
 ------
 - CO-1881 - Added saving manufacturer part number in shop
