@@ -1,6 +1,7 @@
-note released
+1.12.1
 ------
-- Added set product type on customer order line item
+- Added missing product type on customer order line item
+- CO-1951 - Fixed update procedure
 
 1.12.0
 ------
