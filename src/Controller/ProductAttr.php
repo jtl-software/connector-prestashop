@@ -30,6 +30,7 @@ class ProductAttr extends BaseController
         'online_only' => 'online_only',
         'products_status' => 'active',
         'main_category_id' => 'id_category_default',
+        'shipping_methods' => 'shipping_methods',
     ];
 
     /**
