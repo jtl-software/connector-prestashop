@@ -361,7 +361,7 @@ class Product extends BaseController
                         }
                     }
                     break;
-                case 'shipping_methods':
+                case 'carriers':
                     $carriers = explode(',', $value);
                     if (!in_array($carriers, ['', '0'], true)) {
                         $product->setCarriers($carriers);
