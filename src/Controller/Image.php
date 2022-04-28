@@ -2,6 +2,8 @@
 
 namespace jtl\Connector\Presta\Controller;
 
+use jtl\Connector\Core\Logger\Logger;
+use jtl\Connector\Formatter\ExceptionFormatter;
 use jtl\Connector\Presta\Utils\Utils;
 use Context;
 
@@ -211,6 +213,13 @@ class Image extends BaseController
 
                     if (!is_null($combiId) && $isUpdate === false) {
                         $this->db->execute('INSERT INTO '._DB_PREFIX_.'product_attribute_image SET id_product_attribute='.$combiId.', id_image='.$img->id);
+                    }
+
+                    try {
+                        \Hook::exec('actionWatermark', ['id_image' => $img->id, 'id_product' => $img->id_product]);
+                    } catch (\PrestaShopException $e) {
+                        Logger::write(sprintf("Watermark Hook returned Exception for id_img: %s id_product: %s", $img->id, $img->id_product), Logger::ERROR, 'controller');
+                        Logger::write(ExceptionFormatter::format($e), Logger::ERROR, 'controller');
                     }
 
                     $data->getId()->setEndpoint($img->id);
