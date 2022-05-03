@@ -194,6 +194,7 @@ class Image extends BaseController
                             $oldCover = new \Image($coverId['id_image']);
                             $oldCover->cover = 0;
                             $oldCover->save();
+                            \Hook::exec('actionWatermark', ['id_image' => $oldCover->id, 'id_product' => $productId]);
                         }
                     }
 
@@ -208,6 +209,8 @@ class Image extends BaseController
                             \ImageManager::resize($data->getFilename(), $new_path . '-' . stripslashes($image_type['name']) . '.jpg', $image_type['width'], $image_type['height'], null);
                         }
                     }
+
+                    \Hook::exec('actionWatermark', ['id_image' => $img->id, 'id_product' => $productId]);
 
                     if (!is_null($combiId) && $isUpdate === false) {
                         $this->db->execute('INSERT INTO '._DB_PREFIX_.'product_attribute_image SET id_product_attribute='.$combiId.', id_image='.$img->id);
