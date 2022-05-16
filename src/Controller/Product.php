@@ -49,6 +49,21 @@ class Product extends BaseController
         $count = 0;
 
         foreach ($result as $data) {
+
+            $carriers = $this->db->executeS('
+                SELECT id_carrier_reference
+                FROM '. _DB_PREFIX_ .'product_carrier
+                WHERE id_product = '. $data['id_product'] .'
+                    AND id_shop = ' . $data['id_shop_default'] );
+
+            $carrierIds = [];
+
+            foreach ($carriers as $carrier) {
+                $carrierIds[] = $carrier['id_carrier_reference'];
+            }
+
+            $data['carriers'] = implode(',', $carrierIds);
+
             $model = $this->mapper->toHost($data);
 
             $return[] = $model;

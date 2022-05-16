@@ -4,7 +4,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Configuration;
 use Context;
-use Exception;
 use jtl\Connector\Presta\Utils\Utils;
 use PrestaShopDatabaseException;
 use PrestaShopException;
