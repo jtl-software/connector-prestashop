@@ -4,7 +4,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Configuration;
 use Context;
-use Exception;
 use jtl\Connector\Presta\Utils\Utils;
 use PrestaShopDatabaseException;
 use PrestaShopException;
@@ -30,6 +29,7 @@ class ProductAttr extends BaseController
         'online_only' => 'online_only',
         'products_status' => 'active',
         'main_category_id' => 'id_category_default',
+        'carriers' => 'carriers',
     ];
 
     /**

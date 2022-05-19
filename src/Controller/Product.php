@@ -49,6 +49,21 @@ class Product extends BaseController
         $count = 0;
 
         foreach ($result as $data) {
+
+            $carriers = $this->db->executeS('
+                SELECT id_carrier_reference
+                FROM '. _DB_PREFIX_ .'product_carrier
+                WHERE id_product = '. $data['id_product'] .'
+                    AND id_shop = ' . $data['id_shop_default'] );
+
+            $carrierIds = [];
+
+            foreach ($carriers as $carrier) {
+                $carrierIds[] = $carrier['id_carrier_reference'];
+            }
+
+            $data['carriers'] = implode(',', $carrierIds);
+
             $model = $this->mapper->toHost($data);
 
             $return[] = $model;
@@ -344,7 +359,7 @@ class Product extends BaseController
                     $name = $i18n->getName();
                 }
 
-                if (isset($specialAttributes[$name]) && $i18n->getValue() !== "") {
+                if (isset($specialAttributes[$name])) {
                     $foundSpecialAttributes[$name] = $i18n->getValue();
                     break;
                 }
@@ -352,26 +367,23 @@ class Product extends BaseController
         }
 
         foreach ($foundSpecialAttributes as $key => $value) {
-            if ($value === 'false' || $value === 'true') {
-                $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-            } elseif (is_numeric($value)) {
-                $value = (int)$value;
-                if ($key === 'main_category_id') {
-                    $found = false;
+            switch ($key) {
+                case 'main_category_id':
                     foreach ($data->getCategories() as $product2Category) {
                         if ($product2Category->getCategoryId()->getHost() === $value
                             && $product2Category->getCategoryId()->getEndpoint() !== '') {
                             $value = (int)$product2Category->getCategoryId()->getEndpoint();
-                            $found = true;
-                            break;
                         }
                     }
-
-                    if (!$found) {
-                        continue;
+                    break;
+                case 'carriers':
+                    $carriers = explode(',', $value);
+                    if (!in_array($carriers, ['', '0'], true)) {
+                        $product->setCarriers($carriers);
                     }
-                }
+                    break;
             }
+
 
             $product->{$specialAttributes[$key]} = $value;
         }
