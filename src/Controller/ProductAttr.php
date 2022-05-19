@@ -60,17 +60,21 @@ class ProductAttr extends BaseController
             $excludedFeaturesIds[] = $rrpFeatureId;
         }
 
-        $attributes = $this->db->executeS(sprintf(
+        $featuresQuery = sprintf(
             '
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
-            WHERE custom = 1 AND `id_product` = "%s" AND fp.id_feature NOT IN(%s)',
+            WHERE custom = 1 AND `id_product` = "%s"',
             _DB_PREFIX_,
             _DB_PREFIX_,
-            $productId,
-            join(',', $excludedFeaturesIds)
-        ));
+            $productId);
+
+        if (!empty($excludedFeaturesIds)) {
+            $featuresQuery = sprintf($featuresQuery . ' AND fp.id_feature NOT IN(%s)', implode(',', $excludedFeaturesIds));
+        }
+
+        $attributes = $this->db->executeS($featuresQuery);
 
         $return = [];
 
