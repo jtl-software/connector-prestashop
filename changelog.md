@@ -1,3 +1,8 @@
+1.13.0
+------
+- CO-1999 - Added support for watermark generation
+- CO-1883 - Added support for product shipping carriers
+
 1.12.1
 ------
 - Added missing product type on customer order line item
