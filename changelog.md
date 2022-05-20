@@ -1,3 +1,7 @@
+1.13.1
+------
+- CO-2018 - Hotfix for product feature query
+
 1.13.0
 ------
 - CO-1999 - Added support for watermark generation
