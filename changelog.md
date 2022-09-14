@@ -1,3 +1,7 @@
+Unreleased
+------
+- CO-2117 - Delivery time not saved
+
 1.13.1
 ------
 - CO-2018 - Hotfix for product feature query

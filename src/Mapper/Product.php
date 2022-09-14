@@ -67,7 +67,8 @@ class Product extends BaseMapper
         'minimal_quantity' => null,
         'ProductI18n' => 'i18ns',
         'wholesale_price' => null,
-        'mpn' => 'manufacturerNumber'
+        'mpn' => 'manufacturerNumber',
+        'delivery_in_stock' => null
     ];
 
     protected function wholesale_price($data)
@@ -232,5 +233,12 @@ class Product extends BaseMapper
         ))->fetchAll(\PDO::FETCH_ASSOC);
 
         return $foundTaxClasses[0]['id_tax_rules_group'] ?? null;
+    }
+
+    protected function delivery_in_stock($data)
+    {
+        $deliveryTime = $data->getAdditionalHandlingTime() + $data->getSupplierDeliveryTime();
+
+        return $deliveryTime > 0 ? $deliveryTime . ' Werktage' : null;
     }
 }
