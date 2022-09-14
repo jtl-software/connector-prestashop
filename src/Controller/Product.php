@@ -49,12 +49,13 @@ class Product extends BaseController
         $count = 0;
 
         foreach ($result as $data) {
-
-            $carriers = $this->db->executeS('
+            $carriers = $this->db->executeS(
+                '
                 SELECT id_carrier_reference
-                FROM '. _DB_PREFIX_ .'product_carrier
-                WHERE id_product = '. $data['id_product'] .'
-                    AND id_shop = ' . $data['id_shop_default'] );
+                FROM ' . _DB_PREFIX_ . 'product_carrier
+                WHERE id_product = ' . $data['id_product'] . '
+                    AND id_shop = ' . $data['id_shop_default']
+            );
 
             $carrierIds = [];
 
@@ -103,8 +104,14 @@ class Product extends BaseController
         $masterId = $data->getMasterProductId()->getEndpoint();
 
         if (empty($masterId)) {
-            $this->db->execute('UPDATE ' . _DB_PREFIX_ . 'product SET unit_price_ratio=' . $data->getBasePriceDivisor() . ' WHERE id_product=' . $data->getId()->getEndpoint());
-            $this->db->execute('UPDATE ' . _DB_PREFIX_ . 'product_shop SET unit_price_ratio=' . $data->getBasePriceDivisor() . ' WHERE id_product=' . $data->getId()->getEndpoint());
+            $this->db->execute(
+                'UPDATE ' . _DB_PREFIX_ . 'product SET unit_price_ratio=' . $data->getBasePriceDivisor(
+                ) . ' WHERE id_product=' . $data->getId()->getEndpoint()
+            );
+            $this->db->execute(
+                'UPDATE ' . _DB_PREFIX_ . 'product_shop SET unit_price_ratio=' . $data->getBasePriceDivisor(
+                ) . ' WHERE id_product=' . $data->getId()->getEndpoint()
+            );
         }
 
         \Product::flushPriceCache();
@@ -118,7 +125,7 @@ class Product extends BaseController
      */
     public function pushData($data)
     {
-        /** \Product $product */
+        /** @var \Product $product */
 
         if (isset(static::$idCache[$data->getMasterProductId()->getHost()])) {
             $data->getMasterProductId()->setEndpoint(static::$idCache[$data->getMasterProductId()->getHost()]);
@@ -126,168 +133,191 @@ class Product extends BaseController
 
         $masterId = $data->getMasterProductId()->getEndpoint();
 
-        if (empty($masterId)) {
-            $product = $this->mapper->toEndpoint($data);
+        $exists = false;
 
-            $product->save();
+        try {
+            if (empty($masterId)) {
+                $product = $this->mapper->toEndpoint($data);
 
-            $id = $product->id;
-        } else {
-            list($productId, $combiId) = Utils::explodeProductEndpoint($data->getId()->getEndpoint());
+                $exists = $product->id > 0;
 
-            $product = new \Product($masterId);
+                $product->save();
 
-            $minOrder = ceil($data->getMinimumOrderQuantity());
-            $minOrder = $minOrder < 1 ? 1 : $minOrder;
-
-            if (!empty($combiId)) {
-                $product->updateAttribute(
-                    $combiId,
-                    null,
-                    null,
-                    $data->getShippingWeight(),
-                    null,
-                    null,
-                    null,
-                    $data->getSku(),
-                    $data->getEan(),
-                    null,
-                    null,
-                    $data->getUpc(),
-                    $minOrder
-                );
-
-                $id = $data->getId()->getEndpoint();
+                $id = $product->id;
             } else {
-                $combiId = $product->addAttribute(
-                    null,
-                    $data->getShippingWeight(),
-                    null,
-                    null,
-                    null,
-                    $data->getSku(),
-                    $data->getEan(),
-                    null,
-                    null,
-                    $data->getUpc(),
-                    $minOrder
-                );
+                list($productId, $combiId) = Utils::explodeProductEndpoint($data->getId()->getEndpoint());
 
-                $id = $data->getMasterProductId()->getEndpoint() . '_' . $combiId;
-            }
+                $product = new \Product($masterId);
 
-            $combi = new Combination($combiId);
+                $exists = $product->id > 0;
 
-            $allowedGroupTypes = [
-                ProductVariation::TYPE_RADIO,
-                ProductVariation::TYPE_SELECT
-            ];
+                $minOrder = ceil($data->getMinimumOrderQuantity());
+                $minOrder = $minOrder < 1 ? 1 : $minOrder;
 
-            $valIds = [];
-            foreach ($data->getVariations() as $variation) {
-                $groupType = in_array($variation->getType(), $allowedGroupTypes) ? $variation->getType() : ProductVariation::TYPE_SELECT;
-                $attrGrpId = null;
-                $attrPublicNames = [];
-                $attrNames = [];
-                foreach ($variation->getI18ns() as $varI18n) {
-                    $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
-                    $varName = $varI18n->getName();
-                    if (!empty($varName)) {
-                        $attrNames[$langId] = sprintf('%s (%s)', $varName, ucfirst($groupType));
-                        $attrPublicNames[$langId] = $varName;
-                    }
+                if (!empty($combiId)) {
+                    $product->updateAttribute(
+                        $combiId,
+                        null,
+                        null,
+                        $data->getShippingWeight(),
+                        null,
+                        null,
+                        null,
+                        $data->getSku(),
+                        $data->getEan(),
+                        null,
+                        null,
+                        $data->getUpc(),
+                        $minOrder
+                    );
 
-                    if ($langId == Context::getContext()->language->id) {
-                        $sql = sprintf('SELECT id_attribute_group FROM %sattribute_group_lang WHERE name = "%s"', _DB_PREFIX_, $attrNames[$langId]);
-                        $attrGrpId = $this->db->getValue($sql);
-                    }
+                    $id = $data->getId()->getEndpoint();
+                } else {
+                    $combiId = $product->addAttribute(
+                        null,
+                        $data->getShippingWeight(),
+                        null,
+                        null,
+                        null,
+                        $data->getSku(),
+                        $data->getEan(),
+                        null,
+                        null,
+                        $data->getUpc(),
+                        $minOrder
+                    );
+
+                    $id = $data->getMasterProductId()->getEndpoint() . '_' . $combiId;
                 }
 
-                if (in_array($attrGrpId, [false, null], true) || in_array($variation->getType(), $allowedGroupTypes)) {
-                    $attrGrp = new AttributeGroup($attrGrpId);
-                    $attrGrp->name = $attrNames;
-                    $attrGrp->public_name = $attrPublicNames;
-                    $attrGrp->group_type = $groupType;
-                    $attrGrp->save();
-                    $attrGrpId = $attrGrp->id;
-                }
+                $combi = new Combination($combiId);
 
-                foreach ($variation->getValues() as $value) {
-                    $valNames = [];
-                    foreach ($value->getI18ns() as $valI18n) {
-                        $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
+                $allowedGroupTypes = [
+                    ProductVariation::TYPE_RADIO,
+                    ProductVariation::TYPE_SELECT
+                ];
 
-                        $valName = $valI18n->getName();
-
-                        if (!empty($valName)) {
-                            $valNames[$langId] = $valName;
+                $valIds = [];
+                foreach ($data->getVariations() as $variation) {
+                    $groupType = in_array(
+                        $variation->getType(),
+                        $allowedGroupTypes
+                    ) ? $variation->getType() : ProductVariation::TYPE_SELECT;
+                    $attrGrpId = null;
+                    $attrPublicNames = [];
+                    $attrNames = [];
+                    foreach ($variation->getI18ns() as $varI18n) {
+                        $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
+                        $varName = $varI18n->getName();
+                        if (!empty($varName)) {
+                            $attrNames[$langId] = sprintf('%s (%s)', $varName, ucfirst($groupType));
+                            $attrPublicNames[$langId] = $varName;
                         }
 
                         if ($langId == Context::getContext()->language->id) {
-                            $valId = $this->db->getValue(
-                                '
+                            $sql = sprintf(
+                                'SELECT id_attribute_group FROM %sattribute_group_lang WHERE name = "%s"',
+                                _DB_PREFIX_,
+                                $attrNames[$langId]
+                            );
+                            $attrGrpId = $this->db->getValue($sql);
+                        }
+                    }
+
+                    if (in_array($attrGrpId, [false, null], true) || in_array(
+                            $variation->getType(),
+                            $allowedGroupTypes
+                        )) {
+                        $attrGrp = new AttributeGroup($attrGrpId);
+                        $attrGrp->name = $attrNames;
+                        $attrGrp->public_name = $attrPublicNames;
+                        $attrGrp->group_type = $groupType;
+                        $attrGrp->save();
+                        $attrGrpId = $attrGrp->id;
+                    }
+
+                    foreach ($variation->getValues() as $value) {
+                        $valNames = [];
+                        foreach ($value->getI18ns() as $valI18n) {
+                            $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
+
+                            $valName = $valI18n->getName();
+
+                            if (!empty($valName)) {
+                                $valNames[$langId] = $valName;
+                            }
+
+                            if ($langId == Context::getContext()->language->id) {
+                                $valId = $this->db->getValue(
+                                    '
                               SELECT l.id_attribute
                               FROM ' . _DB_PREFIX_ . 'attribute_lang l
                               LEFT JOIN ' . _DB_PREFIX_ . 'attribute a ON a.id_attribute = l.id_attribute
                               WHERE l.name="' . $valName . '" && a.id_attribute_group = ' . $attrGrpId
-                            );
+                                );
+                            }
                         }
+
+                        $val = new Attribute($valId);
+                        $val->name = $valNames;
+                        $val->id_attribute_group = $attrGrpId;
+                        $val->position = $value->getSort();
+
+                        $val->save();
+
+                        $valId = $val->id;
+
+                        $valIds[] = $valId;
                     }
+                }
 
-                    $val = new Attribute($valId);
-                    $val->name = $valNames;
-                    $val->id_attribute_group = $attrGrpId;
-                    $val->position = $value->getSort();
+                $oldVariantImages = $combi->getWsImages();
+                $combi->price = 0;
+                $combi->setAttributes($valIds);
+                $combi->setWsImages($oldVariantImages);
+                $combi->save();
 
-                    $val->save();
+                $product->checkDefaultAttributes();
+            }
 
-                    $valId = $val->id;
+            $data->getId()->setEndpoint($id);
 
-                    $valIds[] = $valId;
+            if ($id) {
+                $data->getStockLevel()->getProductId()->setEndpoint($id);
+                $stock = new ProductStockLevel();
+                $stock->pushData($data->getStockLevel(), $product);
+
+                foreach ($data->getPrices() as $price) {
+                    $price->getProductId()->setEndpoint($id);
+                }
+
+                $price = new ProductPrice();
+                foreach ($data->getPrices() as $priceData) {
+                    $price->pushData($priceData);
+                }
+
+                $specialPrices = new ProductSpecialPrice();
+                $specialPrices->pushData($data);
+
+                $categories = new Product2Category();
+                $categories->pushData($data);
+
+                if (isset($product) && $data->getMasterProductId()->getHost() === 0) {
+                    ProductAttr::getInstance()->pushData($data, $product);
+                    ProductSpecific::getInstance()->pushData($data, $product);
+                    $this->pushSpecialAttributes($data, $product);
                 }
             }
 
-            $oldVariantImages = $combi->getWsImages();
-            $combi->price = 0;
-            $combi->setAttributes($valIds);
-            $combi->setWsImages($oldVariantImages);
-            $combi->save();
+            static::$idCache[$data->getId()->getHost()] = $id;
 
-            $product->checkDefaultAttributes();
+            return $data;
+        } catch (\Exception $e) {
+            if (!empty($product) && !$exists) {
+                $product->delete();
+            }
+            throw $e;
         }
-
-        $data->getId()->setEndpoint($id);
-
-        if ($id) {
-            $data->getStockLevel()->getProductId()->setEndpoint($id);
-            $stock = new ProductStockLevel();
-            $stock->pushData($data->getStockLevel(), $product);
-
-            foreach ($data->getPrices() as $price) {
-                $price->getProductId()->setEndpoint($id);
-            }
-
-            $price = new ProductPrice();
-            foreach ($data->getPrices() as $priceData) {
-                $price->pushData($priceData);
-            }
-
-            $specialPrices = new ProductSpecialPrice();
-            $specialPrices->pushData($data);
-
-            $categories = new Product2Category();
-            $categories->pushData($data);
-
-            if (isset($product) && $data->getMasterProductId()->getHost() === 0) {
-                ProductAttr::getInstance()->pushData($data, $product);
-                ProductSpecific::getInstance()->pushData($data, $product);
-                $this->pushSpecialAttributes($data, $product);
-            }
-        }
-
-        static::$idCache[$data->getId()->getHost()] = $id;
-
-        return $data;
     }
 
     /**
@@ -317,19 +347,23 @@ class Product extends BaseController
 
     public function getStats()
     {
-        $count = $this->db->getValue('
+        $count = $this->db->getValue(
+            '
 			SELECT COUNT(*) 
 			FROM ' . _DB_PREFIX_ . 'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
             WHERE l.host_id IS NULL AND p.id_product > 0
-        ');
+        '
+        );
 
-        $countVars = $this->db->getValue('
+        $countVars = $this->db->getValue(
+            '
             SELECT COUNT(*)
             FROM ' . _DB_PREFIX_ . 'product_attribute p
 			LEFT JOIN jtl_connector_link_product l ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
             WHERE l.host_id IS NULL AND p.id_product > 0
-        ');
+        '
+        );
 
         return ($count + $countVars);
     }
@@ -456,11 +490,13 @@ class Product extends BaseController
 
             foreach ($this->getProductTranslations($data['id_product']) as $productTranslation) {
                 if (isset($productTranslation[$attributeName]) && !empty($productTranslation[$attributeName])) {
-                    $attribute->addI18n((new ProductAttrI18nModel())
-                        ->setProductAttrId($attribute->getId())
-                        ->setLanguageISO($utils->getLanguageIsoById($productTranslation['id_lang']))
-                        ->setName($attributeName)
-                        ->setValue($productTranslation[$attributeName]));
+                    $attribute->addI18n(
+                        (new ProductAttrI18nModel())
+                            ->setProductAttrId($attribute->getId())
+                            ->setLanguageISO($utils->getLanguageIsoById($productTranslation['id_lang']))
+                            ->setName($attributeName)
+                            ->setValue($productTranslation[$attributeName])
+                    );
                 }
             }
 
@@ -478,11 +514,13 @@ class Product extends BaseController
 
             foreach ($productTags as $languageId => $productTag) {
                 $languageIso = Utils::getInstance()->getLanguageIsoById((string)$languageId);
-                $productTagsAttribute->addI18n((new ProductAttrI18nModel())
-                    ->setProductAttrId($productTagsAttribute->getId())
-                    ->setLanguageISO($languageIso)
-                    ->setName('tags')
-                    ->setValue(join(',', $productTag)));
+                $productTagsAttribute->addI18n(
+                    (new ProductAttrI18nModel())
+                        ->setProductAttrId($productTagsAttribute->getId())
+                        ->setLanguageISO($languageIso)
+                        ->setName('tags')
+                        ->setValue(join(',', $productTag))
+                );
             }
 
             $model->addAttribute($productTagsAttribute);
@@ -496,8 +534,13 @@ class Product extends BaseController
      * @param string $value
      * @param string $languageISO
      */
-    protected function addAttribute(string $wawiName, string $prestaName, ProductModel $model, string $value, string $languageISO): void
-    {
+    protected function addAttribute(
+        string $wawiName,
+        string $prestaName,
+        ProductModel $model,
+        string $value,
+        string $languageISO
+    ): void {
         $attribute = (new ProductAttrModel())
             ->setId(new Identity($wawiName))
             ->setProductId($model->getId());
@@ -519,7 +562,9 @@ class Product extends BaseController
      */
     protected function findCategoryHostIdByEndpoint(int $prestaCategoryId): string
     {
-        return $this->db->getValue(sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', $prestaCategoryId));
+        return $this->db->getValue(
+            sprintf('SELECT host_id FROM jtl_connector_link_category WHERE endpoint_id = %d', $prestaCategoryId)
+        );
     }
 
     /**
