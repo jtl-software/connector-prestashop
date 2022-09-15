@@ -1,3 +1,7 @@
+Unreleased
+------
+- CO-2103 - duplicate products on invalid characters
+
 1.13.1
 ------
 - CO-2018 - Hotfix for product feature query
