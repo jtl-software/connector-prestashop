@@ -20,10 +20,13 @@ include:
     file:
       - 'auto-create-mr/ci.yaml'
       - 'code-quality/ci.yaml'
+      - 'update-changelog/ci.yaml'
 
 stages:
   - createMR
   - test
+  - extract-changelog
+  - update-changelog
 
 code_quality:
   before_script: []
@@ -40,3 +43,20 @@ code_quality:
   artifacts:
     reports:
       junit: junit.xml
+
+
+extractChangelog:
+  stage: extract-changelog
+  when: on_success
+  variables:
+    CHANGELOG_FILE: 'changelog.md'
+    CHANGELOG_JSON: 'presta.json'
+    CONTEXT_FILE: '/tmp/target/storage/systems/presta.json'
+
+updateChangelogRepo:
+  only:
+    - tags
+  stage: update-changelog
+  when: on_success
+  variables:
+    COPY_FILE: "presta.json"
