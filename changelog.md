@@ -1,4 +1,6 @@
 ## Unreleased
+
+## 1.13.2 _2022-11-08_
 - CO-2103 - duplicate products on invalid characters
 
 ## 1.13.1  _2022-05-20_
