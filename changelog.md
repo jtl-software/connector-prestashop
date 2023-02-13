@@ -1,4 +1,5 @@
 ## Unreleased
+- CO-2253 - Prevent duplicated payment entries for status completed 
 
 ## 1.13.2 _2022-11-08_
 - CO-2103 - duplicate products on invalid characters
