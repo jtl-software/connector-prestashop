@@ -55,7 +55,7 @@ class CustomerOrder extends BaseController
     private function setStates($id, &$model)
     {
         $order = new \Order($id);
-        $model->setPaymentStatus($order->hasBeenPaid() == 1 ? CustomerOrderModel::PAYMENT_STATUS_COMPLETED : CustomerOrderModel::PAYMENT_STATUS_UNPAID);
+        $model->setPaymentStatus(CustomerOrderModel::PAYMENT_STATUS_UNPAID);
         if ($order->hasBeenDelivered() == 1 || $order->hasBeenShipped() == 1) {
             $model->setStatus(CustomerOrderModel::STATUS_SHIPPED);
         }
