@@ -15,7 +15,7 @@ class Category extends BaseController
 			LEFT JOIN jtl_connector_link_category l ON c.id_category = l.endpoint_id
             WHERE l.host_id IS NULL AND c.id_parent != 0 AND c.is_root_category = 0
             ORDER BY c.nleft
-            LIMIT '.$limit
+            LIMIT ' . $this->db->escape($limit)
         );
 
         $return = [];
@@ -35,6 +35,7 @@ class Category extends BaseController
             $data->getParentCategoryId()->setEndpoint(static::$idCache[$data->getParentCategoryId()->getHost()]);
         }
 
+        /** @var \Category $category */
         $category = $this->mapper->toEndpoint($data);
         $category->save();
 

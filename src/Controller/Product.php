@@ -43,7 +43,7 @@ class Product extends BaseController
 			SELECT * FROM ' . _DB_PREFIX_ . 'product p
 			LEFT JOIN jtl_connector_link_product l ON CAST(p.id_product AS CHAR) = l.endpoint_id
             WHERE l.host_id IS NULL AND p.id_product > 0
-            LIMIT ' . $limit
+            LIMIT ' . $this->db->escape($limit)
         );
 
         $count = 0;
@@ -202,13 +202,13 @@ class Product extends BaseController
                     $groupType = in_array(
                         $variation->getType(),
                         $allowedGroupTypes
-                    ) ? $variation->getType() : ProductVariation::TYPE_SELECT;
+                    ) ? $this->db->escape($variation->getType()) : ProductVariation::TYPE_SELECT;
                     $attrGrpId = null;
                     $attrPublicNames = [];
                     $attrNames = [];
                     foreach ($variation->getI18ns() as $varI18n) {
                         $langId = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
-                        $varName = $varI18n->getName();
+                        $varName = $this->db->escape($varI18n->getName());
                         if (!empty($varName)) {
                             $attrNames[$langId] = sprintf('%s (%s)', $varName, ucfirst($groupType));
                             $attrPublicNames[$langId] = $varName;
@@ -241,7 +241,7 @@ class Product extends BaseController
                         foreach ($value->getI18ns() as $valI18n) {
                             $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
 
-                            $valName = $valI18n->getName();
+                            $valName = $this->db->escape($valI18n->getName());
 
                             if (!empty($valName)) {
                                 $valNames[$langId] = $valName;
