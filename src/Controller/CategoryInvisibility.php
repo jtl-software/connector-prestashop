@@ -12,7 +12,7 @@ class CategoryInvisibility extends BaseController
             WHERE NOT EXISTS(
               SELECT *
               FROM '._DB_PREFIX_.'category_group i
-              WHERE g.id_group = i.id_group AND i.id_category = '.$data['id_category'].'
+              WHERE g.id_group = i.id_group AND i.id_category = '.$this->db->escape($data['id_category']).'
             )');
 
         $return = [];

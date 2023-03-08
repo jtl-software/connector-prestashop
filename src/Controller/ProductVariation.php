@@ -8,10 +8,10 @@ class ProductVariation extends BaseController
     {
         $masterId = $model->getMasterProductId()->getEndpoint();
         
-        $where = 'p.id_product = ' . $data['id_product'];
+        $where = 'p.id_product = ' . $this->db->escape($data['id_product']);
         
         if (!empty($masterId)) {
-            $where = 'p.id_product_attribute = ' . $data['id_product_attribute'];
+            $where = 'p.id_product_attribute = ' . $this->db->escape($data['id_product_attribute']);
         }
         
         $result = $this->db->executeS('

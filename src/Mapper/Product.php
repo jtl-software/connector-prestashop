@@ -145,7 +145,7 @@ class Product extends BaseMapper
     protected function isMasterProduct($data)
     {
         if (!isset($data['id_product_attribute'])) {
-            $count = $this->db->getValue('SELECT COUNT(id_product) FROM ' . _DB_PREFIX_ . 'product_attribute WHERE id_product=' . $data['id_product']);
+            $count = $this->db->getValue('SELECT COUNT(id_product) FROM ' . _DB_PREFIX_ . 'product_attribute WHERE id_product=' . $this->db->escape($data['id_product']));
 
             if ($count > 0) {
                 return true;
@@ -162,7 +162,7 @@ class Product extends BaseMapper
 
     protected function permitNegativeStock($data)
     {
-        $query = 'SELECT out_of_stock FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$data['id_product'];
+        $query = 'SELECT out_of_stock FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$this->db->escape($data['id_product']);
 
         if (!empty($data['id_product_attribute'])) {
             $query .= ' AND id_product_attribute = '.$data['id_product_attribute'];

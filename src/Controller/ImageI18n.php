@@ -20,7 +20,7 @@ class ImageI18n extends BaseController
                          FROM ' . _DB_PREFIX_ . 'image_lang il
                          LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = il.id_lang
                          WHERE l.id_lang IS NOT NULL AND il.id_image = %s',
-                $data['id']
+                $this->db->escape($data['id'])
             ));
 
             if (is_array($imageLang)) {

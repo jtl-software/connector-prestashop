@@ -471,7 +471,7 @@ class Product extends BaseController
 
         foreach (ProductAttr::getSpecialAttributes() as $wawiName => $prestaName) {
             if (isset($data[$prestaName])) {
-                $value = $data[$prestaName];
+                $value = $this->db->escape($data[$prestaName]);
                 if ($wawiName === 'main_category_id') {
                     $value = (string)$this->findCategoryHostIdByEndpoint((int)$value);
                 }
@@ -488,7 +488,7 @@ class Product extends BaseController
                 ->setProductId($model->getId())
                 ->setIsTranslated(true);
 
-            foreach ($this->getProductTranslations($data['id_product']) as $productTranslation) {
+            foreach ($this->getProductTranslations($this->db->escape($data['id_product'])) as $productTranslation) {
                 if (isset($productTranslation[$attributeName]) && !empty($productTranslation[$attributeName])) {
                     $attribute->addI18n(
                         (new ProductAttrI18nModel())

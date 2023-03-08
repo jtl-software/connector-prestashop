@@ -8,10 +8,10 @@ class ProductStockLevel extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $query = 'SELECT quantity FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$data['id_product'];
+        $query = 'SELECT quantity FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$this->db->escape($data['id_product']);
 
         if (!empty($data['id_product_attribute'])) {
-            $query .= ' AND id_product_attribute = '.$data['id_product_attribute'];
+            $query .= ' AND id_product_attribute = '.$this->db->escape($data['id_product_attribute']);
         } else {
             $query .= ' AND id_product_attribute = 0';
         }
