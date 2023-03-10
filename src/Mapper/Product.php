@@ -162,7 +162,7 @@ class Product extends BaseMapper
 
     protected function permitNegativeStock($data)
     {
-        $query = 'SELECT out_of_stock FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$this->db->escape($data['id_product']);
+        $query = 'SELECT out_of_stock FROM '._DB_PREFIX_.'stock_available WHERE id_product=' . $this->db->escape($data['id_product']);
 
         if (!empty($data['id_product_attribute'])) {
             $query .= ' AND id_product_attribute = '.$data['id_product_attribute'];
