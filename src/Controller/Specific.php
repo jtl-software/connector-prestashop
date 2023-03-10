@@ -26,7 +26,7 @@ class Specific extends BaseController
             GROUP BY v.id_feature
             LIMIT %s',
             _DB_PREFIX_,
-            $limit
+            $this->db->escape($limit)
         ));
         
         foreach ($specificsIds as $specificsId) {
@@ -133,8 +133,8 @@ class Specific extends BaseController
             
             return $specific;
         }
-        
-        $specific->getId()->setEndpoint($feature->id);
+
+        $specific->getId()->setEndpoint($this->db->escape($feature->id));
         
         //SPECIFCVALUE
         $existingSpecificValues = [];
@@ -228,7 +228,7 @@ class Specific extends BaseController
                             WHERE name = "%s"
                             AND id_lang = %s',
                     _DB_PREFIX_,
-                    $i18n->getName(),
+                    $this->db->escape($i18n->getName()),
                     $defaultIsoId
                 );
                 
@@ -302,7 +302,7 @@ class Specific extends BaseController
             FROM %sfeature_value
             WHERE custom = 0 AND id_feature = %s',
             _DB_PREFIX_,
-            $specificId
+            $this->db->escape()
         ));
     }
 }

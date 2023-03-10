@@ -35,11 +35,11 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
     public function getHostId($endpointId, $type)
     {
         if (isset(static::$types[$type])) {
-            $dbResult = $this->db->getValue('SELECT host_id FROM jtl_connector_link_' . static::$types[$type] . " WHERE endpoint_id = '" . $endpointId . "'");
+            $dbResult = $this->db->getValue('SELECT host_id FROM jtl_connector_link_' . static::$types[$type] . " WHERE endpoint_id = '" . $this->db->escape($endpointId) . "'");
     
             $hostId = $dbResult ? $dbResult : null;
     
-            Logger::write(sprintf('Trying to get hostId with endpointId (%s) and type (%s) ... hostId: (%s)', $endpointId, $type, $hostId), Logger::DEBUG, 'linker');
+            Logger::write(sprintf('Trying to get hostId with endpointId (%s) and type (%s) ... hostId: (%s)', $this->db->escape($endpointId), $type, $hostId), Logger::DEBUG, 'linker');
     
             return $hostId;
         }

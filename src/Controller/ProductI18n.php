@@ -29,7 +29,7 @@ class ProductI18n extends BaseController
             FROM '._DB_PREFIX_.'product_lang AS p
             LEFT JOIN '._DB_PREFIX_.'lang AS l ON l.id_lang = p.id_lang
             WHERE p.id_product = %s AND p.id_shop = %s AND l.id_lang IS NOT NULL
-        ', $data['id_product'], \Context::getContext()->shop->id);
+        ', $this->db->escape($data['id_product']), \Context::getContext()->shop->id);
 
         $result = $this->db->executeS($sql);
 

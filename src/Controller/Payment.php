@@ -13,7 +13,7 @@ class Payment extends BaseController
             'LEFT JOIN jtl_connector_link_payment l ON p.id_order_payment = l.endpoint_id' . "\n" .
             'LEFT JOIN jtl_connector_link_customer_order co ON co.endpoint_id = o.id_order' . "\n" .
             'WHERE l.host_id IS NULL AND co.endpoint_id IS NOT NULL' . "\n" .
-            'LIMIT ' . $limit;
+            'LIMIT ' . $this->db->escape($limit);
 
         $result = $this->db->executeS($sql);
 

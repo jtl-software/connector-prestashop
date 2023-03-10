@@ -50,7 +50,7 @@ class ProductAttr extends BaseController
      */
     public function pullData($data, $model, $limit = null)
     {
-        $productId = $model->getId()->getEndpoint();
+        $productId = $this->db->escape($model->getId()->getEndpoint());
 
         $excludedFeaturesIds = [];
 
@@ -147,7 +147,7 @@ class ProductAttr extends BaseController
         $sql = sprintf('SELECT fp.*, fl.name FROM %sfeature_product fp 
             LEFT JOIN %sfeature_value fv ON fp.id_feature = fv.id_feature AND fp.id_feature_value = fv.id_feature_value 
             LEFT JOIN %sfeature_lang fl ON fp.id_feature = fl.id_feature 
-            WHERE fp.id_product = %d AND fl.id_lang = %d AND fv.custom = 1', _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $model->id, $defaultPrestaLanguageId);
+            WHERE fp.id_product = %d AND fl.id_lang = %d AND fv.custom = 1', _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $this->db->escape($model->id), $defaultPrestaLanguageId);
 
         $psProductAttributes = $this->db->executeS($sql);
         if (is_array($psProductAttributes)) {
@@ -163,7 +163,7 @@ class ProductAttr extends BaseController
             if (!empty($psAttributesToDelete)) {
                 $featureValuesIds = array_column($psAttributesToDelete, 'id_feature_value');
                 $this->db->Execute(
-                    sprintf('DELETE FROM `%sfeature_product`WHERE `id_product` = %s AND `id_feature_value` IN (%s)', _DB_PREFIX_, $model->id, join(',', $featureValuesIds))
+                    sprintf('DELETE FROM `%sfeature_product`WHERE `id_product` = %s AND `id_feature_value` IN (%s)', _DB_PREFIX_, $this->db->escape($model->id), join(',', $featureValuesIds))
                 );
             }
         }
@@ -204,7 +204,7 @@ class ProductAttr extends BaseController
             FROM %sfeature_value
             WHERE custom = 0 AND id_feature = %s',
             _DB_PREFIX_,
-            $attributeId
+            $this->db->escape($attributeId)
         ));
     }
 

@@ -15,7 +15,7 @@ class Customer extends BaseController
 			LEFT JOIN jtl_connector_link_customer l ON c.id_customer = l.endpoint_id
             WHERE l.host_id IS NULL AND a.id_address IS NOT NULL
             GROUP BY c.id_customer
-            LIMIT ' . $limit
+            LIMIT ' . $this->db->escape($limit)
         );
 
         $return = [];

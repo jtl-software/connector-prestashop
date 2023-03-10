@@ -19,7 +19,7 @@ class ProductSpecific extends BaseController
             WHERE custom = 0 AND `id_product` = "%s"',
             _DB_PREFIX_,
             _DB_PREFIX_,
-            $product->getId()->getEndpoint()
+            $this->db->escape($product->getId()->getEndpoint())
         ));
         
         $productSpecifics = [];
@@ -75,9 +75,9 @@ class ProductSpecific extends BaseController
             FROM %sfeature_product
             WHERE id_feature = "%s" AND id_product = "%s" AND id_feature_value = "%s"',
             _DB_PREFIX_,
-            $productSpecific->getId()->getEndpoint(),
-            $productSpecific->getProductId()->getEndpoint(),
-            $productSpecific->getSpecificValueId()->getEndpoint()
+            $this->db->escape($productSpecific->getId()->getEndpoint()),
+            $this->db->escape($productSpecific->getProductId()->getEndpoint()),
+            $this->db->escape($productSpecific->getSpecificValueId()->getEndpoint())
         ));
     }
     
@@ -94,8 +94,8 @@ class ProductSpecific extends BaseController
                 WHERE custom = 1
             )',
                 _DB_PREFIX_,
-                $product->getId()->getEndpoint(),
-                implode(',', array_merge($existingSpecificValues, [0])),
+                $this->db->escape($product->getId()->getEndpoint()),
+                $this->db->escape(implode(',', array_merge($existingSpecificValues, [0]))),
                 _DB_PREFIX_
             )
         );
@@ -108,8 +108,8 @@ class ProductSpecific extends BaseController
                     DELETE FROM `%sfeature_product`
                     WHERE `id_feature_value` = "%s" AND `id_product` = "%s"',
                         _DB_PREFIX_,
-                        $value['id_feature_value'],
-                        $value['id_product']
+                        $this->db->escape($value['id_feature_value']),
+                        $this->db->escape($value['id_product'])
                     )
                 );
             }
