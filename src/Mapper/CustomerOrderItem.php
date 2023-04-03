@@ -41,7 +41,7 @@ class CustomerOrderItem extends BaseMapper
         if ($rate == 0) {
             $query = sprintf('SELECT t.rate FROM %stax t 
                          LEFT JOIN %sorder_detail_tax dt ON dt.id_tax = t.id_tax
-                         WHERE dt.id_order_detail = %s', _DB_PREFIX_, _DB_PREFIX_, $data['id_order_detail']);
+                         WHERE dt.id_order_detail = %s', _DB_PREFIX_, _DB_PREFIX_, $this->db->escape($data['id_order_detail']));
 
             $rate = $this->db->getValue($query);
 

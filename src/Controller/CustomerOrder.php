@@ -22,7 +22,7 @@ class CustomerOrder extends BaseController
         }
 
         $result = $this->db->executeS(
-            $query . ' LIMIT '.$limit
+            $query . ' LIMIT ' . $this->db->escape($limit)
         );
 
         $return = [];

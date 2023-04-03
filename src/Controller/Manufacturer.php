@@ -12,7 +12,7 @@ class Manufacturer extends BaseController
 			FROM '._DB_PREFIX_.'manufacturer m
 			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
             WHERE l.host_id IS NULL
-            LIMIT '.$limit
+            LIMIT ' . $this->db->escape($limit)
         );
 
         $return = [];

@@ -32,7 +32,7 @@ class ProductSpecialPrice extends BaseController
 			LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
 			WHERE
 			    p.id_product_attribute = 0
-			    AND p.id_product = ' . $data['id_product'] . '
+			    AND p.id_product = ' . $this->db->escape($data['id_product']) . '
 			    AND p.id_country = 0
 			    AND p.id_currency = 0
 			    AND id_customer = 0
@@ -47,7 +47,7 @@ class ProductSpecialPrice extends BaseController
                 FROM ' . _DB_PREFIX_ . 'specific_price p
                 LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
                 WHERE
-                    p.id_product_attribute = ' . $data['id_product_attribute'] . '
+                    p.id_product_attribute = ' . $this->db->escape($data['id_product_attribute']) . '
                     AND p.id_country = 0
 			        AND p.id_currency = 0
 			        AND id_customer = 0
@@ -96,7 +96,7 @@ class ProductSpecialPrice extends BaseController
 
     public function pushData($data, $model = null)
     {
-        $id = $data->getId()->getEndpoint();
+        $id = $this->db->escape($data->getId()->getEndpoint());
 
         if (!empty($id)) {
             list($productId, $combiId) = Utils::explodeProductEndpoint($id, 0);

@@ -6,7 +6,7 @@ class DeliveryNote extends BaseController
 {
     public function pushData($data)
     {
-        $orderId = $data->getCustomerOrderId()->getEndpoint();
+        $orderId = $this->db->escape($data->getCustomerOrderId()->getEndpoint());
 
         if (!empty($orderId)) {
             $trackingCodes = [];
@@ -22,7 +22,7 @@ class DeliveryNote extends BaseController
                     $trackingCodes = array_merge($trackingCodes, array_map('trim', explode(',', $existingTrackingCodes)));
                 }
 
-                $codesString = implode(',', array_unique($trackingCodes));
+                $codesString = $this->db->escape(implode(',', array_unique($trackingCodes)));
 
                 $this->db->execute(sprintf(
                     'UPDATE %sorder_carrier SET tracking_number = "%s" WHERE id_order = %s',

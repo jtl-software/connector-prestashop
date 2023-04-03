@@ -13,7 +13,7 @@ class CustomerOrderShippingAddress extends BaseController
 			LEFT JOIN '._DB_PREFIX_.'country c ON c.id_country = a.id_country
 			LEFT JOIN '._DB_PREFIX_.'state s ON s.id_state = a.id_state
 			LEFT JOIN '._DB_PREFIX_.'customer cu ON cu.id_customer = a.id_customer
-            WHERE a.id_address = '.$data['id_address_delivery']
+            WHERE a.id_address = ' . $this->db->escape($data['id_address_delivery'])
         );
 
         return $this->mapper->toHost($result[0]);
