@@ -87,7 +87,7 @@ class Connector extends Controller
         
         $connector->setEndpointVersion($version)
             ->setPlatformName('PrestaShop')
-            ->setPlatformVersion(_PS_VERSION_)
+            ->setPlatformVersion(1)
             ->setProtocolVersion(Application()->getProtocolVersion())
             ->setServerInfo($serverInfo);
 
