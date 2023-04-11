@@ -1,5 +1,8 @@
 ## Unreleased
 
+## unreleased
+- CO-2323 - Fixed wrong Presta Version in Wawi License check
+
 ## 1.13.2 _2022-11-08_
 - CO-2103 - duplicate products on invalid characters
 
