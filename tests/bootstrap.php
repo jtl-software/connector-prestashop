@@ -1,5 +1,7 @@
 <?php
 
+//phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
+
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 
 require '../../config/config.inc.php';

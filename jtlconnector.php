@@ -21,6 +21,7 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
 use jtl\Connector\Presta\Utils\Config;
 use Symfony\Component\Yaml\Yaml;
 
+//phpcs:ignore PSR1.Classes.ClassDeclaration.MissingNamespace
 class JTLConnector extends Module
 {
     public const
@@ -60,7 +61,11 @@ class JTLConnector extends Module
         $minimumPhpversion = '7.1.3';
         if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
             $this->_errors[] =
-                sprintf($this->l('The Connector requires PHP %s. Your system is running PHP %s.'), $minimumPhpversion, PHP_VERSION);
+                sprintf(
+                    $this->l('The Connector requires PHP %s. Your system is running PHP %s.'),
+                    $minimumPhpversion,
+                    PHP_VERSION
+                );
         }
 
         if (!extension_loaded('sqlite3')) {
@@ -80,9 +85,12 @@ class JTLConnector extends Module
         }
 
         if (count($this->_errors) != 0) {
-            $this->_errors[] = '<b>' . sprintf($this->l(
-                'Please read the %s for requirements and setup instructions.'
-            ), '<a href="http://guide.jtl-software.de/jtl/JTL-Connector">Connector Guide</a>') . '</b>';
+            $this->_errors[] = '<b>' . sprintf(
+                $this->l(
+                    'Please read the %s for requirements and setup instructions.'
+                ),
+                '<a href="http://guide.jtl-software.de/jtl/JTL-Connector">Connector Guide</a>'
+            ) . '</b>';
 
             return false;
         }
@@ -118,6 +126,127 @@ class JTLConnector extends Module
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
     }
 
+    private function createLinkingTables()
+    {
+        $db = Db::getInstance();
+
+        $link = $db->getLink();
+
+        if ($link instanceof \PDO) {
+            $link->beginTransaction();
+        } elseif ($link instanceof \mysqli) {
+            $link->begin_transaction();
+        }
+
+        try {
+            $types = [
+                1    => 'category',
+                2    => 'customer',
+                4    => 'customer_order',
+                8    => 'delivery_note',
+                16   => 'image',
+                32   => 'manufacturer',
+                64   => 'product',
+                128  => 'specific',
+                256  => 'specific_value',
+                512  => 'payment',
+                1024 => 'crossselling',
+                2048 => 'crossselling_group',
+                70   => 'tax_class'
+            ];
+
+            $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
+                endpoint_id INT(10) NOT NULL,
+                host_id INT(10) NOT NULL,
+                PRIMARY KEY (endpoint_id),
+                INDEX (host_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+
+            $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
+                endpoint_id varchar(255) NOT NULL,
+                host_id INT(10) NOT NULL,
+                PRIMARY KEY (endpoint_id),
+                INDEX (host_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+
+            foreach ($types as $id => $name) {
+                if ($id == 16 || $id == 64) {
+                    $db->query(
+                        sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
+                    )->execute();
+                } else {
+                    $db->query(
+                        sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
+                    )->execute();
+                }
+            }
+
+            $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
+
+            if (!empty($check)) {
+                $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
+
+                foreach ($existingTypes as $existingType) {
+                    $typeId    = (int)$existingType['type'];
+                    $tableName = 'jtl_connector_link_' . $types[$typeId];
+                    $db->query(
+                        "INSERT INTO {$tableName} (host_id, endpoint_id)
+                        SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
+                        "
+                    )->execute();
+                }
+
+                if (count($existingTypes) > 0) {
+                    $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
+                }
+            }
+
+            \Db::getInstance()->getLink()->commit();
+
+            return true;
+        } catch (\Exception $e) {
+            $link->rollback();
+            throw $e;
+        }
+    }
+
+    private function convertLinkingTables()
+    {
+        $db = Db::getInstance();
+
+        $link = $db->getLink();
+
+        if ($link instanceof \PDO) {
+            $link->beginTransaction();
+        } elseif ($link instanceof \mysqli) {
+            $link->begin_transaction();
+        }
+
+        try {
+            $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
+
+            $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
+
+            if (!empty($newLinkingTables)) {
+                foreach ($newLinkingTables as $newLinkingTable) {
+                    if (!empty($newLinkingTable)) {
+                        $newLinkingTable = reset($newLinkingTable);
+                        if ($newLinkingTable !== 'jtl_connector_link_backup') {
+                            $db->query(sprintf($query, $newLinkingTable))->execute();
+                        }
+                    }
+                }
+            }
+
+            \Db::getInstance()->getLink()->commit();
+
+            return true;
+        } catch (\Exception $e) {
+            $link->rollback();
+            throw $e;
+        }
+    }
+
     public function uninstall()
     {
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
@@ -147,24 +276,30 @@ class JTLConnector extends Module
                 $this->clearLogs();
                 $output .= $this->displayConfirmation($this->l('Logs have been cleared successfully!'));
             } elseif (Tools::getValue('jtlconnector_remove_inconsistency')) {
-                Db::getInstance()->execute(sprintf(
-                    'DELETE FROM %sfeature_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
-                    _DB_PREFIX_,
-                    _DB_PREFIX_
-                ));
+                Db::getInstance()->execute(
+                    sprintf(
+                        'DELETE FROM %sfeature_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
+                        _DB_PREFIX_,
+                        _DB_PREFIX_
+                    )
+                );
                 $affected = Db::getInstance()->Affected_Rows();
-                Db::getInstance()->execute(sprintf(
-                    'DELETE FROM %sfeature_value_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
-                    _DB_PREFIX_,
-                    _DB_PREFIX_
-                ));
+                Db::getInstance()->execute(
+                    sprintf(
+                        'DELETE FROM %sfeature_value_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
+                        _DB_PREFIX_,
+                        _DB_PREFIX_
+                    )
+                );
                 $affected += Db::getInstance()->Affected_Rows();
 
-                $output .= $this->displayConfirmation(sprintf(
-                    "%s: %s",
-                    $this->l('Successfully cleaned inconsistent entries'),
-                    $affected
-                ));
+                $output .= $this->displayConfirmation(
+                    sprintf(
+                        "%s: %s",
+                        $this->l('Successfully cleaned inconsistent entries'),
+                        $affected
+                    )
+                );
             } elseif (Tools::getValue('jtlconnector_download_logs')) {
                 $this->downloadJTLLogs();
             } else {
@@ -173,9 +308,18 @@ class JTLConnector extends Module
                     $output .= $this->displayError($this->l('Password must have a minimum length of 8 chars!'));
                 } else {
                     Configuration::updateValue('jtlconnector_pass', $pass);
-                    Configuration::updateValue('jtlconnector_truncate_desc', Tools::getValue('jtlconnector_truncate_desc'));
-                    Configuration::updateValue('jtlconnector_custom_fields', Tools::getValue('jtlconnector_custom_fields'));
-                    Configuration::updateValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES, Tools::getValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES));
+                    Configuration::updateValue(
+                        'jtlconnector_truncate_desc',
+                        Tools::getValue('jtlconnector_truncate_desc')
+                    );
+                    Configuration::updateValue(
+                        'jtlconnector_custom_fields',
+                        Tools::getValue('jtlconnector_custom_fields')
+                    );
+                    Configuration::updateValue(
+                        self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES,
+                        Tools::getValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES)
+                    );
                     Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
                     Config::set('developer_logging', Tools::getValue('jtlconnector_developer_logging'));
 
@@ -252,9 +396,9 @@ class JTLConnector extends Module
 
         $fields_form            = [];
         $fields_form[0]['form'] = [
-            'legend' => [
+            'legend'      => [
                 'title' => $this->l('Connector Settings'),
-                'icon' => 'icon-cogs',
+                'icon'  => 'icon-cogs',
             ],
             'description' => sprintf(
                 '<b>%s</b><br>%s: <b>%s</b><br/>',
@@ -262,140 +406,151 @@ class JTLConnector extends Module
                 $this->l('The "Onlineshop URL" is'),
                 $this->context->link->getModuleLink('jtlconnector', 'api')
             ),
-            'input' => [
+            'input'       => [
                 [
-                    'type' => 'textbutton',
-                    'label' => $this->l('Password'),
-                    'name' => 'jtlconnector_pass',
-                    'size' => 5,
+                    'type'     => 'textbutton',
+                    'label'    => $this->l('Password'),
+                    'name'     => 'jtlconnector_pass',
+                    'size'     => 5,
                     'required' => true,
-                    'button' => [
-                        'label' => '<i class="icon-paste"></i>',
+                    'button'   => [
+                        'label'      => '<i class="icon-paste"></i>',
                         'attributes' => [
-                            'onclick' => 'document.getElementById("jtlconnector_pass").select();document.execCommand("copy");',
+                            'onclick' =>
+                                'document.getElementById("jtlconnector_pass").select();document.execCommand("copy");',
                         ],
                     ],
                 ],
                 [
-                    'type' => 'switch',
-                    'label' => $this->l('Truncate short description'),
-                    'name' => 'jtlconnector_truncate_desc',
+                    'type'    => 'switch',
+                    'label'   => $this->l('Truncate short description'),
+                    'name'    => 'jtlconnector_truncate_desc',
                     'is_bool' => true,
-                    'desc' => sprintf(
-                        $this->l('Enable this option to truncate too long short descriptions. Your current setting is %s chars. You can change this in your product preferences.'),
+                    'desc'    => sprintf(
+                        $this->l(
+                            'Enable this option to truncate too long short descriptions. Your current setting is %s 
+                            chars. You can change this in your product preferences.'
+                        ),
                         $limit
                     ),
-                    'values' => [
+                    'values'  => [
                         [
-                            'id' => 'active_on',
+                            'id'    => 'active_on',
                             'value' => true,
                             'label' => $this->l('Enabled'),
                         ],
                         [
-                            'id' => 'active_off',
+                            'id'    => 'active_off',
                             'value' => false,
                             'label' => $this->l('Disabled'),
                         ],
                     ],
                 ],
                 [
-                    'type' => 'switch',
-                    'label' => $this->l('Add custom fields as attributes'),
-                    'name' => 'jtlconnector_custom_fields',
+                    'type'    => 'switch',
+                    'label'   => $this->l('Add custom fields as attributes'),
+                    'name'    => 'jtlconnector_custom_fields',
                     'is_bool' => true,
-                    'desc' => $this->l('Enable this option to add the custom fields as product attributes.'),
-                    'values' => [
+                    'desc'    => $this->l('Enable this option to add the custom fields as product attributes.'),
+                    'values'  => [
                         [
-                            'id' => 'active_on',
+                            'id'    => 'active_on',
                             'value' => true,
                             'label' => $this->l('Enabled'),
                         ],
                         [
-                            'id' => 'active_off',
+                            'id'    => 'active_off',
                             'value' => false,
                             'label' => $this->l('Disabled'),
                         ],
                     ],
                 ],
                 [
-                    'type' => 'switch',
-                    'label' => $this->l('Delete unknown attributes'),
-                    'name' => self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES,
+                    'type'    => 'switch',
+                    'label'   => $this->l('Delete unknown attributes'),
+                    'name'    => self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES,
                     'is_bool' => true,
-                    'desc' => $this->l('Enable this option when not in JTL-Wawi defined product attributes should get deleted'),
-                    'values' => [
+                    'desc'    => $this->l(
+                        'Enable this option when not in JTL-Wawi defined product attributes should get deleted'
+                    ),
+                    'values'  => [
                         [
-                            'id' => 'active_on',
+                            'id'    => 'active_on',
                             'value' => true,
                             'label' => $this->l('Enabled'),
                         ],
                         [
-                            'id' => 'active_off',
+                            'id'    => 'active_off',
                             'value' => false,
                             'label' => $this->l('Disabled'),
                         ],
                     ],
                 ],
                 [
-                    'type' => 'date',
-                    'label' => $this->l('Import orders from'),
-                    'name' => 'jtlconnector_from_date',
-                    'desc' => $this->l('If this option is set, only orders are pulled that are newer then this date.'),
-                    'size' => 5,
+                    'type'     => 'date',
+                    'label'    => $this->l('Import orders from'),
+                    'name'     => 'jtlconnector_from_date',
+                    'desc'     => $this->l(
+                        'If this option is set, only orders are pulled that are newer then this date.'
+                    ),
+                    'size'     => 5,
                     'required' => false,
                 ],
                 [
-                    'type' => 'button',
+                    'type'  => 'button',
                     'label' => $this->l('Remove inconsistent specifics database entries'),
-                    'text' => $this->l('Remove'),
-                    'name' => 'jtlconnector_remove_inconsistency',
-                    'icon' => 'delete',
-                    'desc' => sprintf(
-                        $this->l('Use this button to remove inconsistency in your specifics table caused by missing languages.'),
+                    'text'  => $this->l('Remove'),
+                    'name'  => 'jtlconnector_remove_inconsistency',
+                    'icon'  => 'delete',
+                    'desc'  => sprintf(
+                        $this->l(
+                            'Use this button to remove inconsistency in your specifics table caused by missing 
+                            languages.'
+                        ),
                         $limit
                     ),
                 ],
                 [
-                    'type' => 'html',
-                    'name' => '',
+                    'type'         => 'html',
+                    'name'         => '',
                     'html_content' => '<hr>',
                 ],
                 [
-                    'type' => 'switch',
-                    'label' => $this->l('Enable Developer Logging'),
-                    'name' => 'jtlconnector_developer_logging',
-                    'desc' => sprintf($this->l('Use this setting to enable developer logging.'), $limit),
+                    'type'   => 'switch',
+                    'label'  => $this->l('Enable Developer Logging'),
+                    'name'   => 'jtlconnector_developer_logging',
+                    'desc'   => sprintf($this->l('Use this setting to enable developer logging.'), $limit),
                     'values' => [
                         [
-                            'id' => 'active_on',
+                            'id'    => 'active_on',
                             'value' => true,
                             'label' => $this->l('Enabled'),
                         ],
                         [
-                            'id' => 'active_off',
+                            'id'    => 'active_off',
                             'value' => false,
                             'label' => $this->l('Disabled'),
                         ],
                     ],
                 ],
                 [
-                    'type' => 'button',
+                    'type'  => 'button',
                     'label' => $this->l('Clear logs'),
-                    'text' => $this->l('Clear'),
-                    'name' => 'jtlconnector_clear_logs',
-                    'icon' => 'delete',
-                    'desc' => $this->l('Use this button to clear your dev logs.'),
+                    'text'  => $this->l('Clear'),
+                    'name'  => 'jtlconnector_clear_logs',
+                    'icon'  => 'delete',
+                    'desc'  => $this->l('Use this button to clear your dev logs.'),
                 ],
                 [
-                    'type' => 'button',
+                    'type'  => 'button',
                     'label' => $this->l('Download logs'),
-                    'text' => $this->l('Download'),
-                    'name' => 'jtlconnector_download_logs',
-                    'icon' => 'download',
-                    'desc' => $this->l('Use this button to download your dev logs.'),
+                    'text'  => $this->l('Download'),
+                    'name'  => 'jtlconnector_download_logs',
+                    'icon'  => 'download',
+                    'desc'  => $this->l('Use this button to download your dev logs.'),
                 ],
             ],
-            'submit' => [
+            'submit'      => [
                 'title' => $this->l('Save'),
                 'class' => 'button',
             ],
@@ -421,128 +576,19 @@ class JTLConnector extends Module
 
         // Load current value
         $helper->fields_value['jtlconnector_pass']                    = Configuration::get('jtlconnector_pass');
-        $helper->fields_value['jtlconnector_truncate_desc']           = Configuration::get('jtlconnector_truncate_desc');
-        $helper->fields_value['jtlconnector_custom_fields']           = Configuration::get('jtlconnector_custom_fields');
-        $helper->fields_value[self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES] = Configuration::get(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES);
+        $helper->fields_value['jtlconnector_truncate_desc']           = Configuration::get(
+            'jtlconnector_truncate_desc'
+        );
+        $helper->fields_value['jtlconnector_custom_fields']           = Configuration::get(
+            'jtlconnector_custom_fields'
+        );
+        $helper->fields_value[self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES] = Configuration::get(
+            self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES
+        );
         $helper->fields_value['jtlconnector_from_date']               = Configuration::get('jtlconnector_from_date');
         $helper->fields_value['jtlconnector_remove_inconsistency']    = false;
         $helper->fields_value['jtlconnector_developer_logging']       = Config::get('developer_logging');
 
         return $helper->generateForm($fields_form);
-    }
-
-    private function createLinkingTables()
-    {
-        $db = Db::getInstance();
-
-        $link = $db->getLink();
-
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
-        }
-
-        try {
-            $types = [
-                1 => 'category',
-                2 => 'customer',
-                4 => 'customer_order',
-                8 => 'delivery_note',
-                16 => 'image',
-                32 => 'manufacturer',
-                64 => 'product',
-                128 => 'specific',
-                256 => 'specific_value',
-                512 => 'payment',
-                1024 => 'crossselling',
-                2048 => 'crossselling_group',
-                70 => 'tax_class'
-            ];
-
-            $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
-                endpoint_id INT(10) NOT NULL,
-                host_id INT(10) NOT NULL,
-                PRIMARY KEY (endpoint_id),
-                INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
-
-            $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
-                endpoint_id varchar(255) NOT NULL,
-                host_id INT(10) NOT NULL,
-                PRIMARY KEY (endpoint_id),
-                INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
-
-            foreach ($types as $id => $name) {
-                if ($id == 16 || $id == 64) {
-                    $db->query(sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION))->execute();
-                } else {
-                    $db->query(sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION))->execute();
-                }
-            }
-
-            $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
-
-            if (!empty($check)) {
-                $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
-
-                foreach ($existingTypes as $existingType) {
-                    $typeId    = (int)$existingType['type'];
-                    $tableName = 'jtl_connector_link_' . $types[$typeId];
-                    $db->query("INSERT INTO {$tableName} (host_id, endpoint_id)
-                        SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
-                        ")->execute();
-                }
-
-                if (count($existingTypes) > 0) {
-                    $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
-                }
-            }
-
-            \Db::getInstance()->getLink()->commit();
-
-            return true;
-        } catch (\Exception $e) {
-            $link->rollback();
-            throw $e;
-        }
-    }
-
-    private function convertLinkingTables()
-    {
-        $db = Db::getInstance();
-
-        $link = $db->getLink();
-
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
-        }
-
-        try {
-            $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
-
-            $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
-
-            if (!empty($newLinkingTables)) {
-                foreach ($newLinkingTables as $newLinkingTable) {
-                    if (!empty($newLinkingTable)) {
-                        $newLinkingTable = reset($newLinkingTable);
-                        if ($newLinkingTable !== 'jtl_connector_link_backup') {
-                            $db->query(sprintf($query, $newLinkingTable))->execute();
-                        }
-                    }
-                }
-            }
-
-            \Db::getInstance()->getLink()->commit();
-
-            return true;
-        } catch (\Exception $e) {
-            $link->rollback();
-            throw $e;
-        }
     }
 }

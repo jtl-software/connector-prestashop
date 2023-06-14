@@ -1,5 +1,7 @@
 <?php
 
+//phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
+
 use jtl\Connector\Application\Application;
 
 if (!defined('_PS_VERSION_')) {

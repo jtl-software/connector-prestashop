@@ -1,5 +1,7 @@
 <?php
 
+//phpcs:ignoreFile PSR1.Methods.CamelCapsMethodName.NotCamelCaps
+
 namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Model\Identity;
@@ -146,7 +148,9 @@ class Product extends BaseMapper
     {
         if (!isset($data['id_product_attribute'])) {
             $count = $this->db->getValue(
-                'SELECT COUNT(id_product) FROM ' . \_DB_PREFIX_ . 'product_attribute WHERE id_product=' . $data['id_product']
+                'SELECT COUNT(id_product) 
+                 FROM ' . \_DB_PREFIX_ . 'product_attribute 
+                 WHERE id_product=' . $data['id_product']
             );
 
             if ($count > 0) {

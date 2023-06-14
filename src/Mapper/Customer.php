@@ -1,5 +1,8 @@
 <?php
 
+//phpcs:ignoreFile PSR1.Methods.CamelCapsMethodName.NotCamelCaps
+
+
 namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Presta\Utils\Utils;

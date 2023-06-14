@@ -64,12 +64,17 @@ class Utils
      */
     public static function cleanHtml($html)
     {
-        $events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
-        $events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend';
-        $events .= '|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove';
-        $events .= '|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel';
-        $events .= '|ondragleave|ondragover|ondragstart|ondrop|onerrorupdate|onfilterchange|onfinish|onfocusin|onfocusout|onhashchange|onhelp|oninput|onlosecapture|onmessage|onmouseup|onmovestart';
-        $events .= '|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange';
+        $events  = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
+        $events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|
+                    onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend';
+        $events .= '|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|
+                    onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove';
+        $events .= '|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|
+                    ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel';
+        $events .= '|ondragleave|ondragover|ondragstart|ondrop|onerrorupdate|onfilterchange|onfinish|onfocusin|
+                    onfocusout|onhashchange|onhelp|oninput|onlosecapture|onmessage|onmouseup|onmovestart';
+        $events .= '|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|
+                    onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange';
         $events .= '|onselectstart|onstart|onstop';
 
         $html = \preg_replace('/<[\s]*script/ims', '', $html);
@@ -168,7 +173,7 @@ class Utils
                 $iso3 = Language::convert($lang['language_code']);
                 if (empty($iso3)) {
                     $locale = \str_replace('-', '_', $lang['locale']);
-                    $iso3 = Language::map($locale);
+                    $iso3   = Language::map($locale);
                 }
 
                 $lang['iso3'] = $iso3;
@@ -195,10 +200,10 @@ class Utils
     {
         $context = \Context::getContext();
 
-        $address = new \Address();
+        $address             = new \Address();
         $address->id_country = (int)$context->country->id;
-        $address->id_state = 0;
-        $address->postcode = 0;
+        $address->id_state   = 0;
+        $address->postcode   = 0;
 
         $tax_manager = \TaxManagerFactory::getManager(
             $address,

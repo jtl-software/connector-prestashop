@@ -23,7 +23,8 @@ class CustomerOrderItem extends BaseMapper
     protected function productId($data)
     {
         return new Identity(
-            $data['product_attribute_id'] == 0 ? $data['product_id'] : $data['product_id'] . '_' . $data['product_attribute_id']
+            $data['product_attribute_id'] == 0
+                ? $data['product_id'] : $data['product_id'] . '_' . $data['product_attribute_id']
         );
     }
 

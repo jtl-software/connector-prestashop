@@ -10,7 +10,7 @@ namespace jtl\Connector\Presta\Utils;
 class Config
 {
     protected static $instance = null;
-    private static $data = null;
+    private static $data       = null;
 
     /**
      * constructor

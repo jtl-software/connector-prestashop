@@ -36,6 +36,7 @@ class Category extends BaseMapper
         return new Identity($data['id_parent']);
     }
 
+    //phpcs:ignore PSR1.Methods.CamelCapsMethodName.NotCamelCaps
     protected function id_parent($data)
     {
         return $data->getParentcategoryId()->getEndpoint() == 0 ? \Category::getRootCategory(

@@ -531,7 +531,7 @@ class Product extends BaseController
         $translations = [];
         foreach (Utils::getInstance()->getLanguages() as $language) {
             $translations[$language['id_lang']] = [
-                'name' => ProductAttr::RECOMMENDED_RETAIL_PRICE,
+                'name'  => ProductAttr::RECOMMENDED_RETAIL_PRICE,
                 'value' => $rrp
             ];
         }

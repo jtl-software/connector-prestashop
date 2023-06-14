@@ -15,7 +15,7 @@ class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTes
             'invisibilities',
             'considerStock',
             'modified',
-            'permitNegativeStock', //Is set default to true, otherwise products without Stock handling couldn't be bought
+            'permitNegativeStock', //Is set default to true, else products without Stock handling couldn't be bought
             'minBestBeforeDate',
             'newReleaseDate',
             'nextAvailableInflowDate',

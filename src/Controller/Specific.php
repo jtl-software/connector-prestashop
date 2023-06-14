@@ -276,6 +276,7 @@ class Specific extends BaseController
                     $value['id_feature_value']
                 )
             );
+            /** @noinspection PhpParamsInspection */
             (new PrimaryKeyMapper())->delete($value['id_feature_value'], null, 256);
         }
     }

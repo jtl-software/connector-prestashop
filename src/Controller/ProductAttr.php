@@ -26,10 +26,10 @@ class ProductAttr extends BaseController
      * @var array<string>
      */
     protected static $specialAttributes = [
-        'online_only' => 'online_only',
-        'products_status' => 'active',
+        'online_only'      => 'online_only',
+        'products_status'  => 'active',
         'main_category_id' => 'id_category_default',
-        'carriers' => 'carriers',
+        'carriers'         => 'carriers',
     ];
 
     /**

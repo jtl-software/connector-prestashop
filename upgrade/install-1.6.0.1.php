@@ -1,5 +1,7 @@
 <?php
 
+//phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }

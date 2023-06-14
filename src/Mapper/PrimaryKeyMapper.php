@@ -35,10 +35,11 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
     {
         if (isset(static::$types[$type])) {
             $dbResult = $this->db->getValue(
-                'SELECT host_id FROM jtl_connector_link_' . static::$types[$type] . " WHERE endpoint_id = '" . $endpointId . "'"
+                'SELECT host_id FROM jtl_connector_link_' . static::$types[$type] . " 
+                WHERE endpoint_id = '" . $endpointId . "'"
             );
 
-            $hostId = $dbResult ? $dbResult : null;
+            $hostId = $dbResult ?: null;
 
             Logger::write(
                 \sprintf(
@@ -120,7 +121,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         );
     }
 
-    public function delete($endpointId = null, $hostId = null, $type)
+    public function delete($endpointId, $hostId, $type)
     {
         Logger::write(
             \sprintf('Delete link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type),
