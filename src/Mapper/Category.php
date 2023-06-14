@@ -10,21 +10,21 @@ class Category extends BaseMapper
     protected $identity      = 'id|id_category';
 
     protected $pull = [
-        'id' => 'id_category',
+        'id'               => 'id_category',
         'parentCategoryId' => null,
-        'isActive' => 'active',
-        'sort' => 'position',
-        'level' => 'level_depth',
-        'i18ns' => 'CategoryI18n',
-        'invisibilities' => 'CategoryInvisibility'
+        'isActive'         => 'active',
+        'sort'             => 'position',
+        'level'            => 'level_depth',
+        'i18ns'            => 'CategoryI18n',
+        'invisibilities'   => 'CategoryInvisibility'
     ];
 
     protected $push = [
-        'id_category' => 'id',
-        'id_parent' => null,
-        'active' => 'isActive',
-        'position' => 'sort',
-        'CategoryI18n' => 'i18ns',
+        'id_category'          => 'id',
+        'id_parent'            => null,
+        'active'               => 'isActive',
+        'position'             => 'sort',
+        'CategoryI18n'         => 'i18ns',
         'CategoryInvisibility' => 'invisibilities'
     ];
 
@@ -38,6 +38,7 @@ class Category extends BaseMapper
 
     protected function id_parent($data)
     {
-        return $data->getParentcategoryId()->getEndpoint() == 0 ? \Category::getRootCategory()->id : $data->getParentcategoryId()->getEndpoint();
+        return $data->getParentcategoryId()->getEndpoint() == 0 ? \Category::getRootCategory(
+        )->id : $data->getParentcategoryId()->getEndpoint();
     }
 }

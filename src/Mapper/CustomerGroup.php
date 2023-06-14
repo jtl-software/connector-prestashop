@@ -5,11 +5,11 @@ namespace jtl\Connector\Presta\Mapper;
 class CustomerGroup extends BaseMapper
 {
     protected $pull = [
-        'id' => 'id_group',
-        'isDefault' => null,
+        'id'            => 'id_group',
+        'isDefault'     => null,
         'applyNetPrice' => 'price_display_method',
-        'discount' => 'reduction',
-        'i18ns' => 'CustomerGroupI18n'
+        'discount'      => 'reduction',
+        'i18ns'         => 'CustomerGroupI18n'
     ];
 
     protected function isDefault($data)

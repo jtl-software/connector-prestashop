@@ -11,63 +11,63 @@ class Product extends BaseMapper
     protected $identity      = 'id|id_product';
 
     protected $pull = [
-        'id' => null,
-        'manufacturerId' => 'id_manufacturer',
-        'masterProductId' => null,
-        'creationDate' => 'date_add',
-        'ean' => 'ean13',
-        'isbn' => 'isbn',
-        'height' => 'height',
-        'isMasterProduct' => null,
-        'length' => 'depth',
-        'modified' => 'date_upd',
-        'shippingWeight' => 'weight',
-        'sku' => 'reference',
-        'upc' => 'upc',
-        'stockLevel' => 'ProductStockLevel',
-        'specialPrices' => 'ProductSpecialPrice',
-        'vat' => null,
-        'width' => 'width',
-        'attributes' => 'ProductAttr',
-        'categories' => 'Product2Category',
-        'prices' => 'ProductPrice',
-        'variations' => 'ProductVariation',
-        'i18ns' => 'ProductI18n',
-        'availableFrom' => 'available_date',
-        'basePriceUnitName' => 'unity',
-        'considerStock' => null,
-        'permitNegativeStock' => null,
-        'isActive' => null,
-        'isTopProduct' => 'on_sale',
-        'purchasePrice' => 'wholesale_price',
+        'id'                   => null,
+        'manufacturerId'       => 'id_manufacturer',
+        'masterProductId'      => null,
+        'creationDate'         => 'date_add',
+        'ean'                  => 'ean13',
+        'isbn'                 => 'isbn',
+        'height'               => 'height',
+        'isMasterProduct'      => null,
+        'length'               => 'depth',
+        'modified'             => 'date_upd',
+        'shippingWeight'       => 'weight',
+        'sku'                  => 'reference',
+        'upc'                  => 'upc',
+        'stockLevel'           => 'ProductStockLevel',
+        'specialPrices'        => 'ProductSpecialPrice',
+        'vat'                  => null,
+        'width'                => 'width',
+        'attributes'           => 'ProductAttr',
+        'categories'           => 'Product2Category',
+        'prices'               => 'ProductPrice',
+        'variations'           => 'ProductVariation',
+        'i18ns'                => 'ProductI18n',
+        'availableFrom'        => 'available_date',
+        'basePriceUnitName'    => 'unity',
+        'considerStock'        => null,
+        'permitNegativeStock'  => null,
+        'isActive'             => null,
+        'isTopProduct'         => 'on_sale',
+        'purchasePrice'        => 'wholesale_price',
         'minimumOrderQuantity' => 'minimal_quantity',
-        'manufacturerNumber' => 'mpn'
+        'manufacturerNumber'   => 'mpn'
     ];
 
     protected $push = [
-        'id_product' => 'id',
-        'id_manufacturer' => 'manufacturerId',
+        'id_product'          => 'id',
+        'id_manufacturer'     => 'manufacturerId',
         'id_category_default' => null,
-        'date_add' => null,
-        'ean13' => 'ean',
-        'height' => 'height',
-        'depth' => 'length',
-        'date_upd' => 'modified',
-        'weight' => 'shippingWeight',
-        'reference' => 'sku',
-        'upc' => 'upc',
-        'isbn' => 'isbn',
-        'out_of_stock' => null,
-        'id_tax_rules_group' => null,
-        'width' => 'width',
-        'unity' => null,
-        'available_date' => 'availableFrom',
-        'active' => 'isActive',
-        'on_sale' => 'isTopProduct',
-        'minimal_quantity' => null,
-        'ProductI18n' => 'i18ns',
-        'wholesale_price' => null,
-        'mpn' => 'manufacturerNumber'
+        'date_add'            => null,
+        'ean13'               => 'ean',
+        'height'              => 'height',
+        'depth'               => 'length',
+        'date_upd'            => 'modified',
+        'weight'              => 'shippingWeight',
+        'reference'           => 'sku',
+        'upc'                 => 'upc',
+        'isbn'                => 'isbn',
+        'out_of_stock'        => null,
+        'id_tax_rules_group'  => null,
+        'width'               => 'width',
+        'unity'               => null,
+        'available_date'      => 'availableFrom',
+        'active'              => 'isActive',
+        'on_sale'             => 'isTopProduct',
+        'minimal_quantity'    => null,
+        'ProductI18n'         => 'i18ns',
+        'wholesale_price'     => null,
+        'mpn'                 => 'manufacturerNumber'
     ];
 
     protected function wholesale_price($data)
@@ -145,7 +145,9 @@ class Product extends BaseMapper
     protected function isMasterProduct($data)
     {
         if (!isset($data['id_product_attribute'])) {
-            $count = $this->db->getValue('SELECT COUNT(id_product) FROM ' . \_DB_PREFIX_ . 'product_attribute WHERE id_product=' . $data['id_product']);
+            $count = $this->db->getValue(
+                'SELECT COUNT(id_product) FROM ' . \_DB_PREFIX_ . 'product_attribute WHERE id_product=' . $data['id_product']
+            );
 
             if ($count > 0) {
                 return true;
@@ -197,7 +199,16 @@ class Product extends BaseMapper
                 'LEFT JOIN %stax t ON t.id_tax = r.id_tax' . "\n" .
                 'WHERE t.rate = %s && r.id_country = %s && rg.deleted = 0 && t.active = 1 && rg.active = 1';
 
-            $taxRulesGroupId = $this->db->getValue(\sprintf($sql, \_DB_PREFIX_, \_DB_PREFIX_, \_DB_PREFIX_, $product->getVat(), \Context::getContext()->country->id));
+            $taxRulesGroupId = $this->db->getValue(
+                \sprintf(
+                    $sql,
+                    \_DB_PREFIX_,
+                    \_DB_PREFIX_,
+                    \_DB_PREFIX_,
+                    $product->getVat(),
+                    \Context::getContext()->country->id
+                )
+            );
 
             if (\count($product->getTaxRates()) > 0 && !\is_null($product->getTaxClassId())) {
                 $taxRulesGroupId = $this->findTaxClassId(...$product->getTaxRates()) ?? $taxRulesGroupId;
@@ -217,19 +228,25 @@ class Product extends BaseMapper
     {
         $conditions = [];
         foreach ($jtlTaxRates as $taxRate) {
-            $conditions[] = \sprintf("(iso_code = '%s' AND rate='%s')", $taxRate->getCountryIso(), \number_format($taxRate->getRate(), 3));
+            $conditions[] = \sprintf(
+                "(iso_code = '%s' AND rate='%s')",
+                $taxRate->getCountryIso(),
+                \number_format($taxRate->getRate(), 3)
+            );
         }
 
-        $foundTaxClasses = $this->db->query(\sprintf(
-            'SELECT id_tax_rules_group, COUNT(id_tax_rules_group) AS hits
+        $foundTaxClasses = $this->db->query(
+            \sprintf(
+                'SELECT id_tax_rules_group, COUNT(id_tax_rules_group) AS hits
                     FROM %stax_rule
                     LEFT JOIN %stax ON %stax.id_tax = %stax_rule.id_tax
                     LEFT JOIN %scountry ON %scountry.id_country = %stax_rule.id_country
                     WHERE %s 
                     GROUP BY id_tax_rules_group
                     ORDER BY hits DESC',
-            ...\array_merge(\array_fill(0, 7, \_DB_PREFIX_), [\join(' OR ', $conditions)])
-        ))->fetchAll(\PDO::FETCH_ASSOC);
+                ...\array_merge(\array_fill(0, 7, \_DB_PREFIX_), [\join(' OR ', $conditions)])
+            )
+        )->fetchAll(\PDO::FETCH_ASSOC);
 
         return $foundTaxClasses[0]['id_tax_rules_group'] ?? null;
     }

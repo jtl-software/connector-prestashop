@@ -6,10 +6,10 @@ use jtl\Connector\Model\Identity;
 
 class BaseMapper
 {
-    protected $db  = null;
-    private $model = null;
-    private $type;
+    protected $db            = null;
     protected $endpointModel = null;
+    private $model           = null;
+    private $type;
 
     public function __construct()
     {
@@ -45,7 +45,7 @@ class BaseMapper
                 } elseif ($property->isIdentity()) {
                     $value = new Identity($value);
                 } elseif ($property->getType() == 'boolean') {
-                    $value = (bool) $value;
+                    $value = (bool)$value;
                 } elseif ($property->getType() == 'integer') {
                     $value = \intval($value);
                 } elseif ($property->getType() == 'double') {
