@@ -13,6 +13,11 @@ class Utils
     private static $instance;
     private $session = null;
 
+    public function __construct()
+    {
+        $this->session = new SessionHelper("prestaConnector");
+    }
+
     public static function getInstance()
     {
         if (!isset(self::$instance)) {
@@ -20,68 +25,6 @@ class Utils
         }
 
         return self::$instance;
-    }
-
-    public function __construct()
-    {
-        $this->session = new SessionHelper("prestaConnector");
-    }
-
-    public function getLanguages()
-    {
-        if (\is_null($this->session->languages)) {
-            $languages = \Language::getLanguages(false);
-
-            foreach ($languages as &$lang) {
-                $iso3 = Language::convert($lang['language_code']);
-                if (empty($iso3)) {
-                    $locale = \str_replace('-', '_', $lang['locale']);
-                    $iso3   = Language::map($locale);
-                }
-
-                $lang['iso3'] = $iso3;
-            }
-
-            $this->session->languages = $languages;
-        }
-
-        return $this->session->languages;
-    }
-
-    public function getLanguageIdByIso($iso)
-    {
-        foreach ($this->getLanguages() as $lang) {
-            if ($lang['iso3'] === $iso) {
-                return $lang['id_lang'];
-            }
-        }
-
-        return false;
-    }
-
-    public function getLanguageIsoById($id)
-    {
-        foreach ($this->getLanguages() as $lang) {
-            if ($lang['id_lang'] === $id) {
-                return $lang['iso3'];
-            }
-        }
-
-        return false;
-    }
-
-    public function getProductTaxRate($id)
-    {
-        $context = \Context::getContext();
-
-        $address             = new \Address();
-        $address->id_country = (int) $context->country->id;
-        $address->id_state   = 0;
-        $address->postcode   = 0;
-
-        $tax_manager = \TaxManagerFactory::getManager($address, \Product::getIdTaxRulesGroupByIdProduct((int) $id, $context));
-
-        return $tax_manager->getTaxCalculator()->getTotalRate();
     }
 
     /**
@@ -121,7 +64,7 @@ class Utils
      */
     public static function cleanHtml($html)
     {
-        $events  = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
+        $events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
         $events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend';
         $events .= '|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove';
         $events .= '|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel';
@@ -159,12 +102,18 @@ class Utils
      * @param ProductAttr ...$productAttrs
      * @return ProductAttrI18n|null
      */
-    public static function findAttributeByLanguageISO(string $attributeName, string $languageISO, ProductAttr ...$productAttrs): ?ProductAttrI18n
-    {
+    public static function findAttributeByLanguageISO(
+        string $attributeName,
+        string $languageISO,
+        ProductAttr ...$productAttrs
+    ): ?ProductAttrI18n {
         $attribute = null;
         foreach ($productAttrs as $productAttr) {
             foreach ($productAttr->getI18ns() as $productAttrI18n) {
-                if ($productAttrI18n->getLanguageISO() === $languageISO && $attributeName === $productAttrI18n->getName()) {
+                if (
+                    $productAttrI18n->getLanguageISO() === $languageISO && $attributeName === $productAttrI18n->getName(
+                    )
+                ) {
                     $attribute = $productAttrI18n;
                     break 2;
                 }
@@ -197,5 +146,65 @@ class Utils
         }
 
         return $mappedPaymentModuleCode;
+    }
+
+    public function getLanguageIdByIso($iso)
+    {
+        foreach ($this->getLanguages() as $lang) {
+            if ($lang['iso3'] === $iso) {
+                return $lang['id_lang'];
+            }
+        }
+
+        return false;
+    }
+
+    public function getLanguages()
+    {
+        if (\is_null($this->session->languages)) {
+            $languages = \Language::getLanguages(false);
+
+            foreach ($languages as &$lang) {
+                $iso3 = Language::convert($lang['language_code']);
+                if (empty($iso3)) {
+                    $locale = \str_replace('-', '_', $lang['locale']);
+                    $iso3 = Language::map($locale);
+                }
+
+                $lang['iso3'] = $iso3;
+            }
+
+            $this->session->languages = $languages;
+        }
+
+        return $this->session->languages;
+    }
+
+    public function getLanguageIsoById($id)
+    {
+        foreach ($this->getLanguages() as $lang) {
+            if ($lang['id_lang'] === $id) {
+                return $lang['iso3'];
+            }
+        }
+
+        return false;
+    }
+
+    public function getProductTaxRate($id)
+    {
+        $context = \Context::getContext();
+
+        $address = new \Address();
+        $address->id_country = (int)$context->country->id;
+        $address->id_state = 0;
+        $address->postcode = 0;
+
+        $tax_manager = \TaxManagerFactory::getManager(
+            $address,
+            \Product::getIdTaxRulesGroupByIdProduct((int)$id, $context)
+        );
+
+        return $tax_manager->getTaxCalculator()->getTotalRate();
     }
 }

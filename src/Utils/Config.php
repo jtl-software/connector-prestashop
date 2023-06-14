@@ -9,16 +9,8 @@ namespace jtl\Connector\Presta\Utils;
 
 class Config
 {
-    private static $data       = null;
     protected static $instance = null;
-
-    /**
-     * clone
-     * Kopieren der Instanz von aussen ebenfalls verbieten
-     */
-    protected function __clone()
-    {
-    }
+    private static $data = null;
 
     /**
      * constructor
@@ -26,6 +18,13 @@ class Config
      */
     protected function __construct()
     {
+    }
+
+    public static function getData()
+    {
+        self::getInstance();
+
+        return self::$data;
     }
 
     /**
@@ -49,13 +48,6 @@ class Config
         return self::$instance;
     }
 
-    public static function getData()
-    {
-        self::getInstance();
-
-        return self::$data;
-    }
-
     /**
      * @param $name
      * @param $value
@@ -68,15 +60,16 @@ class Config
     }
 
     /**
-     * @param $name
-     *
      * @return bool
      */
-    public static function has($name)
+    public static function save()
     {
         self::getInstance();
-
-        return \array_key_exists($name, (array)self::$data);
+        if (\file_put_contents(\CONNECTOR_DIR . '/config/config.json', \json_encode(self::$data)) === false) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -109,15 +102,22 @@ class Config
     }
 
     /**
+     * @param $name
+     *
      * @return bool
      */
-    public static function save()
+    public static function has($name)
     {
         self::getInstance();
-        if (\file_put_contents(\CONNECTOR_DIR . '/config/config.json', \json_encode(self::$data)) === false) {
-            return false;
-        } else {
-            return true;
-        }
+
+        return \array_key_exists($name, (array)self::$data);
+    }
+
+    /**
+     * clone
+     * Kopieren der Instanz von aussen ebenfalls verbieten
+     */
+    protected function __clone()
+    {
     }
 }
