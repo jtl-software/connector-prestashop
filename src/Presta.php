@@ -41,7 +41,9 @@ class Presta extends BaseConnector
     public function handle(RequestPacket $requestpacket)
     {
         if (!empty(\Db::getInstance()->executeS('SHOW TABLES LIKE "jtl_connector_link"'))) {
-            throw new \RuntimeException("Detected old linking table, please upgrade your connector in the Prestashop backend!");
+            throw new \RuntimeException(
+                "Detected old linking table, please upgrade your connector in the Prestashop backend!"
+            );
         }
 
         $this->controller->setMethod($this->getMethod());
@@ -83,13 +85,29 @@ class Presta extends BaseConnector
                     \Db::getInstance()->getLink()->rollback();
                     if (\method_exists($currentItem, 'getId')) {
                         if ($currentItem instanceof Product) {
-                            throw new \Exception(\sprintf('Type: Product Host-Id: %s SKU: %s %s', $currentItem->getId()->getHost(), $currentItem->getSku(), $result->getError()->getMessage()));
+                            throw new \Exception(
+                                \sprintf(
+                                    'Type: Product Host-Id: %s SKU: %s %s',
+                                    $currentItem->getId()->getHost(),
+                                    $currentItem->getSku(),
+                                    $result->getError()->getMessage()
+                                )
+                            );
                         } else {
-                            throw new \Exception(\sprintf('Type: %s Host-Id: %s %s', \get_class($currentItem), $currentItem->getId()->getHost(), $result->getError()->getMessage()));
+                            throw new \Exception(
+                                \sprintf(
+                                    'Type: %s Host-Id: %s %s',
+                                    \get_class($currentItem),
+                                    $currentItem->getId()->getHost(),
+                                    $result->getError()->getMessage()
+                                )
+                            );
                         }
                     }
 
-                    throw new \Exception(\sprintf('Type: %s %s', \get_class($currentItem), $result->getError()->getMessage()));
+                    throw new \Exception(
+                        \sprintf('Type: %s %s', \get_class($currentItem), $result->getError()->getMessage())
+                    );
                 }
 
                 $results[] = $result->getResult();
