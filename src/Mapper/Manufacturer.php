@@ -5,7 +5,7 @@ namespace jtl\Connector\Presta\Mapper;
 class Manufacturer extends BaseMapper
 {
     protected $endpointModel = '\Manufacturer';
-    protected $identity = 'id|id_manufacturer';
+    protected $identity      = 'id|id_manufacturer';
 
     protected $pull = [
         'id' => 'id_manufacturer',

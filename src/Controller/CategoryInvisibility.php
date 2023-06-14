@@ -8,18 +8,18 @@ class CategoryInvisibility extends BaseController
     {
         $result = $this->db->executeS('
             SELECT g.id_group
-            FROM ' . _DB_PREFIX_ . 'group g
+            FROM ' . \_DB_PREFIX_ . 'group g
             WHERE NOT EXISTS(
               SELECT *
-              FROM '._DB_PREFIX_.'category_group i
-              WHERE g.id_group = i.id_group AND i.id_category = '.$data['id_category'].'
+              FROM ' . \_DB_PREFIX_ . 'category_group i
+              WHERE g.id_group = i.id_group AND i.id_category = ' . $data['id_category'] . '
             )');
 
         $return = [];
 
         foreach ($result as $dataInv) {
             $dataInv['id_category'] = $data['id_category'];
-            $model = $this->mapper->toHost($dataInv);
+            $model                  = $this->mapper->toHost($dataInv);
 
             $return[] = $model;
         }
@@ -37,7 +37,7 @@ class CategoryInvisibility extends BaseController
         }
 
         foreach (\Group::getGroups(1) as $group) {
-            if (!in_array($group['id_group'], $invExcludes)) {
+            if (!\in_array($group['id_group'], $invExcludes)) {
                 $invIncludes[] = $group['id_group'];
             }
         }

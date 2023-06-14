@@ -28,8 +28,8 @@ class ProductSpecialPrice extends BaseController
 
         $pResult = $this->db->executeS('
 			SELECT p.*, pr.price AS pPrice
-			FROM ' . _DB_PREFIX_ . 'specific_price p
-			LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
+			FROM ' . \_DB_PREFIX_ . 'specific_price p
+			LEFT JOIN ' . \_DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
 			WHERE
 			    p.id_product_attribute = 0
 			    AND p.id_product = ' . $data['id_product'] . '
@@ -44,8 +44,8 @@ class ProductSpecialPrice extends BaseController
         if (isset($data['id_product_attribute'])) {
             $varResult = $this->db->executeS('
                 SELECT p.*, pr.price AS pPrice
-                FROM ' . _DB_PREFIX_ . 'specific_price p
-                LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
+                FROM ' . \_DB_PREFIX_ . 'specific_price p
+                LEFT JOIN ' . \_DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
                 WHERE
                     p.id_product_attribute = ' . $data['id_product_attribute'] . '
                     AND p.id_country = 0
@@ -55,7 +55,7 @@ class ProductSpecialPrice extends BaseController
             ');
         }
 
-        $result = array_merge($pResult, $varResult);
+        $result = \array_merge($pResult, $varResult);
 
         $groupPrices = Utils::groupProductPrices($result);
 
@@ -101,9 +101,9 @@ class ProductSpecialPrice extends BaseController
         if (!empty($id)) {
             list($productId, $combiId) = Utils::explodeProductEndpoint($id, 0);
 
-            if (!empty($productId) && !is_null($combiId)) {
+            if (!empty($productId) && !\is_null($combiId)) {
                 $this->db->execute('
-                    DELETE p FROM ' . _DB_PREFIX_ . 'specific_price p
+                    DELETE p FROM ' . \_DB_PREFIX_ . 'specific_price p
                     WHERE p.id_product = ' . $productId . '
                     AND p.id_product_attribute = ' . $combiId . '
                     AND p.from != "0000-00-00 00:00:00"
@@ -115,18 +115,18 @@ class ProductSpecialPrice extends BaseController
                     }
 
                     foreach ($specialPrice->getItems() as $item) {
-                        $priceObj = new \SpecificPrice();
-                        $priceObj->id_product = $productId;
+                        $priceObj                       = new \SpecificPrice();
+                        $priceObj->id_product           = $productId;
                         $priceObj->id_product_attribute = $combiId;
-                        $priceObj->id_group = $item->getCustomerGroupId()->getEndpoint();
-                        $priceObj->price = round($item->getPriceNet(), 6);
-                        $priceObj->from_quantity = 0;
-                        $priceObj->id_shop = 0;
-                        $priceObj->id_currency = 0;
-                        $priceObj->id_country = 0;
-                        $priceObj->id_customer = 0;
-                        $priceObj->reduction = 0;
-                        $priceObj->reduction_type = 'amount';
+                        $priceObj->id_group             = $item->getCustomerGroupId()->getEndpoint();
+                        $priceObj->price                = \round($item->getPriceNet(), 6);
+                        $priceObj->from_quantity        = 0;
+                        $priceObj->id_shop              = 0;
+                        $priceObj->id_currency          = 0;
+                        $priceObj->id_country           = 0;
+                        $priceObj->id_customer          = 0;
+                        $priceObj->reduction            = 0;
+                        $priceObj->reduction_type       = 'amount';
 
                         if ($specialPrice->getActiveFromDate() !== null) {
                             $priceObj->from = $specialPrice->getActiveFromDate()->format('Y-m-d H:i:s');
@@ -164,14 +164,14 @@ class ProductSpecialPrice extends BaseController
                     $reduction = $data['reduction'] / ($taxRate / 100 + 1);
                 }
 
-                return (float)round($priceNet - $reduction, 6);
+                return (float)\round($priceNet - $reduction, 6);
             } elseif ($data['reduction_type'] === 'percentage') {
                 $percentage = $data['reduction'] * 100;
-                $reduction = $priceNet * $percentage / 100;
+                $reduction  = $priceNet * $percentage / 100;
 
-                return (float)round($priceNet - $reduction, 6);
+                return (float)\round($priceNet - $reduction, 6);
             }
         }
-        return floatval($data['price']);
+        return \floatval($data['price']);
     }
 }

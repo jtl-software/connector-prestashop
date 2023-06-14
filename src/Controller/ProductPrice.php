@@ -22,9 +22,9 @@ class ProductPrice extends BaseController
         $defaultItem->setProductPriceId($default->getId());
 
         if (isset($data['id_product_attribute'])) {
-            $defaultItem->setNetPrice(floatval($data['pPrice'] + $data['price']));
+            $defaultItem->setNetPrice(\floatval($data['pPrice'] + $data['price']));
         } else {
-            $defaultItem->setNetPrice(floatval($data['price']));
+            $defaultItem->setNetPrice(\floatval($data['price']));
         }
 
         $default->addItem($defaultItem);
@@ -33,8 +33,8 @@ class ProductPrice extends BaseController
 
         $pResult = $this->db->executeS('
 			SELECT p.*, pr.price AS pPrice
-			FROM ' . _DB_PREFIX_ . 'specific_price p
-			LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
+			FROM ' . \_DB_PREFIX_ . 'specific_price p
+			LEFT JOIN ' . \_DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
 			WHERE
 			    p.id_product_attribute = 0
 			    AND p.id_product = ' . $data['id_product'] . '
@@ -49,8 +49,8 @@ class ProductPrice extends BaseController
         if (isset($data['id_product_attribute'])) {
             $varResult = $this->db->executeS('
                 SELECT p.*, pr.price AS pPrice
-                FROM ' . _DB_PREFIX_ . 'specific_price p
-                LEFT JOIN ' . _DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
+                FROM ' . \_DB_PREFIX_ . 'specific_price p
+                LEFT JOIN ' . \_DB_PREFIX_ . 'product pr ON pr.id_product = p.id_product
                 WHERE
                     p.id_product_attribute = ' . $data['id_product_attribute'] . '
                     AND p.id_country = 0
@@ -60,7 +60,7 @@ class ProductPrice extends BaseController
             ');
         }
 
-        $result = array_merge($pResult, $varResult);
+        $result = \array_merge($pResult, $varResult);
 
         $groupPrices = Utils::groupProductPrices($result);
 
@@ -76,7 +76,7 @@ class ProductPrice extends BaseController
             foreach ($gPriceData as $gItemData) {
                 $gItem = new ProductPriceItemModel();
                 $gItem->setProductPriceId($gPrice->getId());
-                $gItem->setQuantity(intval($gItemData['from_quantity']));
+                $gItem->setQuantity(\intval($gItemData['from_quantity']));
                 $gItem->setNetPrice($this->calculateNetPrice($gItemData, $productTaxRate));
 
                 $gPrice->addItem($gItem);
@@ -95,46 +95,46 @@ class ProductPrice extends BaseController
         if (!empty($id)) {
             list($productId, $combiId) = Utils::explodeProductEndpoint($id, 0);
 
-            if (!empty($productId) && !is_null($combiId)) {
+            if (!empty($productId) && !\is_null($combiId)) {
                 $customerGroupId = $price->getCustomerGroupId()->getEndpoint();
 
                 if (!empty($customerGroupId)) {
-                    $this->db->execute(sprintf("
+                    $this->db->execute(\sprintf("
 						DELETE p FROM %sspecific_price p
 						WHERE p.id_product = %s
 						AND p.id_product_attribute = %s
 						AND p.from = \"0000-00-00 00:00:00\"
 						AND p.id_group = %s
-					", _DB_PREFIX_, $productId, $combiId, $customerGroupId));
+					", \_DB_PREFIX_, $productId, $combiId, $customerGroupId));
                 }
 
                 foreach ($price->getItems() as $item) {
                     if (empty($customerGroupId)) {
                         $product = new \Product($productId);
                         if (empty($combiId)) {
-                            $product->price = round($item->getNetprice(), 6);
+                            $product->price = \round($item->getNetprice(), 6);
                             $product->save();
                         } else {
-                            $combiPriceDiff = $item->getNetPrice() - floatval($product->price);
-                            $combi = new \Combination($combiId);
-                            $combi->price = round($combiPriceDiff, 6);
+                            $combiPriceDiff = $item->getNetPrice() - \floatval($product->price);
+                            $combi          = new \Combination($combiId);
+                            $combi->price   = \round($combiPriceDiff, 6);
                             $combi->save();
                         }
                     } else {
-                        $priceObj = new \SpecificPrice();
-                        $priceObj->id_product = $productId;
+                        $priceObj                       = new \SpecificPrice();
+                        $priceObj->id_product           = $productId;
                         $priceObj->id_product_attribute = $combiId;
-                        $priceObj->id_group = $customerGroupId;
-                        $priceObj->price = round($item->getNetPrice(), 6);
-                        $priceObj->from_quantity = $item->getQuantity();
-                        $priceObj->id_shop = 0;
-                        $priceObj->id_currency = 0;
-                        $priceObj->id_country = 0;
-                        $priceObj->id_customer = 0;
-                        $priceObj->reduction = 0;
-                        $priceObj->reduction_type = 'amount';
-                        $priceObj->from = '0000-00-00 00:00:00';
-                        $priceObj->to = '0000-00-00 00:00:00';
+                        $priceObj->id_group             = $customerGroupId;
+                        $priceObj->price                = \round($item->getNetPrice(), 6);
+                        $priceObj->from_quantity        = $item->getQuantity();
+                        $priceObj->id_shop              = 0;
+                        $priceObj->id_currency          = 0;
+                        $priceObj->id_country           = 0;
+                        $priceObj->id_customer          = 0;
+                        $priceObj->reduction            = 0;
+                        $priceObj->reduction_type       = 'amount';
+                        $priceObj->from                 = '0000-00-00 00:00:00';
+                        $priceObj->to                   = '0000-00-00 00:00:00';
 
                         $priceObj->save();
                     }
@@ -151,12 +151,12 @@ class ProductPrice extends BaseController
             if ($data['reduction_type'] === 'amount') {
                 $reduction = ($data['reduction_tax'] === 1) ? ($data['reduction'] / (100 + $taxRate)) * 100 : $data['reduction'];
 
-                return floatval($data['pPrice'] - $reduction);
+                return \floatval($data['pPrice'] - $reduction);
             } else {
-                return floatval($data['pPrice'] - (($data['pPrice'] / 100) * $data['price']));
+                return \floatval($data['pPrice'] - (($data['pPrice'] / 100) * $data['price']));
             }
         } else {
-            return floatval($data['price']);
+            return \floatval($data['price']);
         }
     }
 }

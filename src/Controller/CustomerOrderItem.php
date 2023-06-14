@@ -54,8 +54,8 @@ class CustomerOrderItem extends BaseController
             ->setCustomerOrderId(new Identity($orderId))
             ->setType(CustomerOrderItemModel::TYPE_COUPON)
             ->setName($cartRule['name'])
-            ->setPrice(floatval(-$cartRule['value_tax_excl']))
-            ->setPriceGross(floatval(-$cartRule['value']))
+            ->setPrice(\floatval(-$cartRule['value_tax_excl']))
+            ->setPriceGross(\floatval(-$cartRule['value']))
             ->setVat($highestVatRate)
             ->setQuantity(1);
     }
@@ -71,9 +71,9 @@ class CustomerOrderItem extends BaseController
             ->setCustomerOrderId(new Identity($data['id_order']))
             ->setType(CustomerOrderItemModel::TYPE_SHIPPING)
             ->setName($data['shippingMethod'])
-            ->setPrice(floatval($data['total_shipping_tax_excl']))
-            ->setPriceGross(floatval($data['total_shipping_tax_incl']))
-            ->setVat(floatval($data['carrier_tax_rate']))
+            ->setPrice(\floatval($data['total_shipping_tax_excl']))
+            ->setPriceGross(\floatval($data['total_shipping_tax_incl']))
+            ->setVat(\floatval($data['carrier_tax_rate']))
             ->setQuantity(1);
     }
 
@@ -85,7 +85,7 @@ class CustomerOrderItem extends BaseController
      */
     protected function fetchOrderItems(string $tableName, int $orderId): array
     {
-        return $this->db->executeS(sprintf(' SELECT r.* FROM %s%s r WHERE r.id_order = %s',_DB_PREFIX_, $tableName, $orderId));
+        return $this->db->executeS(\sprintf(' SELECT r.* FROM %s%s r WHERE r.id_order = %s', \_DB_PREFIX_, $tableName, $orderId));
     }
 
     /**
@@ -94,7 +94,7 @@ class CustomerOrderItem extends BaseController
      */
     protected function getHighestVatRate(CustomerOrderItemModel ...$customerOrderItems): float
     {
-        return max(array_map(function (CustomerOrderItemModel $customerOrderItem) {
+        return \max(\array_map(function (CustomerOrderItemModel $customerOrderItem) {
             return $customerOrderItem->getVat();
         }, $customerOrderItems));
     }

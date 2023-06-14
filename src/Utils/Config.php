@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @author    Jan Weskamp <jan.weskamp@jtl-software.com>
  * @copyright 2010-2013 JTL-Software GmbH
@@ -8,9 +9,9 @@ namespace jtl\Connector\Presta\Utils;
 
 class Config
 {
-    private static $data = null;
+    private static $data       = null;
     protected static $instance = null;
-    
+
     /**
      * clone
      * Kopieren der Instanz von aussen ebenfalls verbieten
@@ -18,7 +19,7 @@ class Config
     protected function __clone()
     {
     }
-    
+
     /**
      * constructor
      * externe Instanzierung verbieten
@@ -26,35 +27,35 @@ class Config
     protected function __construct()
     {
     }
-    
+
     /**
      * @param string $file
      *
      * @return Config|null
      */
-    public static function getInstance($file = CONNECTOR_DIR . '/config/config.json')
+    public static function getInstance($file = \CONNECTOR_DIR . '/config/config.json')
     {
         if (null === self::$instance) {
-            self::$instance = new self;
+            self::$instance = new self();
         }
-        
-        if (is_null(self::$data)) {
-            self::$data = json_decode(@file_get_contents($file));
-            if (is_null(self::$data)) {
+
+        if (\is_null(self::$data)) {
+            self::$data = \json_decode(@\file_get_contents($file));
+            if (\is_null(self::$data)) {
                 self::$data = new \stdClass();
             }
         }
-        
+
         return self::$instance;
     }
-    
+
     public static function getData()
     {
         self::getInstance();
-        
+
         return self::$data;
     }
-    
+
     /**
      * @param $name
      * @param $value
@@ -65,7 +66,7 @@ class Config
         self::$data->$name = $value;
         self::save();
     }
-    
+
     /**
      * @param $name
      *
@@ -74,10 +75,10 @@ class Config
     public static function has($name)
     {
         self::getInstance();
-        
-        return array_key_exists($name, (array)self::$data);
+
+        return \array_key_exists($name, (array)self::$data);
     }
-    
+
     /**
      * @param $name
      *
@@ -86,10 +87,10 @@ class Config
     public static function get($name)
     {
         self::getInstance();
-        
+
         return self::$data->$name;
     }
-    
+
     /**
      * @param $name
      *
@@ -100,20 +101,20 @@ class Config
         self::getInstance();
         if (self::has($name)) {
             unset(self::$data->$name);
-            
+
             return true;
         } else {
             return false;
         }
     }
-    
+
     /**
      * @return bool
      */
     public static function save()
     {
         self::getInstance();
-        if (file_put_contents(CONNECTOR_DIR . '/config/config.json', json_encode(self::$data)) === false) {
+        if (\file_put_contents(\CONNECTOR_DIR . '/config/config.json', \json_encode(self::$data)) === false) {
             return false;
         } else {
             return true;

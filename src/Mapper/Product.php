@@ -2,13 +2,13 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use \jtl\Connector\Model\Identity;
+use jtl\Connector\Model\Identity;
 use jtl\Connector\Presta\Utils\Utils;
 
 class Product extends BaseMapper
 {
     protected $endpointModel = '\Product';
-    protected $identity = 'id|id_product';
+    protected $identity      = 'id|id_product';
 
     protected $pull = [
         'id' => null,
@@ -25,7 +25,7 @@ class Product extends BaseMapper
         'sku' => 'reference',
         'upc' => 'upc',
         'stockLevel' => 'ProductStockLevel',
-        'specialPrices'=>'ProductSpecialPrice',
+        'specialPrices' => 'ProductSpecialPrice',
         'vat' => null,
         'width' => 'width',
         'attributes' => 'ProductAttr',
@@ -72,21 +72,21 @@ class Product extends BaseMapper
 
     protected function wholesale_price($data)
     {
-        return round($data->getPurchasePrice(), 4);
+        return \round($data->getPurchasePrice(), 4);
     }
-    
+
     protected function out_of_stock($data)
     {
         if ($data->getConsiderStock() === false || $data->getPermitNegativeStock() === true) {
             return 1;
         }
-        
+
         return 0;
     }
 
     protected function date_add($data)
     {
-        if (is_null($data->getCreationDate())) {
+        if (\is_null($data->getCreationDate())) {
             $current = new \DateTime();
             return $current->format('Y-m-d H:i:s');
         }
@@ -96,7 +96,7 @@ class Product extends BaseMapper
 
     protected function minimal_quantity($data)
     {
-        $value = ceil($data->getMinimumOrderQuantity());
+        $value = \ceil($data->getMinimumOrderQuantity());
         return $value < 1 ? 1 : $value;
     }
 
@@ -105,7 +105,7 @@ class Product extends BaseMapper
         $unit = '';
         if ($data->getConsiderBasePrice()) {
             $basePriceQuantity = $data->getBasePriceQuantity() !== 1. ? (string)$data->getBasePriceQuantity() : '';
-            $unit = sprintf('%s%s', $basePriceQuantity, $data->getBasePriceUnitCode());
+            $unit              = \sprintf('%s%s', $basePriceQuantity, $data->getBasePriceUnitCode());
         }
         return $unit;
     }
@@ -118,7 +118,7 @@ class Product extends BaseMapper
     protected function id($data)
     {
         if (isset($data['id_product_attribute'])) {
-            return new Identity($data['id_product'].'_'.$data['id_product_attribute']);
+            return new Identity($data['id_product'] . '_' . $data['id_product_attribute']);
         } else {
             return new Identity($data['id_product']);
         }
@@ -130,22 +130,22 @@ class Product extends BaseMapper
             return new Identity($data['id_product']);
         }
     }
-    
+
     protected function id_category_default($data)
     {
         $categories = $data->getCategories();
-        if (count($categories) > 0) {
-            $firstCategory = reset($categories);
+        if (\count($categories) > 0) {
+            $firstCategory = \reset($categories);
             return $firstCategory->getCategoryId()->getEndpoint();
         }
-        
+
         return null;
     }
 
     protected function isMasterProduct($data)
     {
         if (!isset($data['id_product_attribute'])) {
-            $count = $this->db->getValue('SELECT COUNT(id_product) FROM ' . _DB_PREFIX_ . 'product_attribute WHERE id_product=' . $data['id_product']);
+            $count = $this->db->getValue('SELECT COUNT(id_product) FROM ' . \_DB_PREFIX_ . 'product_attribute WHERE id_product=' . $data['id_product']);
 
             if ($count > 0) {
                 return true;
@@ -162,10 +162,10 @@ class Product extends BaseMapper
 
     protected function permitNegativeStock($data)
     {
-        $query = 'SELECT out_of_stock FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$data['id_product'];
+        $query = 'SELECT out_of_stock FROM ' . \_DB_PREFIX_ . 'stock_available WHERE id_product=' . $data['id_product'];
 
         if (!empty($data['id_product_attribute'])) {
-            $query .= ' AND id_product_attribute = '.$data['id_product_attribute'];
+            $query .= ' AND id_product_attribute = ' . $data['id_product_attribute'];
         } else {
             $query .= ' AND id_product_attribute = 0';
         }
@@ -187,7 +187,7 @@ class Product extends BaseMapper
      */
     protected function id_tax_rules_group(\jtl\Connector\Model\Product $product)
     {
-        if (!is_null($product->getTaxClassId()) && !empty($product->getTaxClassId()->getEndpoint())) {
+        if (!\is_null($product->getTaxClassId()) && !empty($product->getTaxClassId()->getEndpoint())) {
             $taxRulesGroupId = $product->getTaxClassId()->getEndpoint();
         } else {
             $sql =
@@ -197,9 +197,9 @@ class Product extends BaseMapper
                 'LEFT JOIN %stax t ON t.id_tax = r.id_tax' . "\n" .
                 'WHERE t.rate = %s && r.id_country = %s && rg.deleted = 0 && t.active = 1 && rg.active = 1';
 
-            $taxRulesGroupId = $this->db->getValue(sprintf($sql, _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $product->getVat(), \Context::getContext()->country->id));
+            $taxRulesGroupId = $this->db->getValue(\sprintf($sql, \_DB_PREFIX_, \_DB_PREFIX_, \_DB_PREFIX_, $product->getVat(), \Context::getContext()->country->id));
 
-            if (count($product->getTaxRates()) > 0 && !is_null($product->getTaxClassId())) {
+            if (\count($product->getTaxRates()) > 0 && !\is_null($product->getTaxClassId())) {
                 $taxRulesGroupId = $this->findTaxClassId(...$product->getTaxRates()) ?? $taxRulesGroupId;
                 //$product->getTaxClassId()->setEndpoint($taxRulesGroupId);
             }
@@ -217,10 +217,10 @@ class Product extends BaseMapper
     {
         $conditions = [];
         foreach ($jtlTaxRates as $taxRate) {
-            $conditions[] = sprintf("(iso_code = '%s' AND rate='%s')", $taxRate->getCountryIso(), number_format($taxRate->getRate(), 3));
+            $conditions[] = \sprintf("(iso_code = '%s' AND rate='%s')", $taxRate->getCountryIso(), \number_format($taxRate->getRate(), 3));
         }
 
-        $foundTaxClasses = $this->db->query(sprintf(
+        $foundTaxClasses = $this->db->query(\sprintf(
             'SELECT id_tax_rules_group, COUNT(id_tax_rules_group) AS hits
                     FROM %stax_rule
                     LEFT JOIN %stax ON %stax.id_tax = %stax_rule.id_tax
@@ -228,7 +228,7 @@ class Product extends BaseMapper
                     WHERE %s 
                     GROUP BY id_tax_rules_group
                     ORDER BY hits DESC',
-            ...array_merge(array_fill(0, 7, _DB_PREFIX_), [join(' OR ', $conditions)])
+            ...\array_merge(\array_fill(0, 7, \_DB_PREFIX_), [\join(' OR ', $conditions)])
         ))->fetchAll(\PDO::FETCH_ASSOC);
 
         return $foundTaxClasses[0]['id_tax_rules_group'] ?? null;

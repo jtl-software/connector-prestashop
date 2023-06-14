@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use \jtl\Connector\Presta\Utils\Utils;
+use jtl\Connector\Presta\Utils\Utils;
 
 class CategoryI18n extends BaseMapper
 {

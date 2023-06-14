@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Tests;
-
 
 class CategoryTest extends \ConnectorIntegrationTests\Integration\CategoryTest
 {

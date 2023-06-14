@@ -9,17 +9,17 @@ class Manufacturer extends BaseController
         $result = $this->db->executeS(
             '
 			SELECT m.*
-			FROM '._DB_PREFIX_.'manufacturer m
+			FROM ' . \_DB_PREFIX_ . 'manufacturer m
 			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
             WHERE l.host_id IS NULL
-            LIMIT '.$limit
+            LIMIT ' . $limit
         );
 
         $return = [];
 
         foreach ($result as $data) {
             $model = $this->mapper->toHost($data);
-            
+
             $return[] = $model;
         }
 
@@ -30,7 +30,7 @@ class Manufacturer extends BaseController
     {
         $manufacturer = $this->mapper->toEndpoint($data);
 
-        $manufacturer->name = str_replace('#', '', $manufacturer->name);
+        $manufacturer->name = \str_replace('#', '', $manufacturer->name);
 
         $manufacturer->save();
 
@@ -56,7 +56,7 @@ class Manufacturer extends BaseController
     {
         return $this->db->getValue('
 			SELECT COUNT(*) 
-			FROM '._DB_PREFIX_.'manufacturer m
+			FROM ' . \_DB_PREFIX_ . 'manufacturer m
 			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
             WHERE l.host_id IS NULL
         ');

@@ -10,7 +10,7 @@ use jtl\Connector\Drawing\ImageRelationType;
 class PrimaryKeyMapper implements IPrimaryKeyMapper
 {
     protected $db;
-    
+
     protected static $types = [
         IdentityLinker::TYPE_CATEGORY => 'category',
         IdentityLinker::TYPE_CUSTOMER => 'customer',
@@ -36,14 +36,14 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
     {
         if (isset(static::$types[$type])) {
             $dbResult = $this->db->getValue('SELECT host_id FROM jtl_connector_link_' . static::$types[$type] . " WHERE endpoint_id = '" . $endpointId . "'");
-    
+
             $hostId = $dbResult ? $dbResult : null;
-    
-            Logger::write(sprintf('Trying to get hostId with endpointId (%s) and type (%s) ... hostId: (%s)', $endpointId, $type, $hostId), Logger::DEBUG, 'linker');
-    
+
+            Logger::write(\sprintf('Trying to get hostId with endpointId (%s) and type (%s) ... hostId: (%s)', $endpointId, $type, $hostId), Logger::DEBUG, 'linker');
+
             return $hostId;
         }
-        
+
         return null;
     }
 
@@ -52,7 +52,7 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
         if (!isset(static::$types[$type])) {
             return null;
         }
-        
+
         $relation = '';
 
         if ($type == IdentityLinker::TYPE_IMAGE) {
@@ -65,21 +65,21 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
                     break;
             }
         }
-        
-        $dbResult = $this->db->getValue(sprintf('SELECT endpoint_id FROM jtl_connector_link_%s WHERE host_id = %s%s', static::$types[$type], $hostId, $relation));
+
+        $dbResult = $this->db->getValue(\sprintf('SELECT endpoint_id FROM jtl_connector_link_%s WHERE host_id = %s%s', static::$types[$type], $hostId, $relation));
 
         $endpointId = $dbResult ? $dbResult : null;
 
-        Logger::write(sprintf('Trying to get endpointId with hostId (%s) and type (%s) and relation type (%s) ... endpointId: (%s)', $hostId, $type, $relationType, $endpointId), Logger::DEBUG, 'linker');
+        Logger::write(\sprintf('Trying to get endpointId with hostId (%s) and type (%s) and relation type (%s) ... endpointId: (%s)', $hostId, $type, $relationType, $endpointId), Logger::DEBUG, 'linker');
 
         return $endpointId;
     }
 
     public function save($endpointId, $hostId, $type)
     {
-        Logger::write(sprintf('Save link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type), Logger::DEBUG, 'linker');
-        
-        $this->db->execute(sprintf(
+        Logger::write(\sprintf('Save link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type), Logger::DEBUG, 'linker');
+
+        $this->db->execute(\sprintf(
             'INSERT IGNORE INTO jtl_connector_link_%s (endpoint_id, host_id) VALUES ("%s",%s)',
             static::$types[$type],
             $endpointId,
@@ -89,29 +89,29 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
 
     public function delete($endpointId = null, $hostId = null, $type)
     {
-        Logger::write(sprintf('Delete link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type), Logger::DEBUG, 'linker');
-    
+        Logger::write(\sprintf('Delete link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type), Logger::DEBUG, 'linker');
+
         $where = [];
-    
+
         if ($endpointId && $endpointId != '') {
-            $where[] = 'endpoint_id = "'.$endpointId.'"';
+            $where[] = 'endpoint_id = "' . $endpointId . '"';
         }
-    
+
         if ($hostId) {
-            $where[] = 'host_id = '.$hostId;
+            $where[] = 'host_id = ' . $hostId;
         }
-    
-        $this->db->execute(sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], implode(' AND ', $where)));
+
+        $this->db->execute(\sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], \implode(' AND ', $where)));
     }
 
     public function clear()
     {
         Logger::write('Clearing linking tables', Logger::DEBUG, 'linker');
-        
+
         foreach (static::$types as $id => $name) {
             $this->db->execute('TRUNCATE TABLE jtl_connector_link_' . $name);
         }
-    
+
         return true;
     }
 

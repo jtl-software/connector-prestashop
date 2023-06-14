@@ -11,6 +11,6 @@ class Image extends BaseMapper
         'relationType' => 'relationType',
         'remoteUrl' => 'remoteUrl',
         'sort' => 'sort',
-        'i18ns'=>'ImageI18n'
+        'i18ns' => 'ImageI18n'
     ];
 }

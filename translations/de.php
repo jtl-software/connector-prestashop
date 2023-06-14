@@ -1,7 +1,7 @@
 <?php
 
 global $_MODULE;
-$_MODULE = [];
+$_MODULE                                                                            = [];
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_2f2955ae26ff6ad87f627976b738cc44'] = 'Dieses Modul ermöglicht die Verbindung zwischen PrestaShop und der JTL Wawi.';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_da3eea15e22e123e41c13500db04f1bf'] = 'Der Connector benötigt mind. PHP \"%s\". Ihr System benutzt PHP \"%s\".\'';
 $_MODULE['<{jtlconnector}prestashop>jtlconnector_4a9002a2bb5a1e6402ede5d6e4152a51'] = 'Die benötigte SQLite3 PHP Extension ist nicht installiert.';

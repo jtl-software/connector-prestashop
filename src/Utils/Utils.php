@@ -5,18 +5,18 @@ namespace jtl\Connector\Presta\Utils;
 use jtl\Connector\Model\ProductAttr;
 use jtl\Connector\Model\ProductAttrI18n;
 use jtl\Connector\Payment\PaymentTypes;
-use \jtl\Connector\Session\SessionHelper;
-use \jtl\Connector\Core\Utilities\Language;
+use jtl\Connector\Session\SessionHelper;
+use jtl\Connector\Core\Utilities\Language;
 
 class Utils
 {
     private static $instance;
     private $session = null;
-    
+
     public static function getInstance()
     {
         if (!isset(self::$instance)) {
-            self::$instance = new self;
+            self::$instance = new self();
         }
 
         return self::$instance;
@@ -29,14 +29,14 @@ class Utils
 
     public function getLanguages()
     {
-        if (is_null($this->session->languages)) {
+        if (\is_null($this->session->languages)) {
             $languages = \Language::getLanguages(false);
 
             foreach ($languages as &$lang) {
                 $iso3 = Language::convert($lang['language_code']);
                 if (empty($iso3)) {
-                    $locale = str_replace('-', '_', $lang['locale']);
-                    $iso3 = Language::map($locale);
+                    $locale = \str_replace('-', '_', $lang['locale']);
+                    $iso3   = Language::map($locale);
                 }
 
                 $lang['iso3'] = $iso3;
@@ -74,10 +74,10 @@ class Utils
     {
         $context = \Context::getContext();
 
-        $address = new \Address();
+        $address             = new \Address();
         $address->id_country = (int) $context->country->id;
-        $address->id_state = 0;
-        $address->postcode = 0;
+        $address->id_state   = 0;
+        $address->postcode   = 0;
 
         $tax_manager = \TaxManagerFactory::getManager($address, \Product::getIdTaxRulesGroupByIdProduct((int) $id, $context));
 
@@ -91,7 +91,7 @@ class Utils
      */
     public static function explodeProductEndpoint($id, $padValue = null)
     {
-        return array_pad(explode('_', $id, 2), 2, $padValue);
+        return \array_pad(\explode('_', $id, 2), 2, $padValue);
     }
 
     /**
@@ -121,7 +121,7 @@ class Utils
      */
     public static function cleanHtml($html)
     {
-        $events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
+        $events  = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
         $events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend';
         $events .= '|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove';
         $events .= '|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel';
@@ -129,9 +129,9 @@ class Utils
         $events .= '|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange';
         $events .= '|onselectstart|onstart|onstop';
 
-        $html = preg_replace('/<[\s]*script/ims', '', $html);
-        $html = preg_replace('/('.$events.')[\s]*=/ims', '', $html);
-        $html = preg_replace('/.*script\:/ims', '', $html);
+        $html = \preg_replace('/<[\s]*script/ims', '', $html);
+        $html = \preg_replace('/(' . $events . ')[\s]*=/ims', '', $html);
+        $html = \preg_replace('/.*script\:/ims', '', $html);
 
         if ((bool)\Configuration::get('PS_USE_HTMLPURIFIER') === false) {
             return $html;
@@ -148,7 +148,7 @@ class Utils
             $removeTags[] = 'i?frame';
         }
 
-        $html = preg_replace(sprintf('/<[\s]*(%s)/ims', join('|', $removeTags)), '', $html);
+        $html = \preg_replace(\sprintf('/<[\s]*(%s)/ims', \join('|', $removeTags)), '', $html);
 
         return $html;
     }

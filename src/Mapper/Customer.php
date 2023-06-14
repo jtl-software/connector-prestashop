@@ -7,7 +7,7 @@ use jtl\Connector\Presta\Utils\Utils;
 class Customer extends BaseMapper
 {
     protected $endpointModel = '\Customer';
-    protected $identity = 'id|id_customer';
+    protected $identity      = 'id|id_customer';
 
     protected $pull = [
         'id' => 'cid',
@@ -89,7 +89,7 @@ class Customer extends BaseMapper
 
     protected function birthday($data)
     {
-        if (is_array($data)) {
+        if (\is_array($data)) {
             return ($data['birthday'] === '0000-00-00' ? null : new \DateTime($data['birthday']));
         }
         return ($data->getBirthday() === null ? '0000-00-00' : $data->getBirthday()->format('Y-m-d'));

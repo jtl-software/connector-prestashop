@@ -51,9 +51,9 @@ class CustomerOrder extends BaseMapper
      */
     protected function note($data)
     {
-        $result = $this->db->getRow(sprintf("SELECT GROUP_CONCAT(CONCAT(cm.date_add, ' - ', cm.message) SEPARATOR '\r\n') as messages 
-        FROM "._DB_PREFIX_."customer_thread ct
-        LEFT JOIN "._DB_PREFIX_."customer_message cm ON cm.id_customer_thread = ct.id_customer_thread
+        $result = $this->db->getRow(\sprintf("SELECT GROUP_CONCAT(CONCAT(cm.date_add, ' - ', cm.message) SEPARATOR '\r\n') as messages 
+        FROM " . \_DB_PREFIX_ . "customer_thread ct
+        LEFT JOIN " . \_DB_PREFIX_ . "customer_message cm ON cm.id_customer_thread = ct.id_customer_thread
         WHERE ct.id_order = %s", $data['id_order']));
 
         return isset($result['messages']) ? $result['messages'] : '';

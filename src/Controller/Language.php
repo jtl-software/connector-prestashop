@@ -12,7 +12,7 @@ class Language extends BaseController
 
         foreach (Utils::getInstance()->getLanguages() as $data) {
             $model = $this->mapper->toHost((array) $data);
-            
+
             $return[] = $model;
         }
 

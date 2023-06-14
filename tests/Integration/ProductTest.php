@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Tests;
-
 
 use function foo\func;
 
@@ -39,68 +37,72 @@ class ProductTest extends \Jtl\Connector\IntegrationTests\Integration\ProductTes
             'isNewProduct',
             'productWeight',
             'isSerialNumber',
-            'serialNumber', 
-            'basePriceDivisor', 
-            'basePriceFactor', 
-            'basePriceQuantity', 
-            'basePriceUnitCode', 
-            'note', 
-            'recommendedRetailPrice', 
-            'isBatch', 
-            'isBestBefore', 
-            'isDivisible', 
-            'manufacturerNumber', 
-            'measurementQuantity', 
-            'measurementUnitCode', 
-            'nextAvailableInflowQuantity', 
-            'packagingQuantity', 
-            'supplierDeliveryTime', 
+            'serialNumber',
+            'basePriceDivisor',
+            'basePriceFactor',
+            'basePriceQuantity',
+            'basePriceUnitCode',
+            'note',
+            'recommendedRetailPrice',
+            'isBatch',
+            'isBestBefore',
+            'isDivisible',
+            'manufacturerNumber',
+            'measurementQuantity',
+            'measurementUnitCode',
+            'nextAvailableInflowQuantity',
+            'packagingQuantity',
+            'supplierDeliveryTime',
             'supplierStockLevel',
             'originCountry',
             'minimumQuantity',
             'prices.0.items.0.quantity',
-            
+
         ];
     }
-    
-    public function testProductCustomerGroupPackagingQuantityPush() {
+
+    public function testProductCustomerGroupPackagingQuantityPush()
+    {
         $this->markTestIncomplete(
             'This test has not been implemented yet.'
         );
     }
-    
-    public function testProductConfigGroupPush() {
+
+    public function testProductConfigGroupPush()
+    {
         $this->markTestIncomplete(
             'This test has not been implemented yet.'
         );
     }
-    
-    public function testProductPartsListPush() {
+
+    public function testProductPartsListPush()
+    {
         $this->markTestIncomplete(
             'This test has not been implemented yet.'
         );
     }
-    
-    public function testProductSpecialPricePush() {
+
+    public function testProductSpecialPricePush()
+    {
         $this->markTestIncomplete(
             'This test has not been implemented yet.'
         );
     }
-    
+
     public function testProductSpecificPush()
     {
         $this->markTestIncomplete(
             'This test has not been implemented yet.'
         );
     }
-    
+
     public function testProductVariationPush()
     {
         $this->markTestIncomplete(
             'This test has not been implemented yet.'
         );
     }
-    
+
     public function testProductWarehousePush()
     {
         $this->markTestIncomplete(

@@ -15,7 +15,7 @@ class Product2Category extends BaseController
             $cat = new Product2CategoryModel();
             $cat->setProductId($model->getId());
             $cat->setCategoryId(new Identity($catId));
-            $cat->setId(new Identity($model->getId()->getEndpoint().'_'.$catId));
+            $cat->setId(new Identity($model->getId()->getEndpoint() . '_' . $catId));
 
             $return[] = $cat;
         }

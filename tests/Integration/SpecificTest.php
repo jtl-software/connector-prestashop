@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Tests;
-
 
 class SpecificTest extends \Jtl\Connector\IntegrationTests\Integration\SpecificTest
 {
@@ -17,7 +15,7 @@ class SpecificTest extends \Jtl\Connector\IntegrationTests\Integration\SpecificT
             'values.0.i18ns.0.urlPath',
         ];
     }
-    
+
     public function testSpecificBasicPush()
     {
         $this->markTestIncomplete(

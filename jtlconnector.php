@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JTL Connector Module
  * Copyright (c) 2015-2016 JTL Software GmbH
@@ -31,22 +32,22 @@ class JTLConnector extends Module
     public function __construct()
     {
         $this->name = 'jtlconnector';
-        $this->tab = 'payments_gateways';
+        $this->tab  = 'payments_gateways';
         try {
             $this->version = Yaml::parseFile(__DIR__ . '/build-config.yaml')['version'];
         } catch (\Exception $e) {
             $this->version = 'Unknown';
         }
-        $this->author = 'JTL Software GmbH';
+        $this->author        = 'JTL Software GmbH';
         $this->need_instance = 0;
-        $this->bootstrap = true;
+        $this->bootstrap     = true;
 
         parent::__construct();
 
-        $this->displayName = 'JTL-Connector';
-        $this->description = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
+        $this->displayName            = 'JTL-Connector';
+        $this->description            = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
         $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
-        $this->module_key = '488cd335118c56baab7259d5459cf3a3';
+        $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
     public function viewAccess()
@@ -80,8 +81,8 @@ class JTLConnector extends Module
 
         if (count($this->_errors) != 0) {
             $this->_errors[] = '<b>' . sprintf($this->l(
-                    'Please read the %s for requirements and setup instructions.'
-                ), '<a href="http://guide.jtl-software.de/jtl/JTL-Connector">Connector Guide</a>') . '</b>';
+                'Please read the %s for requirements and setup instructions.'
+            ), '<a href="http://guide.jtl-software.de/jtl/JTL-Connector">Connector Guide</a>') . '</b>';
 
             return false;
         }
@@ -92,25 +93,25 @@ class JTLConnector extends Module
 
         $meta = new \Meta();
 
-        $meta->page = 'module-jtlconnector-api';
-        $meta->url_rewrite = [1 => 'jtlconnector'];
+        $meta->page         = 'module-jtlconnector-api';
+        $meta->url_rewrite  = [1 => 'jtlconnector'];
         $meta->configurable = '0';
-        $meta->multilang = false;
+        $meta->multilang    = false;
 
         $meta->save();
 
         $this->createLinkingTables();
         $this->convertLinkingTables();
 
-        $tab = new \Tab();
-        $name = "JTL-Connector";
+        $tab            = new \Tab();
+        $name           = "JTL-Connector";
         $tab->id_parent = (int)Tab::getIdFromClassName('IMPROVE');
         foreach (\Language::getLanguages(true) as $lang) {
             $tab->name[$lang['id_lang']] = $name;
         }
-        $tab->active = true;
-        $tab->position = 0;
-        $tab->module = $this->name;
+        $tab->active     = true;
+        $tab->position   = 0;
+        $tab->module     = $this->name;
         $tab->class_name = "jtlconnector";
         $tab->save();
 
@@ -146,20 +147,24 @@ class JTLConnector extends Module
                 $this->clearLogs();
                 $output .= $this->displayConfirmation($this->l('Logs have been cleared successfully!'));
             } elseif (Tools::getValue('jtlconnector_remove_inconsistency')) {
-                Db::getInstance()->execute(sprintf('DELETE FROM %sfeature_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
-                        _DB_PREFIX_,
-                        _DB_PREFIX_)
-                );
+                Db::getInstance()->execute(sprintf(
+                    'DELETE FROM %sfeature_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
+                    _DB_PREFIX_,
+                    _DB_PREFIX_
+                ));
                 $affected = Db::getInstance()->Affected_Rows();
-                Db::getInstance()->execute(sprintf('DELETE FROM %sfeature_value_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
-                        _DB_PREFIX_,
-                        _DB_PREFIX_)
-                );
+                Db::getInstance()->execute(sprintf(
+                    'DELETE FROM %sfeature_value_lang WHERE id_lang NOT IN (SELECT id_lang FROM %slang)',
+                    _DB_PREFIX_,
+                    _DB_PREFIX_
+                ));
                 $affected += Db::getInstance()->Affected_Rows();
 
-                $output .= $this->displayConfirmation(sprintf("%s: %s",
+                $output .= $this->displayConfirmation(sprintf(
+                    "%s: %s",
                     $this->l('Successfully cleaned inconsistent entries'),
-                    $affected));
+                    $affected
+                ));
             } elseif (Tools::getValue('jtlconnector_download_logs')) {
                 $this->downloadJTLLogs();
             } else {
@@ -184,7 +189,7 @@ class JTLConnector extends Module
 
     private function clearLogs()
     {
-        $logDir = CONNECTOR_DIR . 'logs';
+        $logDir   = CONNECTOR_DIR . 'logs';
         $zip_file = CONNECTOR_DIR . 'tmp/connector_logs.zip';
 
         if (file_exists($zip_file)) {
@@ -204,7 +209,7 @@ class JTLConnector extends Module
 
     private function downloadJTLLogs()
     {
-        $logDir = CONNECTOR_DIR . 'logs';
+        $logDir   = CONNECTOR_DIR . 'logs';
         $zip_file = CONNECTOR_DIR . '/tmp/connector_logs.zip';
 
         $zip = new ZipArchive();
@@ -229,7 +234,6 @@ class JTLConnector extends Module
             header('Content-Disposition: attachment; filename="logs.zip"');
             readfile($zip_file);
             exit();
-
         } else {
             header('Content-Type: application/json; charset=UTF-8');
             header('HTTP/1.1 451 Internal Server Booboo');
@@ -246,16 +250,18 @@ class JTLConnector extends Module
             $limit = 800;
         }
 
-        $fields_form = [];
+        $fields_form            = [];
         $fields_form[0]['form'] = [
             'legend' => [
                 'title' => $this->l('Connector Settings'),
                 'icon' => 'icon-cogs',
             ],
-            'description' => sprintf('<b>%s</b><br>%s: <b>%s</b><br/>',
+            'description' => sprintf(
+                '<b>%s</b><br>%s: <b>%s</b><br/>',
                 $this->l('Please enter the following URL in your Wawi connector setup:'),
                 $this->l('The "Onlineshop URL" is'),
-                $this->context->link->getModuleLink('jtlconnector', 'api')),
+                $this->context->link->getModuleLink('jtlconnector', 'api')
+            ),
             'input' => [
                 [
                     'type' => 'textbutton',
@@ -275,8 +281,10 @@ class JTLConnector extends Module
                     'label' => $this->l('Truncate short description'),
                     'name' => 'jtlconnector_truncate_desc',
                     'is_bool' => true,
-                    'desc' => sprintf($this->l('Enable this option to truncate too long short descriptions. Your current setting is %s chars. You can change this in your product preferences.'),
-                        $limit),
+                    'desc' => sprintf(
+                        $this->l('Enable this option to truncate too long short descriptions. Your current setting is %s chars. You can change this in your product preferences.'),
+                        $limit
+                    ),
                     'values' => [
                         [
                             'id' => 'active_on',
@@ -342,8 +350,10 @@ class JTLConnector extends Module
                     'text' => $this->l('Remove'),
                     'name' => 'jtlconnector_remove_inconsistency',
                     'icon' => 'delete',
-                    'desc' => sprintf($this->l('Use this button to remove inconsistency in your specifics table caused by missing languages.'),
-                        $limit),
+                    'desc' => sprintf(
+                        $this->l('Use this button to remove inconsistency in your specifics table caused by missing languages.'),
+                        $limit
+                    ),
                 ],
                 [
                     'type' => 'html',
@@ -394,29 +404,29 @@ class JTLConnector extends Module
         $helper = new HelperForm();
 
         // Module, token and currentIndex
-        $helper->module = $this;
+        $helper->module          = $this;
         $helper->name_controller = $this->name;
-        $helper->token = Tools::getAdminTokenLite('AdminModules');
-        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
+        $helper->token           = Tools::getAdminTokenLite('AdminModules');
+        $helper->currentIndex    = AdminController::$currentIndex . '&configure=' . $this->name;
 
         // Language
-        $helper->default_form_language = $default_lang;
+        $helper->default_form_language    = $default_lang;
         $helper->allow_employee_form_lang = $default_lang;
 
         // Title and toolbar
-        $helper->title = $this->displayName;
-        $helper->show_toolbar = true;
+        $helper->title          = $this->displayName;
+        $helper->show_toolbar   = true;
         $helper->toolbar_scroll = true;
-        $helper->submit_action = 'submit' . $this->name;
+        $helper->submit_action  = 'submit' . $this->name;
 
         // Load current value
-        $helper->fields_value['jtlconnector_pass'] = Configuration::get('jtlconnector_pass');
-        $helper->fields_value['jtlconnector_truncate_desc'] = Configuration::get('jtlconnector_truncate_desc');
-        $helper->fields_value['jtlconnector_custom_fields'] = Configuration::get('jtlconnector_custom_fields');
+        $helper->fields_value['jtlconnector_pass']                    = Configuration::get('jtlconnector_pass');
+        $helper->fields_value['jtlconnector_truncate_desc']           = Configuration::get('jtlconnector_truncate_desc');
+        $helper->fields_value['jtlconnector_custom_fields']           = Configuration::get('jtlconnector_custom_fields');
         $helper->fields_value[self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES] = Configuration::get(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES);
-        $helper->fields_value['jtlconnector_from_date'] = Configuration::get('jtlconnector_from_date');
-        $helper->fields_value['jtlconnector_remove_inconsistency'] = false;
-        $helper->fields_value['jtlconnector_developer_logging'] = Config::get('developer_logging');
+        $helper->fields_value['jtlconnector_from_date']               = Configuration::get('jtlconnector_from_date');
+        $helper->fields_value['jtlconnector_remove_inconsistency']    = false;
+        $helper->fields_value['jtlconnector_developer_logging']       = Config::get('developer_logging');
 
         return $helper->generateForm($fields_form);
     }
@@ -478,7 +488,7 @@ class JTLConnector extends Module
                 $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
 
                 foreach ($existingTypes as $existingType) {
-                    $typeId = (int)$existingType['type'];
+                    $typeId    = (int)$existingType['type'];
                     $tableName = 'jtl_connector_link_' . $types[$typeId];
                     $db->query("INSERT INTO {$tableName} (host_id, endpoint_id)
                         SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}

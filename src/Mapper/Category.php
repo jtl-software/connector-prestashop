@@ -7,7 +7,7 @@ use jtl\Connector\Model\Identity;
 class Category extends BaseMapper
 {
     protected $endpointModel = '\Category';
-    protected $identity = 'id|id_category';
+    protected $identity      = 'id|id_category';
 
     protected $pull = [
         'id' => 'id_category',
