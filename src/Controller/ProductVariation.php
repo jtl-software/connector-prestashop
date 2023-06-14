@@ -18,7 +18,8 @@ class ProductVariation extends BaseController
             '
 			SELECT a.*, g.position AS groupPos, p.ean13, p.isbn, p.reference
             FROM ' . \_DB_PREFIX_ . 'product_attribute p
-            LEFT JOIN ' . \_DB_PREFIX_ . 'product_attribute_combination c ON c.id_product_attribute = p.id_product_attribute
+            LEFT JOIN ' . \_DB_PREFIX_ . 'product_attribute_combination c 
+            ON c.id_product_attribute = p.id_product_attribute
             LEFT JOIN ' . \_DB_PREFIX_ . 'attribute a ON a.id_attribute = c.id_attribute
             LEFT JOIN ' . \_DB_PREFIX_ . 'attribute_group g ON g.id_attribute_group = a.id_attribute_group
             WHERE ' . $where . '
@@ -34,11 +35,11 @@ class ProductVariation extends BaseController
             $vars[$varRData['id_attribute_group']]['productId'] = $model->getId()->getEndpoint();
             $vars[$varRData['id_attribute_group']]['sort']      = $varRData['groupPos'];
             $vars[$varRData['id_attribute_group']]['values'][]  = [
-                'id' => $varRData['id_attribute'],
-                'sort' => $varRData['position'],
+                'id'                 => $varRData['id_attribute'],
+                'sort'               => $varRData['position'],
                 'productVariationId' => $varRData['id_attribute_group'],
-                'ean' => $varRData['ean13'],
-                'sku' => $varRData['reference'],
+                'ean'                => $varRData['ean13'],
+                'sku'                => $varRData['reference'],
             ];
         }
 

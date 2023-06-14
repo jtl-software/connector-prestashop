@@ -39,12 +39,12 @@ class Image extends BaseController
 
             if (\file_exists(\_PS_PROD_IMG_DIR_ . $path . (int)$image['id_image'] . '.jpg')) {
                 $return[] = [
-                    'id' => $image['id_image'],
-                    'foreignKey' => $image['id_product'],
-                    'remoteUrl' => \_PS_BASE_URL_ . \_THEME_PROD_DIR_ . $path . $image['id_image'] . '.jpg',
-                    'filename' => $image['id_image'] . '.jpg',
+                    'id'           => $image['id_image'],
+                    'foreignKey'   => $image['id_product'],
+                    'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_PROD_DIR_ . $path . $image['id_image'] . '.jpg',
+                    'filename'     => $image['id_image'] . '.jpg',
                     'relationType' => 'product',
-                    'sort' => $image['position']
+                    'sort'         => $image['position']
                 ];
             }
         }
@@ -98,10 +98,10 @@ class Image extends BaseController
         foreach ($categories as $category) {
             if (\file_exists(\_PS_CAT_IMG_DIR_ . (int)$category['id_category'] . '.jpg')) {
                 $return[] = [
-                    'id' => 'c' . $category['id_category'],
-                    'foreignKey' => $category['id_category'],
-                    'remoteUrl' => \_PS_BASE_URL_ . \_THEME_CAT_DIR_ . $category['id_category'] . '.jpg',
-                    'filename' => $category['id_category'] . '.jpg',
+                    'id'           => 'c' . $category['id_category'],
+                    'foreignKey'   => $category['id_category'],
+                    'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_CAT_DIR_ . $category['id_category'] . '.jpg',
+                    'filename'     => $category['id_category'] . '.jpg',
                     'relationType' => 'category'
                 ];
             }
@@ -119,10 +119,10 @@ class Image extends BaseController
         foreach ($manufacturers as $manufacturer) {
             if (\file_exists(\_PS_MANU_IMG_DIR_ . (int)$manufacturer['id_manufacturer'] . '.jpg')) {
                 $return[] = [
-                    'id' => 'm' . $manufacturer['id_manufacturer'],
-                    'foreignKey' => $manufacturer['id_manufacturer'],
-                    'remoteUrl' => \_PS_BASE_URL_ . \_THEME_MANU_DIR_ . $manufacturer['id_manufacturer'] . '.jpg',
-                    'filename' => $manufacturer['id_manufacturer'] . '.jpg',
+                    'id'           => 'm' . $manufacturer['id_manufacturer'],
+                    'foreignKey'   => $manufacturer['id_manufacturer'],
+                    'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_MANU_DIR_ . $manufacturer['id_manufacturer'] . '.jpg',
+                    'filename'     => $manufacturer['id_manufacturer'] . '.jpg',
                     'relationType' => 'manufacturer'
                 ];
             }
@@ -205,12 +205,12 @@ class Image extends BaseController
                     $identity = $data->getId();
                     $isUpdate = $identity->getEndpoint() !== "";
 
-                    $img = new \Image($isUpdate ? (int)$identity->getEndpoint() : null);
+                    $img             = new \Image($isUpdate ? (int)$identity->getEndpoint() : null);
                     $img->id_product = $productId;
-                    $img->position = $data->getSort();
+                    $img->position   = $data->getSort();
 
                     $defaultImageLegend = false;
-                    $defaultLanguageId = (int)Context::getContext()->language->id;
+                    $defaultLanguageId  = (int)Context::getContext()->language->id;
 
                     foreach ($data->getI18ns() as $imageI18n) {
                         $languageId = Utils::getInstance()->getLanguageIdByIso($imageI18n->getLanguageISO());
@@ -229,7 +229,7 @@ class Image extends BaseController
 
                         $coverId = \Product::getCover($productId);
                         if (isset($coverId['id_image'])) {
-                            $oldCover = new \Image($coverId['id_image']);
+                            $oldCover        = new \Image($coverId['id_image']);
                             $oldCover->cover = 0;
                             $oldCover->save();
                         }
@@ -255,7 +255,8 @@ class Image extends BaseController
 
                     if (!\is_null($combiId) && $isUpdate === false) {
                         $this->db->execute(
-                            'INSERT INTO ' . \_DB_PREFIX_ . 'product_attribute_image SET id_product_attribute=' . $combiId . ', id_image=' . $img->id
+                            'INSERT INTO ' . \_DB_PREFIX_ . 'product_attribute_image 
+                            SET id_product_attribute=' . $combiId . ', id_image=' . $img->id
                         );
                     }
 

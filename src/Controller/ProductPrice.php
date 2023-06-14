@@ -96,7 +96,8 @@ class ProductPrice extends BaseController
     {
         if ($data['price'] === '-1.000000') {
             if ($data['reduction_type'] === 'amount') {
-                $reduction = ($data['reduction_tax'] === 1) ? ($data['reduction'] / (100 + $taxRate)) * 100 : $data['reduction'];
+                $reduction = ($data['reduction_tax'] === 1)
+                    ? ($data['reduction'] / (100 + $taxRate)) * 100 : $data['reduction'];
 
                 return \floatval($data['pPrice'] - $reduction);
             } else {
@@ -143,25 +144,25 @@ class ProductPrice extends BaseController
                             $product->save();
                         } else {
                             $combiPriceDiff = $item->getNetPrice() - \floatval($product->price);
-                            $combi = new \Combination($combiId);
-                            $combi->price = \round($combiPriceDiff, 6);
+                            $combi          = new \Combination($combiId);
+                            $combi->price   = \round($combiPriceDiff, 6);
                             $combi->save();
                         }
                     } else {
-                        $priceObj = new \SpecificPrice();
-                        $priceObj->id_product = $productId;
+                        $priceObj                       = new \SpecificPrice();
+                        $priceObj->id_product           = $productId;
                         $priceObj->id_product_attribute = $combiId;
-                        $priceObj->id_group = $customerGroupId;
-                        $priceObj->price = \round($item->getNetPrice(), 6);
-                        $priceObj->from_quantity = $item->getQuantity();
-                        $priceObj->id_shop = 0;
-                        $priceObj->id_currency = 0;
-                        $priceObj->id_country = 0;
-                        $priceObj->id_customer = 0;
-                        $priceObj->reduction = 0;
-                        $priceObj->reduction_type = 'amount';
-                        $priceObj->from = '0000-00-00 00:00:00';
-                        $priceObj->to = '0000-00-00 00:00:00';
+                        $priceObj->id_group             = $customerGroupId;
+                        $priceObj->price                = \round($item->getNetPrice(), 6);
+                        $priceObj->from_quantity        = $item->getQuantity();
+                        $priceObj->id_shop              = 0;
+                        $priceObj->id_currency          = 0;
+                        $priceObj->id_country           = 0;
+                        $priceObj->id_customer          = 0;
+                        $priceObj->reduction            = 0;
+                        $priceObj->reduction_type       = 'amount';
+                        $priceObj->from                 = '0000-00-00 00:00:00';
+                        $priceObj->to                   = '0000-00-00 00:00:00';
 
                         $priceObj->save();
                     }

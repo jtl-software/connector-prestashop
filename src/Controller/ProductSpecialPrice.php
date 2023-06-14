@@ -116,7 +116,7 @@ class ProductSpecialPrice extends BaseController
                 return (float)\round($priceNet - $reduction, 6);
             } elseif ($data['reduction_type'] === 'percentage') {
                 $percentage = $data['reduction'] * 100;
-                $reduction = $priceNet * $percentage / 100;
+                $reduction  = $priceNet * $percentage / 100;
 
                 return (float)\round($priceNet - $reduction, 6);
             }
@@ -147,18 +147,18 @@ class ProductSpecialPrice extends BaseController
                     }
 
                     foreach ($specialPrice->getItems() as $item) {
-                        $priceObj = new \SpecificPrice();
-                        $priceObj->id_product = $productId;
+                        $priceObj                       = new \SpecificPrice();
+                        $priceObj->id_product           = $productId;
                         $priceObj->id_product_attribute = $combiId;
-                        $priceObj->id_group = $item->getCustomerGroupId()->getEndpoint();
-                        $priceObj->price = \round($item->getPriceNet(), 6);
-                        $priceObj->from_quantity = 0;
-                        $priceObj->id_shop = 0;
-                        $priceObj->id_currency = 0;
-                        $priceObj->id_country = 0;
-                        $priceObj->id_customer = 0;
-                        $priceObj->reduction = 0;
-                        $priceObj->reduction_type = 'amount';
+                        $priceObj->id_group             = $item->getCustomerGroupId()->getEndpoint();
+                        $priceObj->price                = \round($item->getPriceNet(), 6);
+                        $priceObj->from_quantity        = 0;
+                        $priceObj->id_shop              = 0;
+                        $priceObj->id_currency          = 0;
+                        $priceObj->id_country           = 0;
+                        $priceObj->id_customer          = 0;
+                        $priceObj->reduction            = 0;
+                        $priceObj->reduction_type       = 'amount';
 
                         if ($specialPrice->getActiveFromDate() !== null) {
                             $priceObj->from = $specialPrice->getActiveFromDate()->format('Y-m-d H:i:s');
