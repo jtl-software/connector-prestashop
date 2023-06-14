@@ -22,7 +22,7 @@ class CustomerOrderItem extends BaseController
     {
         $customerOrderItems = [];
 
-        $orderId = (int) $data['id_order'];
+        $orderId = (int)$data['id_order'];
 
         $orderDetails = $this->fetchOrderItems('order_detail', $orderId);
         foreach ($orderDetails as $detail) {
@@ -39,6 +39,32 @@ class CustomerOrderItem extends BaseController
         $customerOrderItems[] = $this->createShippingItem($data);
 
         return $customerOrderItems;
+    }
+
+    /**
+     * @param string $tableName
+     * @param int $orderId
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
+    protected function fetchOrderItems(string $tableName, int $orderId): array
+    {
+        return $this->db->executeS(
+            \sprintf(' SELECT r.* FROM %s%s r WHERE r.id_order = %s', \_DB_PREFIX_, $tableName, $orderId)
+        );
+    }
+
+    /**
+     * @param CustomerOrderItemModel ...$customerOrderItems
+     * @return float
+     */
+    protected function getHighestVatRate(CustomerOrderItemModel ...$customerOrderItems): float
+    {
+        return \max(
+            \array_map(function (CustomerOrderItemModel $customerOrderItem) {
+                return $customerOrderItem->getVat();
+            }, $customerOrderItems)
+        );
     }
 
     /**
@@ -75,27 +101,5 @@ class CustomerOrderItem extends BaseController
             ->setPriceGross(\floatval($data['total_shipping_tax_incl']))
             ->setVat(\floatval($data['carrier_tax_rate']))
             ->setQuantity(1);
-    }
-
-    /**
-     * @param string $tableName
-     * @param int $orderId
-     * @return array
-     * @throws \PrestaShopDatabaseException
-     */
-    protected function fetchOrderItems(string $tableName, int $orderId): array
-    {
-        return $this->db->executeS(\sprintf(' SELECT r.* FROM %s%s r WHERE r.id_order = %s', \_DB_PREFIX_, $tableName, $orderId));
-    }
-
-    /**
-     * @param CustomerOrderItemModel ...$customerOrderItems
-     * @return float
-     */
-    protected function getHighestVatRate(CustomerOrderItemModel ...$customerOrderItems): float
-    {
-        return \max(\array_map(function (CustomerOrderItemModel $customerOrderItem) {
-            return $customerOrderItem->getVat();
-        }, $customerOrderItems));
     }
 }

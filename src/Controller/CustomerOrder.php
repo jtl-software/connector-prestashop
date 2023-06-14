@@ -38,6 +38,18 @@ class CustomerOrder extends BaseController
         return $return;
     }
 
+    private function setStates($id, &$model)
+    {
+        $order = new \Order($id);
+        $model->setPaymentStatus(
+            $order->hasBeenPaid(
+            ) == 1 ? CustomerOrderModel::PAYMENT_STATUS_COMPLETED : CustomerOrderModel::PAYMENT_STATUS_UNPAID
+        );
+        if ($order->hasBeenDelivered() == 1 || $order->hasBeenShipped() == 1) {
+            $model->setStatus(CustomerOrderModel::STATUS_SHIPPED);
+        }
+    }
+
     public function getStats()
     {
         $query = 'SELECT COUNT(*)
@@ -50,14 +62,5 @@ class CustomerOrder extends BaseController
         }
 
         return $this->db->getValue($query);
-    }
-
-    private function setStates($id, &$model)
-    {
-        $order = new \Order($id);
-        $model->setPaymentStatus($order->hasBeenPaid() == 1 ? CustomerOrderModel::PAYMENT_STATUS_COMPLETED : CustomerOrderModel::PAYMENT_STATUS_UNPAID);
-        if ($order->hasBeenDelivered() == 1 || $order->hasBeenShipped() == 1) {
-            $model->setStatus(CustomerOrderModel::STATUS_SHIPPED);
-        }
     }
 }

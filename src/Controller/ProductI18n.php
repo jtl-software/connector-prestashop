@@ -24,12 +24,16 @@ class ProductI18n extends BaseController
             }
         }
 
-        $sql = \sprintf('    
+        $sql = \sprintf(
+            '    
             SELECT p.*
             FROM ' . \_DB_PREFIX_ . 'product_lang AS p
             LEFT JOIN ' . \_DB_PREFIX_ . 'lang AS l ON l.id_lang = p.id_lang
             WHERE p.id_product = %s AND p.id_shop = %s AND l.id_lang IS NOT NULL
-        ', $data['id_product'], \Context::getContext()->shop->id);
+        ',
+            $data['id_product'],
+            \Context::getContext()->shop->id
+        );
 
         $result = $this->db->executeS($sql);
 
@@ -56,7 +60,7 @@ class ProductI18n extends BaseController
         $limit = null;
 
         if (\Configuration::get('jtlconnector_truncate_desc')) {
-            $limit = (int) \Configuration::get('PS_PRODUCT_SHORT_DESC_LIMIT');
+            $limit = (int)\Configuration::get('PS_PRODUCT_SHORT_DESC_LIMIT');
             if ($limit <= 0) {
                 $limit = 800;
             }
@@ -83,7 +87,12 @@ class ProductI18n extends BaseController
                 }
 
                 foreach (ProductAttr::getI18nAttributes() as $attributeName) {
-                    $value = Utils::findAttributeByLanguageISO($attributeName, $i18n->getLanguageISO(), ...$data->getAttributes());
+                    $value = Utils::findAttributeByLanguageISO(
+                        $attributeName,
+                        $i18n->getLanguageISO(),
+                        ...
+                        $data->getAttributes()
+                    );
                     if (!\is_null($value) && \property_exists($model, $attributeName)) {
                         $model->{$attributeName}[$id] = $value->getValue();
                     }

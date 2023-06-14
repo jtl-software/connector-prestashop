@@ -30,11 +30,13 @@ class Payment extends BaseController
 
     public function getStats()
     {
-        return $this->db->getValue('
+        return $this->db->getValue(
+            '
 			SELECT COUNT(*)
 			FROM ' . \_DB_PREFIX_ . 'order_payment p
 			LEFT JOIN jtl_connector_link_payment l ON p.id_order_payment = l.endpoint_id
             WHERE l.host_id IS NULL AND p.transaction_id != ""
-        ');
+        '
+        );
     }
 }

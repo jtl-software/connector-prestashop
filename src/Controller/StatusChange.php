@@ -16,7 +16,10 @@ class StatusChange extends BaseController
             if ($status->getOrderStatus() == CustomerOrder::STATUS_CANCELLED) {
                 $newStatus = 6;
             } else {
-                if ($status->getPaymentStatus() == CustomerOrder::PAYMENT_STATUS_COMPLETED && $status->getOrderStatus() == CustomerOrder::STATUS_SHIPPED) {
+                if (
+                    $status->getPaymentStatus() == CustomerOrder::PAYMENT_STATUS_COMPLETED && $status->getOrderStatus(
+                    ) == CustomerOrder::STATUS_SHIPPED
+                ) {
                     $newStatus = 4;
                 } else {
                     if ($status->getOrderStatus() == CustomerOrder::STATUS_SHIPPED) {

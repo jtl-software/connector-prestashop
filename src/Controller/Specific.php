@@ -17,17 +17,19 @@ class Specific extends BaseController
     {
         $specifics = [];
 
-        $specificsIds = $this->db->executeS(\sprintf(
-            '
+        $specificsIds = $this->db->executeS(
+            \sprintf(
+                '
 			SELECT v.id_feature
 			FROM %sfeature_value v
 			LEFT JOIN jtl_connector_link_specific l ON v.id_feature = l.endpoint_id
             WHERE l.host_id IS NULL AND v.custom = 0
             GROUP BY v.id_feature
             LIMIT %s',
-            \_DB_PREFIX_,
-            $limit
-        ));
+                \_DB_PREFIX_,
+                $limit
+            )
+        );
 
         foreach ($specificsIds as $specificsId) {
             $specific = (new SpecificModel())
@@ -35,14 +37,16 @@ class Specific extends BaseController
                 ->setId(new Identity($specificsId['id_feature']))
                 ->setType('string');
 
-            $specificI18ns = $this->db->executeS(\sprintf(
-                '
+            $specificI18ns = $this->db->executeS(
+                \sprintf(
+                    '
                 SELECT *
                 FROM %sfeature_lang
                 WHERE id_feature = "%s"',
-                \_DB_PREFIX_,
-                $specificsId['id_feature']
-            ));
+                    \_DB_PREFIX_,
+                    $specificsId['id_feature']
+                )
+            );
 
             foreach ($specificI18ns as $specificI18n) {
                 $languageIso = Utils::getInstance()->getLanguageIsoById($specificI18n['id_lang']);
@@ -56,36 +60,42 @@ class Specific extends BaseController
                 }
             }
             // SpecificValues
-            $specificValueData = $this->db->executeS(\sprintf(
-                '
+            $specificValueData = $this->db->executeS(
+                \sprintf(
+                    '
                 SELECT *
                 FROM %sfeature_value
                 WHERE custom = 0 AND id_feature = %s',
-                \_DB_PREFIX_,
-                $specificsId['id_feature']
-            ));
+                    \_DB_PREFIX_,
+                    $specificsId['id_feature']
+                )
+            );
 
             foreach ($specificValueData as $specificValueDataSet) {
                 $specificValue = (new SpecificValueModel())
                     ->setId(new Identity($specificValueDataSet['id_feature_value']))
                     ->setSpecificId($specific->getId());
 
-                $specificValueI18ns = $this->db->executeS(\sprintf(
-                    '
+                $specificValueI18ns = $this->db->executeS(
+                    \sprintf(
+                        '
                     SELECT *
                     FROM %sfeature_value_lang
                     WHERE id_feature_value = %s',
-                    \_DB_PREFIX_,
-                    $specificValueDataSet['id_feature_value']
-                ));
+                        \_DB_PREFIX_,
+                        $specificValueDataSet['id_feature_value']
+                    )
+                );
 
                 foreach ($specificValueI18ns as $specificValueI18n) {
                     $languageIso = Utils::getInstance()->getLanguageIsoById($specificValueI18n['id_lang']);
                     if ($languageIso !== false) {
-                        $specificValue->addI18n((new SpecificValueI18nModel())
-                            ->setLanguageISO($languageIso)
-                            ->setSpecificValueId($specificValue->getId())
-                            ->setValue((string)$specificValueI18n['value']));
+                        $specificValue->addI18n(
+                            (new SpecificValueI18nModel())
+                                ->setLanguageISO($languageIso)
+                                ->setSpecificValueId($specificValue->getId())
+                                ->setValue((string)$specificValueI18n['value'])
+                        );
                     }
                 }
                 $specific->addValue($specificValue);
@@ -125,11 +135,15 @@ class Specific extends BaseController
             }
         } catch (\Exception $e) {
             $specificI18ns = $specific->getI18ns();
-            Logger::write(\sprintf(
-                '
+            Logger::write(
+                \sprintf(
+                    '
                 Error saving Specific: %s. Presta doesn\'t allow special characters in their specifics',
-                \reset($specificI18ns)->getName()
-            ), Logger::ERROR, 'global');
+                    \reset($specificI18ns)->getName()
+                ),
+                Logger::ERROR,
+                'global'
+            );
 
             return $specific;
         }
@@ -159,12 +173,17 @@ class Specific extends BaseController
             } catch (\Exception $e) {
                 $specificValueI18ns = $specificValue->getI18ns();
                 $specificI18ns      = $specific->getI18ns();
-                Logger::write(\sprintf(
-                    '
-                Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their specifics_value',
-                    \reset($specificValueI18ns)->getValue(),
-                    \reset($specificI18ns)->getName()
-                ), Logger::ERROR, 'global');
+                Logger::write(
+                    \sprintf(
+                        '
+                Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their 
+                specifics_value',
+                        \reset($specificValueI18ns)->getValue(),
+                        \reset($specificI18ns)->getName()
+                    ),
+                    Logger::ERROR,
+                    'global'
+                );
                 continue;
             }
 
@@ -176,6 +195,52 @@ class Specific extends BaseController
         $this->removeOldSpecificValues($specific, $existingSpecificValues);
 
         return $specific;
+    }
+
+    protected function getAttributeExists(SpecificModel $specific)
+    {
+        $defaultIsoId   = \Context::getContext()->language->id;
+        $defaultIsoCode = (new Utils())->getLanguageIsoById((string)\Context::getContext()->language->id);
+
+        foreach ($specific->getI18ns() as $i18n) {
+            if ($i18n->getLanguageISO() === $defaultIsoCode) {
+                $sql = \sprintf(
+                    'SELECT id_feature
+                            FROM %sfeature_lang
+                            WHERE name = "%s"
+                            AND id_lang = %s',
+                    \_DB_PREFIX_,
+                    $i18n->getName(),
+                    $defaultIsoId
+                );
+
+                $id = $this->db->getValue($sql);
+
+                if ($this->isAttribute($id)) {
+                    return $id;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    protected function isAttribute($specificId)
+    {
+        if (!$specificId) {
+            return false;
+        }
+
+        return (bool)$this->db->getValue(
+            \sprintf(
+                '
+            SELECT COUNT(*)
+            FROM %sfeature_value
+            WHERE custom = 1 AND id_feature = %s',
+                \_DB_PREFIX_,
+                $specificId
+            )
+        );
     }
 
     protected function removeOldSpecificValues(SpecificModel $specific, $existingSpecificValues = [])
@@ -215,32 +280,38 @@ class Specific extends BaseController
         }
     }
 
-    protected function getAttributeExists(SpecificModel $specific)
+    public function getStats()
     {
-        $defaultIsoId   = \Context::getContext()->language->id;
-        $defaultIsoCode = (new Utils())->getLanguageIsoById((string)\Context::getContext()->language->id);
+        return $this->db->getValue(
+            \sprintf(
+                '
+        SELECT COUNT(*)
+        FROM (SELECT v.id_feature
+              FROM %sfeature_value v
+              LEFT JOIN jtl_connector_link_specific l ON v.id_feature = l.endpoint_id
+              WHERE l.host_id IS NULL AND v.custom = 0
+              GROUP BY v.id_feature) as Z',
+                \_DB_PREFIX_
+            )
+        );
+    }
 
-        foreach ($specific->getI18ns() as $i18n) {
-            if ($i18n->getLanguageISO() === $defaultIsoCode) {
-                $sql = \sprintf(
-                    'SELECT id_feature
-                            FROM %sfeature_lang
-                            WHERE name = "%s"
-                            AND id_lang = %s',
-                    \_DB_PREFIX_,
-                    $i18n->getName(),
-                    $defaultIsoId
-                );
-
-                $id = $this->db->getValue($sql);
-
-                if ($this->isAttribute($id)) {
-                    return $id;
-                }
-            }
+    public function getSpecificValues($specificId)
+    {
+        if (!$specificId) {
+            return false;
         }
 
-        return false;
+        return $this->db->executeS(
+            \sprintf(
+                '
+            SELECT *
+            FROM %sfeature_value
+            WHERE custom = 0 AND id_feature = %s',
+                \_DB_PREFIX_,
+                $specificId
+            )
+        );
     }
 
     protected function deleteData(SpecificModel $specific)
@@ -258,51 +329,5 @@ class Specific extends BaseController
         }
 
         return $specific;
-    }
-
-    public function getStats()
-    {
-        return $this->db->getValue(\sprintf(
-            '
-        SELECT COUNT(*)
-        FROM (SELECT v.id_feature
-              FROM %sfeature_value v
-              LEFT JOIN jtl_connector_link_specific l ON v.id_feature = l.endpoint_id
-              WHERE l.host_id IS NULL AND v.custom = 0
-              GROUP BY v.id_feature) as Z',
-            \_DB_PREFIX_
-        ));
-    }
-
-    protected function isAttribute($specificId)
-    {
-        if (!$specificId) {
-            return false;
-        }
-
-        return (bool)$this->db->getValue(\sprintf(
-            '
-            SELECT COUNT(*)
-            FROM %sfeature_value
-            WHERE custom = 1 AND id_feature = %s',
-            \_DB_PREFIX_,
-            $specificId
-        ));
-    }
-
-    public function getSpecificValues($specificId)
-    {
-        if (!$specificId) {
-            return false;
-        }
-
-        return $this->db->executeS(\sprintf(
-            '
-            SELECT *
-            FROM %sfeature_value
-            WHERE custom = 0 AND id_feature = %s',
-            \_DB_PREFIX_,
-            $specificId
-        ));
     }
 }

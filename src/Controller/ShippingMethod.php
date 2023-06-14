@@ -9,7 +9,7 @@ class ShippingMethod extends BaseController
         $return = [];
 
         foreach (\Carrier::getCarriers(null, true) as $data) {
-            $model = $this->mapper->toHost((array) $data);
+            $model = $this->mapper->toHost((array)$data);
 
             $return[] = $model;
         }

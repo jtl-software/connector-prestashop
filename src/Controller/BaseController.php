@@ -124,10 +124,19 @@ abstract class BaseController extends Controller
 
     protected function getLanguageData(string $table, string $relatedColumn, int $relatedId)
     {
-        return $this->db->executeS(\sprintf('
+        return $this->db->executeS(
+            \sprintf(
+                '
 			SELECT al.*
 			FROM %s%s al
 			LEFT JOIN %slang AS l ON l.id_lang = al.id_lang
-            WHERE l.id_lang IS NOT NULL AND al.%s = %d', \_DB_PREFIX_, $table, \_DB_PREFIX_, $relatedColumn, $relatedId));
+            WHERE l.id_lang IS NOT NULL AND al.%s = %d',
+                \_DB_PREFIX_,
+                $table,
+                \_DB_PREFIX_,
+                $relatedColumn,
+                $relatedId
+            )
+        );
     }
 }

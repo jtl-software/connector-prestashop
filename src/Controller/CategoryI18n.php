@@ -9,10 +9,14 @@ class CategoryI18n extends BaseController
     public function pullData($data, $model)
     {
         $result = $this->db->executeS(
-            \sprintf('SELECT cl.*
+            \sprintf(
+                'SELECT cl.*
 			FROM ' . \_DB_PREFIX_ . 'category_lang cl
 			LEFT JOIN ' . \_DB_PREFIX_ . 'lang AS l ON l.id_lang = cl.id_lang
-			WHERE cl.id_category = %s AND cl.id_shop = %s', $data['id_category'], \Context::getContext()->shop->id)
+			WHERE cl.id_category = %s AND cl.id_shop = %s',
+                $data['id_category'],
+                \Context::getContext()->shop->id
+            )
         );
 
         $return = [];

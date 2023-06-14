@@ -69,12 +69,12 @@ class Connector extends Controller
                     $value *= 1024;
             }
 
-            return (int) $value;
+            return (int)$value;
         };
 
         $serverInfo = new ConnectorServerInfo();
         $serverInfo->setMemoryLimit($returnMegaBytes(\ini_get('memory_limit')))
-            ->setExecutionTime((int) \ini_get('max_execution_time'))
+            ->setExecutionTime((int)\ini_get('max_execution_time'))
             ->setPostMaxSize($returnMegaBytes(\ini_get('post_max_size')))
             ->setUploadMaxFilesize($returnMegaBytes(\ini_get('upload_max_filesize')));
 

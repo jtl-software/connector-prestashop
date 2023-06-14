@@ -11,16 +11,18 @@ class ProductSpecific extends BaseController
 {
     public function pullData(ProductModel $product)
     {
-        $specifics = $this->db->executeS(\sprintf(
-            '
+        $specifics = $this->db->executeS(
+            \sprintf(
+                '
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
             WHERE custom = 0 AND `id_product` = "%s"',
-            \_DB_PREFIX_,
-            \_DB_PREFIX_,
-            $product->getId()->getEndpoint()
-        ));
+                \_DB_PREFIX_,
+                \_DB_PREFIX_,
+                $product->getId()->getEndpoint()
+            )
+        );
 
         $productSpecifics = [];
 
@@ -51,34 +53,36 @@ class ProductSpecific extends BaseController
         $this->unlinkOldSpecificValues($product, $currentValues);
     }
 
+    protected function linkingExists(ProductSpecificModel $productSpecific)
+    {
+        return (int)$this->db->getValue(
+            \sprintf(
+                '
+            SELECT COUNT(*)
+            FROM %sfeature_product
+            WHERE id_feature = "%s" AND id_product = "%s" AND id_feature_value = "%s"',
+                \_DB_PREFIX_,
+                $productSpecific->getId()->getEndpoint(),
+                $productSpecific->getProductId()->getEndpoint(),
+                $productSpecific->getSpecificValueId()->getEndpoint()
+            )
+        );
+    }
+
     protected function createLinking(ProductSpecificModel $productSpecific, \Product $product)
     {
         if ($productSpecific->getId()->getEndpoint() && $productSpecific->getSpecificValueId()->getEndpoint()) {
             return $this->db->insert(
                 'feature_product',
                 [
-                    'id_feature'       => $productSpecific->getId()->getEndpoint(),
-                    'id_product'       => $product->id,
+                    'id_feature' => $productSpecific->getId()->getEndpoint(),
+                    'id_product' => $product->id,
                     'id_feature_value' => $productSpecific->getSpecificValueId()->getEndpoint(),
                 ]
             );
         }
 
         return false;
-    }
-
-    protected function linkingExists(ProductSpecificModel $productSpecific)
-    {
-        return (int)$this->db->getValue(\sprintf(
-            '
-            SELECT COUNT(*)
-            FROM %sfeature_product
-            WHERE id_feature = "%s" AND id_product = "%s" AND id_feature_value = "%s"',
-            \_DB_PREFIX_,
-            $productSpecific->getId()->getEndpoint(),
-            $productSpecific->getProductId()->getEndpoint(),
-            $productSpecific->getSpecificValueId()->getEndpoint()
-        ));
     }
 
     protected function unlinkOldSpecificValues(ProductModel $product, $existingSpecificValues = [])

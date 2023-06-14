@@ -54,11 +54,13 @@ class Manufacturer extends BaseController
 
     public function getStats()
     {
-        return $this->db->getValue('
+        return $this->db->getValue(
+            '
 			SELECT COUNT(*) 
 			FROM ' . \_DB_PREFIX_ . 'manufacturer m
 			LEFT JOIN jtl_connector_link_manufacturer l ON m.id_manufacturer = l.endpoint_id
             WHERE l.host_id IS NULL
-        ');
+        '
+        );
     }
 }
