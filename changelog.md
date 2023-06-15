@@ -1,6 +1,7 @@
 ## Unreleased
 
 ## unreleased
+- CO-2373 - Fix database exception when rrp > net price
 
 ## 1.13.3 _2023-04-11_
 - CO-2323 - Fixed wrong Presta Version in Wawi License check
