@@ -31,7 +31,7 @@ class ProductAttr extends BaseMapper
             $featureId = $this->getIdFeatureByName($defaultFeatureName, $defaultLanguageId);
 
             if ($deleteInsert && $featureId) {
-                $this->db->executeS(sprintf('DELETE FROM %sfeature_product WHERE id_feature = %s AND id_product = %s', _DB_PREFIX_, $featureId, $product->id));
+                $this->db->execute(sprintf('DELETE FROM %sfeature_product WHERE id_feature = %s AND id_product = %s', _DB_PREFIX_, $featureId, $product->id));
             }
 
             $feature = new \Feature($featureId);
