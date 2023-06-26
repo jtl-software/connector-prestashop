@@ -1,6 +1,7 @@
 ## Unreleased
 
 ## unreleased
+- CO-2198 - update logic for main_category_id
 
 ## 1.13.3 _2023-04-11_
 - CO-2323 - Fixed wrong Presta Version in Wawi License check
