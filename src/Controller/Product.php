@@ -402,8 +402,8 @@ class Product extends BaseController
 
         foreach ($foundSpecialAttributes as $key => $value) {
             if ($value === 'false' || $value === 'true') {
-                $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-            } elseif (is_numeric($value)) {
+                $value = \filter_var($value, \FILTER_VALIDATE_BOOLEAN);
+            } elseif (\is_numeric($value)) {
                 $value = (int)$value;
                 if ($key === 'main_category_id') {
                     $found = false;
