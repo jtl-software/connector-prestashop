@@ -7,12 +7,12 @@ use jtl\Connector\Presta\Utils\Utils;
 class Payment extends BaseMapper
 {
     protected $pull = [
-        'id' => 'id_order_payment',
-        'customerOrderId' => 'id_order',
-        'creationDate' => 'date_add',
+        'id'                => 'id_order_payment',
+        'customerOrderId'   => 'id_order',
+        'creationDate'      => 'date_add',
         'paymentModuleCode' => null,
-        'totalSum' => 'amount',
-        'transactionId' => null
+        'totalSum'          => 'amount',
+        'transactionId'     => null
     ];
 
     /**

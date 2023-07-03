@@ -10,7 +10,7 @@ class ProductAttrI18n extends BaseController
         $resultV = $this->getLanguageData('feature_value_lang', 'id_feature_value', (int)$data['id_feature_value']);
 
         $return = [];
-        $i18ns = [];
+        $i18ns  = [];
 
         foreach ($resultA as $aData) {
             $i18ns[$aData['id_lang']] = $aData;

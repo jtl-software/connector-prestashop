@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Checksum;
 
-use \jtl\Connector\Checksum\IChecksumLoader;
+use jtl\Connector\Checksum\IChecksumLoader;
 
 class ChecksumLoader implements IChecksumLoader
 {

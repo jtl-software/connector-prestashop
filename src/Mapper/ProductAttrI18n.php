@@ -8,9 +8,9 @@ class ProductAttrI18n extends BaseMapper
 {
     protected $pull = [
         'productAttrId' => 'id_feature',
-        'languageISO' => null,
-        'name' => 'name',
-        'value' => 'value'
+        'languageISO'   => null,
+        'name'          => 'name',
+        'value'         => 'value'
     ];
 
     protected function languageISO($data)

@@ -5,21 +5,21 @@ namespace jtl\Connector\Presta\Mapper;
 class CustomerOrderShippingAddress extends BaseMapper
 {
     protected $pull = [
-        'id' => 'id_address',
-        'customerId' => 'id_customer',
-        'city' => 'city',
-        'company' => 'company',
-        'countryIso' => 'countryIso',
-        'eMail' => 'email',
+        'id'               => 'id_address',
+        'customerId'       => 'id_customer',
+        'city'             => 'city',
+        'company'          => 'company',
+        'countryIso'       => 'countryIso',
+        'eMail'            => 'email',
         'extraAddressLine' => 'address2',
-        'firstName' => 'firstname',
-        'lastName' => 'lastname',
-        'mobile' => 'phone_mobile',
-        'phone' => 'phone',
-        'salutation' => null,
-        'state' => 'state',
-        'street' => 'address1',
-        'zipCode' => 'postcode'
+        'firstName'        => 'firstname',
+        'lastName'         => 'lastname',
+        'mobile'           => 'phone_mobile',
+        'phone'            => 'phone',
+        'salutation'       => null,
+        'state'            => 'state',
+        'street'           => 'address1',
+        'zipCode'          => 'postcode'
     ];
 
     protected function salutation($data)

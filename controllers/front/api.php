@@ -1,5 +1,7 @@
 <?php
 
+//phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
+
 use jtl\Connector\Application\Application;
 use jtl\Connector\Presta\Presta;
 

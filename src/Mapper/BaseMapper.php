@@ -2,23 +2,23 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use \jtl\Connector\Model\Identity;
+use jtl\Connector\Model\Identity;
 
 class BaseMapper
 {
-    protected $db = null;
-    private $model = null;
-    private $type;
+    protected $db            = null;
     protected $endpointModel = null;
+    private $model           = null;
+    private $type;
 
     public function __construct()
     {
-        $reflect = new \ReflectionClass($this);
+        $reflect   = new \ReflectionClass($this);
         $typeClass = "\\jtl\\Connector\\Type\\{$reflect->getShortName()}";
 
-        $this->db = \DB::getInstance();
+        $this->db    = \DB::getInstance();
         $this->model = "\\jtl\\Connector\\Model\\{$reflect->getShortName()}";
-        $this->type = new $typeClass();
+        $this->type  = new $typeClass();
     }
 
     public function toHost($data)
@@ -26,30 +26,30 @@ class BaseMapper
         $model = new $this->model();
 
         foreach ($this->pull as $host => $endpoint) {
-            $setter = 'set'.ucfirst($host);
-            $fnName = strtolower($host);
+            $setter = 'set' . \ucfirst($host);
+            $fnName = \strtolower($host);
 
-            if (method_exists($this, $fnName)) {
+            if (\method_exists($this, $fnName)) {
                 $value = $this->$fnName($data);
             } else {
-                $value = isset($data[$endpoint]) ? $data[$endpoint] : null;
+                $value    = isset($data[$endpoint]) ? $data[$endpoint] : null;
                 $property = $this->type->getProperty($host);
 
                 if ($property->isNavigation()) {
-                    $subControllerName = "\\jtl\\Connector\\Presta\\Controller\\".$endpoint;
-                    
-                    if (class_exists($subControllerName)) {
+                    $subControllerName = "\\jtl\\Connector\\Presta\\Controller\\" . $endpoint;
+
+                    if (\class_exists($subControllerName)) {
                         $subController = new $subControllerName();
-                        $value = $subController->pullData($data, $model);
+                        $value         = $subController->pullData($data, $model);
                     }
                 } elseif ($property->isIdentity()) {
                     $value = new Identity($value);
                 } elseif ($property->getType() == 'boolean') {
-                    $value = (bool) $value;
+                    $value = (bool)$value;
                 } elseif ($property->getType() == 'integer') {
-                    $value = intval($value);
+                    $value = \intval($value);
                 } elseif ($property->getType() == 'double') {
-                    $value = floatval($value);
+                    $value = \floatval($value);
                 } elseif ($property->getType() == 'DateTime') {
                     $value = $value == '0000-00-00' || $value == '0000-00-00 00:00:00' ? null : new \DateTime($value);
                 }
@@ -68,8 +68,8 @@ class BaseMapper
         $id = null;
 
         if (isset($this->identity)) {
-            list($hostField, $endpointField) = explode('|', $this->identity);
-            $endpointId = $data->{'get'.ucfirst($hostField)}()->getEndpoint();
+            list($hostField, $endpointField) = \explode('|', $this->identity);
+            $endpointId                      = $data->{'get' . \ucfirst($hostField)}()->getEndpoint();
             if (!empty($endpointId)) {
                 $id = $endpointId;
             }
@@ -78,20 +78,20 @@ class BaseMapper
         $model = new $this->endpointModel($id);
 
         foreach ($this->push as $endpoint => $host) {
-            $fnName = strtolower($endpoint);
+            $fnName = \strtolower($endpoint);
 
-            if (method_exists($this, $fnName)) {
+            if (\method_exists($this, $fnName)) {
                 $value = $this->$fnName($data, $customData);
             } else {
-                $getter = 'get'.ucfirst($host);
+                $getter = 'get' . \ucfirst($host);
 
-                $value = $data->$getter();
+                $value    = $data->$getter();
                 $property = $this->type->getProperty($host);
 
                 if ($property->isNavigation()) {
-                    $subControllerName = "\\jtl\\Connector\\Presta\\Controller\\".$endpoint;
-                    
-                    if (class_exists($subControllerName)) {
+                    $subControllerName = "\\jtl\\Connector\\Presta\\Controller\\" . $endpoint;
+
+                    if (\class_exists($subControllerName)) {
                         $subController = new $subControllerName();
                         $subController->pushData($data, $model);
                     }

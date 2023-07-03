@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-use \jtl\Connector\Model\ManufacturerI18n as ManufacturerI18nModel;
+use jtl\Connector\Model\ManufacturerI18n as ManufacturerI18nModel;
 use jtl\Connector\Presta\Utils\Utils;
 
 class ManufacturerI18n extends BaseController
@@ -34,9 +34,9 @@ class ManufacturerI18n extends BaseController
         foreach ($data->getI18ns() as $i18n) {
             $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
 
-            $model->description[$id] = \Tools::htmlentitiesUTF8($i18n->getDescription());
-            $model->meta_title[$id] = $i18n->getTitleTag();
-            $model->meta_keywords[$id] = $i18n->getMetaKeywords();
+            $model->description[$id]      = \Tools::htmlentitiesUTF8($i18n->getDescription());
+            $model->meta_title[$id]       = $i18n->getTitleTag();
+            $model->meta_keywords[$id]    = $i18n->getMetaKeywords();
             $model->meta_description[$id] = $i18n->getMetaDescription();
         }
     }

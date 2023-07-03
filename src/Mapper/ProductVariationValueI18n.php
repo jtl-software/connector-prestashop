@@ -8,8 +8,8 @@ class ProductVariationValueI18n extends BaseMapper
 {
     protected $pull = [
         'productVariationValueId' => 'id_attribute',
-        'languageISO' => null,
-        'name' => 'name'
+        'languageISO'             => null,
+        'name'                    => 'name'
     ];
 
     protected function languageISO($data)

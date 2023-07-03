@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Auth;
 
-use \jtl\Connector\Authentication\ITokenLoader;
+use jtl\Connector\Authentication\ITokenLoader;
 
 class TokenLoader implements ITokenLoader
 {

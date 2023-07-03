@@ -11,11 +11,11 @@ class Category extends BaseController
         $result = $this->db->executeS(
             '
 			SELECT c.* 
-			FROM '._DB_PREFIX_.'category c
+			FROM ' . \_DB_PREFIX_ . 'category c
 			LEFT JOIN jtl_connector_link_category l ON c.id_category = l.endpoint_id
             WHERE l.host_id IS NULL AND c.id_parent != 0 AND c.is_root_category = 0
             ORDER BY c.nleft
-            LIMIT '.$limit
+            LIMIT ' . $limit
         );
 
         $return = [];
@@ -60,11 +60,13 @@ class Category extends BaseController
 
     public function getStats()
     {
-        return $this->db->getValue('
+        return $this->db->getValue(
+            '
 			SELECT COUNT(*) 
-			FROM '._DB_PREFIX_.'category c
+			FROM ' . \_DB_PREFIX_ . 'category c
 			LEFT JOIN jtl_connector_link_category l ON c.id_category = l.endpoint_id
             WHERE l.host_id IS NULL AND c.id_parent != 0 AND c.is_root_category = 0
-        ');
+        '
+        );
     }
 }

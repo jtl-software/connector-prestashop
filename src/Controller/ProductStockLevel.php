@@ -8,10 +8,10 @@ class ProductStockLevel extends BaseController
 {
     public function pullData($data, $model, $limit = null)
     {
-        $query = 'SELECT quantity FROM '._DB_PREFIX_.'stock_available WHERE id_product='.$data['id_product'];
+        $query = 'SELECT quantity FROM ' . \_DB_PREFIX_ . 'stock_available WHERE id_product=' . $data['id_product'];
 
         if (!empty($data['id_product_attribute'])) {
-            $query .= ' AND id_product_attribute = '.$data['id_product_attribute'];
+            $query .= ' AND id_product_attribute = ' . $data['id_product_attribute'];
         } else {
             $query .= ' AND id_product_attribute = 0';
         }
@@ -20,7 +20,7 @@ class ProductStockLevel extends BaseController
 
         $stockLevel = new ProductStockLevelModel();
         $stockLevel->setProductId($model->getId());
-        $stockLevel->setStockLevel(floatval($stock));
+        $stockLevel->setStockLevel(\floatval($stock));
 
         return $stockLevel;
     }
@@ -30,13 +30,13 @@ class ProductStockLevel extends BaseController
         $id = $data->getProductId()->getEndpoint();
 
         if (!empty($id)) {
-            if (strpos($id, '_') === false) {
+            if (\strpos($id, '_') === false) {
                 \StockAvailable::setQuantity($id, null, $data->getStockLevel());
-                if (is_object($model) && property_exists($model, 'out_of_stock')) {
+                if (\is_object($model) && \property_exists($model, 'out_of_stock')) {
                     \StockAvailable::setProductOutOfStock($id, $model->out_of_stock == 1);
                 }
             } else {
-                list($productId, $combiId) = explode('_', $id);
+                list($productId, $combiId) = \explode('_', $id);
 
                 if (!empty($productId) && !empty($combiId)) {
                     \StockAvailable::setQuantity($productId, $combiId, $data->getStockLevel());

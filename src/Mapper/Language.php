@@ -5,11 +5,11 @@ namespace jtl\Connector\Presta\Mapper;
 class Language extends BaseMapper
 {
     protected $pull = [
-        'id' => 'id_lang',
-        'isDefault' => null,
+        'id'          => 'id_lang',
+        'isDefault'   => null,
         'languageISO' => 'iso3',
         'nameEnglish' => 'name',
-        'nameGerman' => 'name'
+        'nameGerman'  => 'name'
     ];
 
     protected function isDefault($data)

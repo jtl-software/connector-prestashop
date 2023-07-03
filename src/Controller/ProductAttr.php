@@ -16,20 +16,20 @@ use PrestaShopException;
 class ProductAttr extends BaseController
 {
     public const
-        DELIVERY_OUT_STOCK = 'delivery_out_stock',
-        DELIVERY_IN_STOCK = 'delivery_in_stock',
-        AVAILABLE_LATER = 'available_later',
-        TAGS = 'tags',
+        DELIVERY_OUT_STOCK       = 'delivery_out_stock',
+        DELIVERY_IN_STOCK        = 'delivery_in_stock',
+        AVAILABLE_LATER          = 'available_later',
+        TAGS                     = 'tags',
         RECOMMENDED_RETAIL_PRICE = 'recommended_retail_price';
 
     /**
      * @var array<string>
      */
     protected static $specialAttributes = [
-        'online_only' => 'online_only',
-        'products_status' => 'active',
+        'online_only'      => 'online_only',
+        'products_status'  => 'active',
         'main_category_id' => 'id_category_default',
-        'carriers' => 'carriers',
+        'carriers'         => 'carriers',
     ];
 
     /**
@@ -40,6 +40,22 @@ class ProductAttr extends BaseController
         self::DELIVERY_IN_STOCK,
         self::AVAILABLE_LATER,
     ];
+
+    /**
+     * @return array<string>
+     */
+    public static function getSpecialAttributes(): array
+    {
+        return self::$specialAttributes;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public static function getI18nAttributes(): array
+    {
+        return self::$i18nAttributes;
+    }
 
     /**
      * @param $data
@@ -55,23 +71,27 @@ class ProductAttr extends BaseController
         $excludedFeaturesIds = [];
 
         $defaultLanguageId = Context::getContext()->language->id;
-        $rrpFeatureId = $this->mapper->getIdFeatureByName(self::RECOMMENDED_RETAIL_PRICE, $defaultLanguageId);
+        $rrpFeatureId      = $this->mapper->getIdFeatureByName(self::RECOMMENDED_RETAIL_PRICE, $defaultLanguageId);
         if ($rrpFeatureId) {
             $excludedFeaturesIds[] = $rrpFeatureId;
         }
 
-        $featuresQuery = sprintf(
+        $featuresQuery = \sprintf(
             '
             SELECT fp.id_feature, fp.id_product, fp.id_feature_value
             FROM `%sfeature_product` fp
             LEFT JOIN `%sfeature_value` fv ON (fp.id_feature_value = fv.id_feature_value)
             WHERE custom = 1 AND `id_product` = "%s"',
-            _DB_PREFIX_,
-            _DB_PREFIX_,
-            $productId);
+            \_DB_PREFIX_,
+            \_DB_PREFIX_,
+            $productId
+        );
 
         if (!empty($excludedFeaturesIds)) {
-            $featuresQuery = sprintf($featuresQuery . ' AND fp.id_feature NOT IN(%s)', implode(',', $excludedFeaturesIds));
+            $featuresQuery = \sprintf(
+                $featuresQuery . ' AND fp.id_feature NOT IN(%s)',
+                \implode(',', $excludedFeaturesIds)
+            );
         }
 
         $attributes = $this->db->executeS($featuresQuery);
@@ -96,17 +116,17 @@ class ProductAttr extends BaseController
     public function pushData($data, $model)
     {
         $attributesToIgnore = self::getAttributesToIgnore();
-        $defaultLanguageId = Context::getContext()->language->id;
+        $defaultLanguageId  = Context::getContext()->language->id;
 
         $this->removeCurrentAttributes($model, ...$data->getAttributes());
         foreach ($data->getAttributes() as $attr) {
             $isIgnoredAttribute = false;
             if ($attr->getIsCustomProperty() === false || Configuration::get('jtlconnector_custom_fields')) {
                 $featureData = [];
-                $languageId = false;
+                $languageId  = false;
 
                 foreach ($attr->getI18ns() as $i18n) {
-                    $name = array_search($i18n->getName(), $attributesToIgnore);
+                    $name = \array_search($i18n->getName(), $attributesToIgnore);
                     if ($name === false) {
                         $name = $i18n->getName();
                     }
@@ -116,11 +136,13 @@ class ProductAttr extends BaseController
                         break;
                     }
 
-                    $languageId = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO()) ?? $defaultLanguageId;
+                    $languageId = Utils::getInstance()->getLanguageIdByIso(
+                        $i18n->getLanguageISO()
+                    ) ?? $defaultLanguageId;
 
                     $name = $i18n->getName();
                     if (!empty($name)) {
-                        $featureData[$languageId]['name'] = $name;
+                        $featureData[$languageId]['name']  = $name;
                         $featureData[$languageId]['value'] = $i18n->getValue();
                     }
                 }
@@ -135,6 +157,18 @@ class ProductAttr extends BaseController
     }
 
     /**
+     * @return array<string>
+     */
+    public function getAttributesToIgnore(): array
+    {
+        return \array_merge(
+            self::$specialAttributes,
+            \array_combine(\array_values(self::$i18nAttributes), \array_values(self::$i18nAttributes)),
+            [self::TAGS => self::TAGS]
+        );
+    }
+
+    /**
      * @param $model
      * @param $jtlProductAttributes
      * @throws PrestaShopDatabaseException
@@ -144,26 +178,45 @@ class ProductAttr extends BaseController
     {
         $defaultPrestaLanguageId = (int)Context::getContext()->language->id;
 
-        $sql = sprintf('SELECT fp.*, fl.name FROM %sfeature_product fp 
+        $sql = \sprintf(
+            'SELECT fp.*, fl.name FROM %sfeature_product fp 
             LEFT JOIN %sfeature_value fv ON fp.id_feature = fv.id_feature AND fp.id_feature_value = fv.id_feature_value 
             LEFT JOIN %sfeature_lang fl ON fp.id_feature = fl.id_feature 
-            WHERE fp.id_product = %d AND fl.id_lang = %d AND fv.custom = 1', _DB_PREFIX_, _DB_PREFIX_, _DB_PREFIX_, $model->id, $defaultPrestaLanguageId);
+            WHERE fp.id_product = %d AND fl.id_lang = %d AND fv.custom = 1',
+            \_DB_PREFIX_,
+            \_DB_PREFIX_,
+            \_DB_PREFIX_,
+            $model->id,
+            $defaultPrestaLanguageId
+        );
 
         $psProductAttributes = $this->db->executeS($sql);
-        if (is_array($psProductAttributes)) {
-            $jtlProductAttributeNames = $this->getJtlProductAttributeNames($defaultPrestaLanguageId, ...$jtlProductAttributes);
+        if (\is_array($psProductAttributes)) {
+            $jtlProductAttributeNames = $this->getJtlProductAttributeNames(
+                $defaultPrestaLanguageId,
+                ...
+                $jtlProductAttributes
+            );
 
             $psAttributesToDelete = $psProductAttributes;
             if ((bool)\Configuration::get(\JTLConnector::CONFIG_DELETE_UNKNOWN_ATTRIBUTES) === false) {
-                $psAttributesToDelete = array_filter($psAttributesToDelete, function ($psProductAttribute) use ($jtlProductAttributeNames) {
-                    return in_array($psProductAttribute['name'], $jtlProductAttributeNames);
-                });
+                $psAttributesToDelete = \array_filter(
+                    $psAttributesToDelete,
+                    function ($psProductAttribute) use ($jtlProductAttributeNames) {
+                        return \in_array($psProductAttribute['name'], $jtlProductAttributeNames);
+                    }
+                );
             }
 
             if (!empty($psAttributesToDelete)) {
-                $featureValuesIds = array_column($psAttributesToDelete, 'id_feature_value');
+                $featureValuesIds = \array_column($psAttributesToDelete, 'id_feature_value');
                 $this->db->Execute(
-                    sprintf('DELETE FROM `%sfeature_product`WHERE `id_product` = %s AND `id_feature_value` IN (%s)', _DB_PREFIX_, $model->id, join(',', $featureValuesIds))
+                    \sprintf(
+                        'DELETE FROM `%sfeature_product`WHERE `id_product` = %s AND `id_feature_value` IN (%s)',
+                        \_DB_PREFIX_,
+                        $model->id,
+                        \join(',', $featureValuesIds)
+                    )
                 );
             }
         }
@@ -174,8 +227,10 @@ class ProductAttr extends BaseController
      * @param \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes
      * @return array
      */
-    protected function getJtlProductAttributeNames(int $psLanguageId, \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes): array
-    {
+    protected function getJtlProductAttributeNames(
+        int $psLanguageId,
+        \jtl\Connector\Model\ProductAttr ...$jtlProductAttributes
+    ): array {
         $jtlProductAttributeNames = [];
         foreach ($jtlProductAttributes as $jtlProductAttribute) {
             foreach ($jtlProductAttribute->getI18ns() as $productAttrI18n) {
@@ -198,37 +253,15 @@ class ProductAttr extends BaseController
             return false;
         }
 
-        return (bool)$this->db->getValue(sprintf(
-            '
+        return (bool)$this->db->getValue(
+            \sprintf(
+                '
             SELECT COUNT(*)
             FROM %sfeature_value
             WHERE custom = 0 AND id_feature = %s',
-            _DB_PREFIX_,
-            $attributeId
-        ));
-    }
-
-    /**
-     * @return array<string>
-     */
-    public static function getSpecialAttributes(): array
-    {
-        return self::$specialAttributes;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public static function getI18nAttributes(): array
-    {
-        return self::$i18nAttributes;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function getAttributesToIgnore(): array
-    {
-        return array_merge(self::$specialAttributes, array_combine(array_values(self::$i18nAttributes), array_values(self::$i18nAttributes)), [self::TAGS => self::TAGS]);
+                \_DB_PREFIX_,
+                $attributeId
+            )
+        );
     }
 }

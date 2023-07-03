@@ -10,7 +10,7 @@ class Currency extends BaseController
 
         foreach (\Currency::getCurrencies() as $data) {
             $model = $this->mapper->toHost($data);
-            
+
             $return[] = $model;
         }
 

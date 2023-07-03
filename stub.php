@@ -1,4 +1,5 @@
 <?php
+
 Phar::mapPhar('connector.phar');
 Phar::interceptFileFuncs();
 

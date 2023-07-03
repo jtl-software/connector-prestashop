@@ -5,16 +5,11 @@ namespace jtl\Connector\Presta\Mapper;
 class ProductAttr extends BaseMapper
 {
     protected $pull = [
-        'id' => 'id_feature',
-        'productId' => 'id_product',
-        'i18ns' => 'ProductAttrI18n',
+        'id'           => 'id_feature',
+        'productId'    => 'id_product',
+        'i18ns'        => 'ProductAttrI18n',
         'isTranslated' => null
     ];
-
-    protected function isTranslated($data)
-    {
-        return true;
-    }
 
     /**
      * @param \Product $product
@@ -24,14 +19,25 @@ class ProductAttr extends BaseMapper
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function saveCustomAttribute(\Product $product, int $defaultLanguageId, array $translations, bool $deleteInsert = false)
-    {
+    public function saveCustomAttribute(
+        \Product $product,
+        int $defaultLanguageId,
+        array $translations,
+        bool $deleteInsert = false
+    ) {
         $defaultFeatureName = $translations[$defaultLanguageId]['name'] ?? null;
         if ($defaultFeatureName !== null) {
             $featureId = $this->getIdFeatureByName($defaultFeatureName, $defaultLanguageId);
 
             if ($deleteInsert && $featureId) {
-                $this->db->execute(sprintf('DELETE FROM %sfeature_product WHERE id_feature = %s AND id_product = %s', _DB_PREFIX_, $featureId, $product->id));
+                $this->db->execute(
+                    \sprintf(
+                        'DELETE FROM %sfeature_product WHERE id_feature = %s AND id_product = %s',
+                        \_DB_PREFIX_,
+                        $featureId,
+                        $product->id
+                    )
+                );
             }
 
             $feature = new \Feature($featureId);
@@ -61,6 +67,18 @@ class ProductAttr extends BaseMapper
      */
     public function getIdFeatureByName(string $featureName, int $languageId)
     {
-        return $this->db->getValue(sprintf('SELECT id_feature FROM %sfeature_lang WHERE name = "%s" AND id_lang = %s', _DB_PREFIX_, $featureName, $languageId));
+        return $this->db->getValue(
+            \sprintf(
+                'SELECT id_feature FROM %sfeature_lang WHERE name = "%s" AND id_lang = %s',
+                \_DB_PREFIX_,
+                $featureName,
+                $languageId
+            )
+        );
+    }
+
+    protected function isTranslated($data)
+    {
+        return true;
     }
 }

@@ -1,5 +1,8 @@
 <?php
 
+//phpcs:ignoreFile PSR1.Methods.CamelCapsMethodName.NotCamelCaps
+
+
 namespace jtl\Connector\Presta\Mapper;
 
 use jtl\Connector\Presta\Utils\Utils;
@@ -7,55 +10,55 @@ use jtl\Connector\Presta\Utils\Utils;
 class Customer extends BaseMapper
 {
     protected $endpointModel = '\Customer';
-    protected $identity = 'id|id_customer';
+    protected $identity      = 'id|id_customer';
 
     protected $pull = [
-        'id' => 'cid',
-        'customerGroupId' => 'id_default_group',
-        'birthday' => null,
-        'city' => 'city',
-        'company' => 'company',
-        'countryIso' => 'iso_code',
-        'creationDate' => 'date_add',
-        'customerNumber' => 'id_customer',
-        'eMail' => 'email',
-        'extraAddressLine' => 'address2',
-        'firstName' => 'firstname',
-        'hasCustomerAccount' => null,
+        'id'                        => 'cid',
+        'customerGroupId'           => 'id_default_group',
+        'birthday'                  => null,
+        'city'                      => 'city',
+        'company'                   => 'company',
+        'countryIso'                => 'iso_code',
+        'creationDate'              => 'date_add',
+        'customerNumber'            => 'id_customer',
+        'eMail'                     => 'email',
+        'extraAddressLine'          => 'address2',
+        'firstName'                 => 'firstname',
+        'hasCustomerAccount'        => null,
         'hasNewsletterSubscription' => 'newsletter',
-        'isActive' => 'active',
-        'languageISO' => null,
-        'lastName' => 'lastname',
-        'mobile' => 'phone_mobile',
-        'phone' => 'phone',
-        'salutation' => null,
-        'street' => 'address1',
-        'vatNumber' => 'vat_number',
-        'websiteUrl' => 'website',
-        'zipCode' => 'postcode'
+        'isActive'                  => 'active',
+        'languageISO'               => null,
+        'lastName'                  => 'lastname',
+        'mobile'                    => 'phone_mobile',
+        'phone'                     => 'phone',
+        'salutation'                => null,
+        'street'                    => 'address1',
+        'vatNumber'                 => 'vat_number',
+        'websiteUrl'                => 'website',
+        'zipCode'                   => 'postcode'
     ];
 
     protected $push = [
-        'id' => 'id',
+        'id'               => 'id',
         'id_default_group' => 'customerGroupId',
-        'birthday' => null,
-        'city' => 'city',
-        'company' => 'company',
-        'date_add' => 'creationDate',
-        'email' => 'eMail',
-        'address2' => 'extraAddressLine',
-        'firstname' => 'firstName',
-        'newsletter' => 'hasNewsletterSubscription',
-        'active' => 'isActive',
-        'id_lang' => null,
-        'lastname' => 'lastName',
-        'phone_mobile' => 'mobile',
-        'phone' => 'phone',
-        'id_gender' => null,
-        'address1' => 'street',
-        'vat_number' => 'vatNumber',
-        'website' => 'websiteUrl',
-        'postcode' => 'zipCode'
+        'birthday'         => null,
+        'city'             => 'city',
+        'company'          => 'company',
+        'date_add'         => 'creationDate',
+        'email'            => 'eMail',
+        'address2'         => 'extraAddressLine',
+        'firstname'        => 'firstName',
+        'newsletter'       => 'hasNewsletterSubscription',
+        'active'           => 'isActive',
+        'id_lang'          => null,
+        'lastname'         => 'lastName',
+        'phone_mobile'     => 'mobile',
+        'phone'            => 'phone',
+        'id_gender'        => null,
+        'address1'         => 'street',
+        'vat_number'       => 'vatNumber',
+        'website'          => 'websiteUrl',
+        'postcode'         => 'zipCode'
     ];
 
     protected function hasCustomerAccount($data)
@@ -89,7 +92,7 @@ class Customer extends BaseMapper
 
     protected function birthday($data)
     {
-        if (is_array($data)) {
+        if (\is_array($data)) {
             return ($data['birthday'] === '0000-00-00' ? null : new \DateTime($data['birthday']));
         }
         return ($data->getBirthday() === null ? '0000-00-00' : $data->getBirthday()->format('Y-m-d'));
