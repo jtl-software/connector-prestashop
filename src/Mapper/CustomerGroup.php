@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class CustomerGroup extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'            => 'id_group',
         'isDefault'     => null,
         'applyNetPrice' => 'price_display_method',
@@ -12,8 +12,8 @@ class CustomerGroup extends BaseMapper
         'i18ns'         => 'CustomerGroupI18n'
     ];
 
-    protected function isDefault($data)
+    protected function isDefault($data): bool
     {
-        return $data['id_group'] === '1' ? true : false;
+        return $data['id_group'] === '1';
     }
 }

@@ -2,14 +2,14 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use jtl\Connector\Model\Identity;
+use Jtl\Connector\Core\Model\Identity;
 
 class Category extends BaseMapper
 {
-    protected $endpointModel = '\Category';
-    protected $identity      = 'id|id_category';
+    protected ?string $endpointModel = '\Category';
+    protected string $identity       = 'id|id_category';
 
-    protected $pull = [
+    protected array $pull = [
         'id'               => 'id_category',
         'parentCategoryId' => null,
         'isActive'         => 'active',
@@ -19,7 +19,7 @@ class Category extends BaseMapper
         'invisibilities'   => 'CategoryInvisibility'
     ];
 
-    protected $push = [
+    protected array $push = [
         'id_category'          => 'id',
         'id_parent'            => null,
         'active'               => 'isActive',
@@ -28,7 +28,7 @@ class Category extends BaseMapper
         'CategoryInvisibility' => 'invisibilities'
     ];
 
-    protected function parentCategoryId($data)
+    protected function parentCategoryId($data): Identity
     {
         if (($data['id_parent'] == \Category::getRootCategory()->id) || $data['id_parent'] == 2) {
             return new Identity(null);

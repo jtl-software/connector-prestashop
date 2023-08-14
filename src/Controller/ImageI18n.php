@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Class ImageI18n
- * @package jtl\Connector\Presta\Controller
+ * @package jtl\Connector\Connector\Controller
  */
 class ImageI18n extends BaseController
 {

@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class Image extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'           => 'id',
         'foreignKey'   => 'foreignKey',
         'filename'     => 'filename',

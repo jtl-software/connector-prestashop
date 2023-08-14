@@ -6,7 +6,7 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class ProductAttrI18n extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'productAttrId' => 'id_feature',
         'languageISO'   => null,
         'name'          => 'name',

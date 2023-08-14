@@ -6,7 +6,7 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class CustomerOrder extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'                 => 'id_order',
         'customerId'         => 'id_customer',
         'billingAddress'     => 'CustomerOrderBillingAddress',
@@ -31,7 +31,7 @@ class CustomerOrder extends BaseMapper
      * @param $data
      * @return mixed
      */
-    protected function paymentModuleCode($data)
+    protected function paymentModuleCode($data): mixed
     {
         return Utils::mapPaymentModuleCode($data['module']) ?? $data['payment'];
     }
@@ -40,7 +40,7 @@ class CustomerOrder extends BaseMapper
      * @param $data
      * @return false|mixed
      */
-    protected function languageISO($data)
+    protected function languageISO($data): mixed
     {
         return Utils::getInstance()->getLanguageIsoById($data['id_lang']);
     }
@@ -49,7 +49,7 @@ class CustomerOrder extends BaseMapper
      * @param $data
      * @return mixed|string
      */
-    protected function note($data)
+    protected function note($data): mixed
     {
         $result = $this->db->getRow(
             \sprintf(
@@ -61,6 +61,6 @@ class CustomerOrder extends BaseMapper
             )
         );
 
-        return isset($result['messages']) ? $result['messages'] : '';
+        return $result['messages'] ?? '';
     }
 }

@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class GlobalData extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'languages'       => 'Language',
         'currencies'      => 'Currency',
         'taxRates'        => 'TaxRate',

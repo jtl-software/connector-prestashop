@@ -9,10 +9,10 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class Customer extends BaseMapper
 {
-    protected $endpointModel = '\Customer';
-    protected $identity      = 'id|id_customer';
+    protected ?string $endpointModel = '\Customer';
+    protected string $identity       = 'id|id_customer';
 
-    protected $pull = [
+    protected array $pull = [
         'id'                        => 'cid',
         'customerGroupId'           => 'id_default_group',
         'birthday'                  => null,
@@ -38,7 +38,7 @@ class Customer extends BaseMapper
         'zipCode'                   => 'postcode'
     ];
 
-    protected $push = [
+    protected array $push = [
         'id'               => 'id',
         'id_default_group' => 'customerGroupId',
         'birthday'         => null,
@@ -61,7 +61,7 @@ class Customer extends BaseMapper
         'postcode'         => 'zipCode'
     ];
 
-    protected function hasCustomerAccount($data)
+    protected function hasCustomerAccount($data): bool
     {
         return true;
     }
@@ -71,7 +71,7 @@ class Customer extends BaseMapper
         return Utils::getInstance()->getLanguageIsoById($data['id_lang']);
     }
 
-    protected function salutation($data)
+    protected function salutation($data): string
     {
         $mappings = ['1' => 'm', '2' => 'w'];
         if (isset($mappings[$data['id_gender']])) {

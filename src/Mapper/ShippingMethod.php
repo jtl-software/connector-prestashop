@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class ShippingMethod extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'   => 'id_carrier',
         'name' => 'name'
     ];

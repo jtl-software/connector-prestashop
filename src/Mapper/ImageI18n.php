@@ -6,7 +6,7 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class ImageI18n extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'altText'     => 'altText',
         'languageISO' => null,
     ];

@@ -10,7 +10,7 @@ use PrestaShopException;
 
 /**
  * Class ProductAttr
- * @package jtl\Connector\Presta\Controller
+ * @package jtl\Connector\Connector\Controller
  * @property \jtl\Connector\Presta\Mapper\ProductAttr $mapper
  */
 class ProductAttr extends BaseController

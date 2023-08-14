@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class TaxRate extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'   => 'id_tax',
         'rate' => 'rate'
     ];

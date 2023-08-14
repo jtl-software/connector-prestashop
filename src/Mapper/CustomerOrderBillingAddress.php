@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class CustomerOrderBillingAddress extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'               => 'id_address',
         'customerId'       => 'id_customer',
         'city'             => 'city',
@@ -23,7 +23,7 @@ class CustomerOrderBillingAddress extends BaseMapper
         'zipCode'          => 'postcode'
     ];
 
-    protected function salutation($data)
+    protected function salutation($data): string
     {
         $mappings = ['1' => 'm', '2' => 'w'];
         if (isset($mappings[$data['id_gender']])) {

@@ -24,7 +24,7 @@ abstract class BaseController extends Controller
 
         $reflect              = new \ReflectionClass($this);
         $this->controllerName = $reflect->getShortName();
-        $mapperClass          = "\\jtl\\Connector\\Presta\\Mapper\\{$reflect->getShortName()}";
+        $mapperClass          = "\\jtl\\Connector\\Connector\\Mapper\\{$reflect->getShortName()}";
 
         if (\class_exists($mapperClass)) {
             $this->mapper = new $mapperClass();

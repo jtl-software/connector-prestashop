@@ -4,16 +4,16 @@ namespace jtl\Connector\Presta\Mapper;
 
 class Manufacturer extends BaseMapper
 {
-    protected $endpointModel = '\Manufacturer';
-    protected $identity      = 'id|id_manufacturer';
+    protected ?string $endpointModel = '\Manufacturer';
+    protected string $identity       = 'id|id_manufacturer';
 
-    protected $pull = [
+    protected array $pull = [
         'id'    => 'id_manufacturer',
         'name'  => 'name',
         'i18ns' => 'ManufacturerI18n'
     ];
 
-    protected $push = [
+    protected array $push = [
         'id'               => 'id',
         'id_manufacturer'  => 'id',
         'name'             => 'name',
@@ -21,7 +21,7 @@ class Manufacturer extends BaseMapper
         'active'           => null
     ];
 
-    protected function active($data)
+    protected function active($data): int
     {
         return 1;
     }

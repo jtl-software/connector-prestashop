@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class Currency extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'        => 'id_currency',
         'factor'    => 'conversion_rate',
         'nameHtml'  => 'name',
@@ -13,7 +13,7 @@ class Currency extends BaseMapper
         'isDefault' => null
     ];
 
-    protected function isDefault($data)
+    protected function isDefault($data): bool
     {
         return \Context::getContext()->currency->id == $data['id_currency'];
     }

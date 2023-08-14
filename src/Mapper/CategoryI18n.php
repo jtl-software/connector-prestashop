@@ -6,7 +6,7 @@ use jtl\Connector\Presta\Utils\Utils;
 
 class CategoryI18n extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'categoryId'      => 'id_category',
         'description'     => 'description',
         'languageISO'     => null,

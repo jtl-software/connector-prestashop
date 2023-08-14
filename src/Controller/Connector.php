@@ -30,7 +30,7 @@ class Connector extends Controller
         ];
 
         foreach ($mainControllers as $controller) {
-            $class = "\\jtl\\Connector\\Presta\\Controller\\{$controller}";
+            $class = "\\jtl\\Connector\\Connector\\Controller\\{$controller}";
 
             if (\class_exists($class)) {
                 try {

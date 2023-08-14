@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class Language extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'          => 'id_lang',
         'isDefault'   => null,
         'languageISO' => 'iso3',
@@ -12,8 +12,8 @@ class Language extends BaseMapper
         'nameGerman'  => 'name'
     ];
 
-    protected function isDefault($data)
+    protected function isDefault($data): bool
     {
-        return $data['id_lang'] === '1' ? true : false;
+        return $data['id_lang'] === '1';
     }
 }

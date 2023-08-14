@@ -2,31 +2,52 @@
 
 namespace jtl\Connector\Presta;
 
+use Composer\InstalledVersions;
+use DI\Container;
+use Jtl\Connector\Core\Authentication\TokenValidatorInterface;
+use Jtl\Connector\Core\Connector\ConnectorInterface;
+use Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface;
 use jtl\Connector\Core\Rpc\RequestPacket;
 use jtl\Connector\Core\Utilities\RpcMethod;
 use jtl\Connector\Base\Connector as BaseConnector;
 use jtl\Connector\Model\Product;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Result\Action;
-use jtl\Connector\Presta\Auth\TokenLoader;
+use jtl\Connector\Presta\Auth\TokenValidator;
 use jtl\Connector\Presta\Checksum\ChecksumLoader;
+use Noodlehaus\ConfigInterface;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
-class Presta extends BaseConnector
+class Connector implements ConnectorInterface
 {
-    protected $controller;
-    protected $action;
+    /**
+     * @var ContainerInterface
+     */
+    protected ContainerInterface $container;
 
-    public function initialize()
+    public function initialize(ConfigInterface $config, Container $container, EventDispatcher $dispatcher): void
     {
-        $this->setPrimaryKeyMapper(new PrimaryKeyMapper());
-        $this->setTokenLoader(new TokenLoader());
-        $this->setChecksumLoader(new ChecksumLoader());
+        $this->container = $container;
+
+        $this->container->set(
+            PrimaryKeyMapper::class,
+            fn(ContainerInterface $container) => new PrimaryKeyMapper()
+        );
+        $this->container->set(
+            ChecksumLoader::class,
+            fn(ContainerInterface $container) => new ChecksumLoader()
+        );
+        $this->container->set(
+            TokenValidator::class,
+            fn(ContainerInterface $container) => new TokenValidator(\Configuration::get('jtlconnector_pass'))
+        );
     }
 
     public function canHandle()
     {
         $controller = RpcMethod::buildController($this->getMethod()->getController());
-        $class      = "\\jtl\\Connector\\Presta\\Controller\\{$controller}";
+        $class      = "\\jtl\\Connector\\Connector\\Controller\\{$controller}";
 
         if (\class_exists($class)) {
             $this->controller = $class::getInstance();
@@ -127,5 +148,35 @@ class Presta extends BaseConnector
         }
 
         return $this->controller->{$this->action}($requestpacket->getParams());
+    }
+
+    public function getPrimaryKeyMapper(): PrimaryKeyMapperInterface
+    {
+        return $this->container->get(PrimaryKeyMapper::class);
+    }
+
+    public function getTokenValidator(): TokenValidatorInterface
+    {
+        return $this->container->get(TokenValidator::class);
+    }
+
+    public function getControllerNamespace(): string
+    {
+        return __NAMESPACE__ . '\Controller';
+    }
+
+    public function getEndpointVersion(): string
+    {
+        return InstalledVersions::getPrettyVersion('jtl/connector-prestashop');
+    }
+
+    public function getPlatformVersion(): string
+    {
+        return '';
+    }
+
+    public function getPlatformName(): string
+    {
+        return 'Prestashop';
     }
 }

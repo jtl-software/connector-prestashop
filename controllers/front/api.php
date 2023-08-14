@@ -2,8 +2,8 @@
 
 //phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
 
-use jtl\Connector\Application\Application;
-use jtl\Connector\Presta\Presta;
+use Jtl\Connector\Core\Application\Application;
+use jtl\Connector\Presta\Connector;
 
 require_once CONNECTOR_DIR . '/lib/autoload.php';
 
@@ -20,7 +20,6 @@ require_once CONNECTOR_DIR . '/lib/autoload.php';
  *
  * JTL Connector Module
  */
-
 class JtlconnectorApiModuleFrontController extends ModuleFrontController
 {
     public function initContent()
@@ -29,12 +28,9 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
             session_destroy();
         }
 
-        $connector = Presta::getInstance();
-        /** @var Application $application */
-        $application = Application::getInstance();
-        $application->createFeaturesFileIfNecessary(sprintf('%s/config/features.example.json', CONNECTOR_DIR));
-        $application->register($connector);
-        $application->run();
+        $connector = new Connector();
+        $application = new Application(CONNECTOR_DIR);
+        $application->run($connector);
 
         exit();
     }

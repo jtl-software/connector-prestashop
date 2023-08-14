@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class ProductAttr extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'           => 'id_feature',
         'productId'    => 'id_product',
         'i18ns'        => 'ProductAttrI18n',
@@ -24,7 +24,7 @@ class ProductAttr extends BaseMapper
         int $defaultLanguageId,
         array $translations,
         bool $deleteInsert = false
-    ) {
+    ): void {
         $defaultFeatureName = $translations[$defaultLanguageId]['name'] ?? null;
         if ($defaultFeatureName !== null) {
             $featureId = $this->getIdFeatureByName($defaultFeatureName, $defaultLanguageId);
@@ -65,7 +65,7 @@ class ProductAttr extends BaseMapper
      * @param int $languageId
      * @return false|string|null
      */
-    public function getIdFeatureByName(string $featureName, int $languageId)
+    public function getIdFeatureByName(string $featureName, int $languageId): bool|string|null
     {
         return $this->db->getValue(
             \sprintf(
@@ -77,7 +77,7 @@ class ProductAttr extends BaseMapper
         );
     }
 
-    protected function isTranslated($data)
+    protected function isTranslated($data): bool
     {
         return true;
     }

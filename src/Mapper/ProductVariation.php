@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 class ProductVariation extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'        => 'id',
         'sort'      => 'sort',
         'productId' => 'productId',

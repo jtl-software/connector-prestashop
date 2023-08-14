@@ -4,15 +4,27 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use jtl\Connector\Model\Identity;
+use Faker\Core\DateTime;
+use jtl\Connector\Core\Model\Identity;
 use jtl\Connector\Presta\Utils\Utils;
+use jtl\Connector\Core\Model\Product as CoreProduct;
+use Jtl\Connector\Core\Model\TaxRate;
 
 class Product extends BaseMapper
 {
-    protected $endpointModel = '\Product';
-    protected $identity      = 'id|id_product';
+    /**
+     * @var string|null
+     */
+    protected ?string $endpointModel = '\Product';
+    /**
+     * @var string
+     */
+    protected string $identity      = 'id|id_product';
 
-    protected $pull = [
+    /**
+     * @var array
+     */
+    protected array $pull = [
         'id'                   => null,
         'manufacturerId'       => 'id_manufacturer',
         'masterProductId'      => null,
@@ -46,7 +58,10 @@ class Product extends BaseMapper
         'manufacturerNumber'   => 'mpn'
     ];
 
-    protected $push = [
+    /**
+     * @var array
+     */
+    protected array $push = [
         'id_product'          => 'id',
         'id_manufacturer'     => 'manufacturerId',
         'id_category_default' => null,
@@ -72,12 +87,20 @@ class Product extends BaseMapper
         'mpn'                 => 'manufacturerNumber'
     ];
 
-    protected function wholesale_price($data)
+    /**
+     * @param $data
+     * @return float
+     */
+    protected function wholesale_price($data): float
     {
         return \round($data->getPurchasePrice(), 4);
     }
 
-    protected function out_of_stock($data)
+    /**
+     * @param $data
+     * @return int
+     */
+    protected function out_of_stock($data): int
     {
         if ($data->getConsiderStock() === false || $data->getPermitNegativeStock() === true) {
             return 1;
@@ -86,7 +109,11 @@ class Product extends BaseMapper
         return 0;
     }
 
-    protected function date_add($data)
+    /**
+     * @param $data
+     * @return string
+     */
+    protected function date_add($data): string
     {
         if (\is_null($data->getCreationDate())) {
             $current = new \DateTime();
@@ -96,13 +123,21 @@ class Product extends BaseMapper
         return $data->getCreationDate()->format('Y-m-d H:i:s');
     }
 
-    protected function minimal_quantity($data)
+    /**
+     * @param $data
+     * @return float|int
+     */
+    protected function minimal_quantity($data): float|int
     {
         $value = \ceil($data->getMinimumOrderQuantity());
-        return $value < 1 ? 1 : $value;
+        return max($value, 1);
     }
 
-    protected function unity($data)
+    /**
+     * @param $data
+     * @return string
+     */
+    protected function unity($data): string
     {
         $unit = '';
         if ($data->getConsiderBasePrice()) {
@@ -112,12 +147,20 @@ class Product extends BaseMapper
         return $unit;
     }
 
-    protected function isActive($data)
+    /**
+     * @param $data
+     * @return bool
+     */
+    protected function isActive($data): bool
     {
         return true;
     }
 
-    protected function id($data)
+    /**
+     * @param $data
+     * @return Identity
+     */
+    protected function id($data): Identity
     {
         if (isset($data['id_product_attribute'])) {
             return new Identity($data['id_product'] . '_' . $data['id_product_attribute']);
@@ -126,14 +169,24 @@ class Product extends BaseMapper
         }
     }
 
-    protected function masterProductId($data)
+    /**
+     * @param $data
+     * @return Identity|null
+     */
+    protected function masterProductId($data): ?Identity
     {
         if (isset($data['id_product_attribute'])) {
             return new Identity($data['id_product']);
         }
+
+        return null;
     }
 
-    protected function id_category_default($data)
+    /**
+     * @param $data
+     * @return int|null
+     */
+    protected function id_category_default($data): ?int
     {
         $categories = $data->getCategories();
         if (\count($categories) > 0) {
@@ -144,7 +197,11 @@ class Product extends BaseMapper
         return null;
     }
 
-    protected function isMasterProduct($data)
+    /**
+     * @param $data
+     * @return bool
+     */
+    protected function isMasterProduct($data): bool
     {
         if (!isset($data['id_product_attribute'])) {
             $count = $this->db->getValue(
@@ -161,12 +218,20 @@ class Product extends BaseMapper
         return false;
     }
 
-    protected function vat($data)
+    /**
+     * @param $data
+     * @return float
+     */
+    protected function vat($data): float
     {
         return Utils::getInstance()->getProductTaxRate($data['id_product']);
     }
 
-    protected function permitNegativeStock($data)
+    /**
+     * @param $data
+     * @return bool
+     */
+    protected function permitNegativeStock($data): bool
     {
         $query = 'SELECT out_of_stock FROM ' . \_DB_PREFIX_ . 'stock_available WHERE id_product=' . $data['id_product'];
 
@@ -178,20 +243,24 @@ class Product extends BaseMapper
 
         $option = $this->db->getValue($query);
 
-        return ($option === false || $option == '0' || $option == '2') ? false : true;
+        return !(($option === false || $option == '0' || $option == '2'));
     }
 
-    protected function considerStock($data)
+    /**
+     * @param $data
+     * @return bool
+     */
+    protected function considerStock($data): bool
     {
         return true;
     }
 
     /**
-     * @param \jtl\Connector\Model\Product $product
+     * @param CoreProduct $product
      * @return false|mixed|string|null
      * @throws \PrestaShopDatabaseException
      */
-    protected function id_tax_rules_group(\jtl\Connector\Model\Product $product)
+    protected function id_tax_rules_group(CoreProduct $product): mixed
     {
         if (!\is_null($product->getTaxClassId()) && !empty($product->getTaxClassId()->getEndpoint())) {
             $taxRulesGroupId = $product->getTaxClassId()->getEndpoint();
@@ -224,11 +293,11 @@ class Product extends BaseMapper
     }
 
     /**
-     * @param \jtl\Connector\Model\TaxRate ...$jtlTaxRates
+     * @param TaxRate ...$jtlTaxRates
      * @return mixed|null
      * @throws \PrestaShopDatabaseException
      */
-    protected function findTaxClassId(\jtl\Connector\Model\TaxRate ...$jtlTaxRates)
+    protected function findTaxClassId(TaxRate ...$jtlTaxRates): mixed
     {
         $conditions = [];
         foreach ($jtlTaxRates as $taxRate) {

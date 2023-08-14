@@ -9,7 +9,7 @@ use jtl\Connector\Presta\Utils\Utils;
 
 /**
  * Class ProductSpecialPrice
- * @package jtl\Connector\Presta\Controller
+ * @package jtl\Connector\Connector\Controller
  */
 class ProductSpecialPrice extends BaseController
 {

@@ -2,12 +2,12 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use jtl\Connector\Model\Identity;
-use jtl\Connector\Presta\Utils\Utils;
+use Jtl\Connector\Core\Model\Identity;
+use Jtl\Connector\Core\Model\CustomerOrderItem as CoreCustomerOrderItem;
 
 class CustomerOrderItem extends BaseMapper
 {
-    protected $pull = [
+    protected array $pull = [
         'id'              => 'id_order_detail',
         'productId'       => null,
         'customerOrderId' => 'id_order',
@@ -20,7 +20,11 @@ class CustomerOrderItem extends BaseMapper
         'vat'             => null
     ];
 
-    protected function productId($data)
+    /**
+     * @param $data
+     * @return Identity
+     */
+    protected function productId($data): Identity
     {
         return new Identity(
             $data['product_attribute_id'] == 0
@@ -28,14 +32,14 @@ class CustomerOrderItem extends BaseMapper
         );
     }
 
-    protected function type($data)
+    protected function type($data): string
     {
-        return \jtl\Connector\Model\CustomerOrderItem::TYPE_PRODUCT;
+        return CoreCustomerOrderItem::TYPE_PRODUCT;
     }
 
-    protected function vat($data)
+    protected function vat($data): float|int
     {
-        if ((float)$data['total_price_tax_excl'] === (float)0) {
+        if ((float)$data['total_price_tax_excl'] === 0.0) {
             return 0;
         }
 

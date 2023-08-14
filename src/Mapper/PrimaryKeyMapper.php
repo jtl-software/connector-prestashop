@@ -2,131 +2,163 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use jtl\Connector\Linker\IdentityLinker;
-use jtl\Connector\Mapper\IPrimaryKeyMapper;
-use jtl\Connector\Core\Logger\Logger;
-use jtl\Connector\Drawing\ImageRelationType;
+use Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface;
+use Jtl\Connector\Core\Definition\IdentityType;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
-class PrimaryKeyMapper implements IPrimaryKeyMapper
+class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 {
-    protected static $types = [
-        IdentityLinker::TYPE_CATEGORY           => 'category',
-        IdentityLinker::TYPE_CUSTOMER           => 'customer',
-        IdentityLinker::TYPE_CUSTOMER_ORDER     => 'customer_order',
-        IdentityLinker::TYPE_DELIVERY_NOTE      => 'delivery_note',
-        IdentityLinker::TYPE_IMAGE              => 'image',
-        IdentityLinker::TYPE_MANUFACTURER       => 'manufacturer',
-        IdentityLinker::TYPE_PRODUCT            => 'product',
-        IdentityLinker::TYPE_SPECIFIC           => 'specific',
-        IdentityLinker::TYPE_SPECIFIC_VALUE     => 'specific_value',
-        IdentityLinker::TYPE_PAYMENT            => 'payment',
-        IdentityLinker::TYPE_CROSSSELLING       => 'crossselling',
-        IdentityLinker::TYPE_CROSSSELLING_GROUP => 'crossselling_group',
-        IdentityLinker::TYPE_TAX_CLASS          => 'tax_class'
+    /**
+     * @var array|string[]
+     */
+    protected array $tableNames = [
+            'jtl_connector_link_category',
+            'jtl_connector_link_crossselling',
+            'jtl_connector_link_crossselling_group',
+            'jtl_connector_link_customer',
+            'jtl_connector_link_customer_group',
+            'jtl_connector_link_image',
+            'jtl_connector_link_manufacturer',
+            'jtl_connector_link_order',
+            'jtl_connector_link_payment',
+            'jtl_connector_link_product',
+            'jtl_connector_link_shipping_class',
+            'jtl_connector_link_specific',
+            'jtl_connector_link_specific_value',
+            'jtl_connector_link_tax_class'
     ];
-    protected $db;
+
+    /**
+     * @var \Db
+     */
+    protected \Db $db;
+
+    /**
+     * @var LoggerInterface
+     */
+    protected LoggerInterface $logger;
 
     public function __construct()
     {
-        $this->db = \Db::getInstance();
+        $this->db     = \Db::getInstance();
+        $this->logger = new NullLogger();
     }
 
-    public function getHostId($endpointId, $type)
+    /**
+     * @param int $type
+     * @param string $endpointId
+     * @return int|null
+     */
+    public function getHostId(int $type, string $endpointId): ?int
     {
-        if (isset(static::$types[$type])) {
+        $tableName = self::getTableName($type);
+
+        $hostId = null;
+
+        if (!\is_null($tableName)) {
             $dbResult = $this->db->getValue(
-                'SELECT host_id FROM jtl_connector_link_' . static::$types[$type] . " 
+                'SELECT host_id FROM jtl_connector_link_' . $tableName . " 
                 WHERE endpoint_id = '" . $endpointId . "'"
             );
 
             $hostId = $dbResult ?: null;
 
-            Logger::write(
+            $this->logger->debug(
                 \sprintf(
                     'Trying to get hostId with endpointId (%s) and type (%s) ... hostId: (%s)',
                     $endpointId,
                     $type,
                     $hostId
-                ),
-                Logger::DEBUG,
-                'linker'
+                )
             );
-
-            return $hostId;
         }
 
-        return null;
+        return $hostId !== false ? (int)$hostId : null;
     }
 
-    public function getEndpointId($hostId, $type, $relationType = null)
+    /**
+     * @param int $type
+     * @param int $hostId
+     * @return string|null
+     */
+    public function getEndpointId(int $type, int $hostId): ?string
     {
-        if (!isset(static::$types[$type])) {
+        $tableName = self::getTableName($type);
+
+        if (\is_null($tableName)) {
             return null;
         }
 
         $relation = '';
 
-        if ($type == IdentityLinker::TYPE_IMAGE) {
-            switch ($relationType) {
-                case ImageRelationType::TYPE_CATEGORY:
-                    $relation = ' AND endpoint_id LIKE "c%"';
-                    break;
-                case ImageRelationType::TYPE_MANUFACTURER:
-                    $relation = ' AND endpoint_id LIKE "m%"';
-                    break;
-            }
-        }
-
         $dbResult = $this->db->getValue(
             \sprintf(
                 'SELECT endpoint_id FROM jtl_connector_link_%s WHERE host_id = %s%s',
-                static::$types[$type],
+                $tableName,
                 $hostId,
                 $relation
             )
         );
 
-        $endpointId = $dbResult ? $dbResult : null;
+        $endpointId = $dbResult ?: null;
 
-        Logger::write(
+        $this->logger->debug(
             \sprintf(
-                'Trying to get endpointId with hostId (%s) and type (%s) and relation type (%s) ... endpointId: (%s)',
+                'Trying to get endpointId with hostId (%s) and type (%s) ... endpointId: (%s)',
                 $hostId,
                 $type,
-                $relationType,
                 $endpointId
             ),
-            Logger::DEBUG,
-            'linker'
         );
 
         return $endpointId;
     }
 
-    public function save($endpointId, $hostId, $type)
+    /**
+     * @param int $type
+     * @param string $endpointId
+     * @param int $hostId
+     * @return bool
+     */
+    public function save(int $type, string $endpointId, int $hostId): bool
     {
-        Logger::write(
-            \sprintf('Save link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type),
-            Logger::DEBUG,
-            'linker'
+        $tableName = self::getTableName($type);
+
+        if (\is_null($tableName)) {
+            return false;
+        }
+
+        $this->logger->debug(
+            \sprintf('Save link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type)
         );
 
-        $this->db->execute(
+        return $this->db->execute(
             \sprintf(
                 'INSERT IGNORE INTO jtl_connector_link_%s (endpoint_id, host_id) VALUES ("%s",%s)',
-                static::$types[$type],
+                $tableName,
                 $endpointId,
                 $hostId
             )
         );
     }
 
-    public function delete($endpointId, $hostId, $type)
+    /**
+     * @param int $type
+     * @param string|null $endpointId
+     * @param int|null $hostId
+     * @return bool
+     */
+    public function delete(int $type, string $endpointId = null, int $hostId = null): bool
     {
-        Logger::write(
-            \sprintf('Delete link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type),
-            Logger::DEBUG,
-            'linker'
+        $tableName = self::getTableName($type);
+
+        if (\is_null($tableName)) {
+            return false;
+        }
+
+        $this->logger->debug(
+            \sprintf('Delete link with endpointId (%s), hostId (%s) and type (%s)', $endpointId, $hostId, $type)
         );
 
         $where = [];
@@ -139,24 +171,70 @@ class PrimaryKeyMapper implements IPrimaryKeyMapper
             $where[] = 'host_id = ' . $hostId;
         }
 
-        $this->db->execute(
-            \sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', static::$types[$type], \implode(' AND ', $where))
+        return $this->db->execute(
+            \sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', $tableName, \implode(' AND ', $where))
         );
     }
 
-    public function clear()
+    /**
+     * @param int|null $type
+     * @return bool
+     */
+    public function clear(int $type = null): bool
     {
-        Logger::write('Clearing linking tables', Logger::DEBUG, 'linker');
+        $this->logger->debug('Clearing linking tables');
 
-        foreach (static::$types as $id => $name) {
-            $this->db->execute('TRUNCATE TABLE jtl_connector_link_' . $name);
+        foreach ($this->tableNames as $type) {
+            $this->db->execute('TRUNCATE TABLE ' . $type);
         }
 
         return true;
     }
 
-    public function gc()
+
+    /**
+     * @param $type
+     * @return string|null
+     */
+    public static function getTableName($type): ?string
     {
-        return true;
+        return match ($type) {
+            IdentityType::CATEGORY =>
+                'jtl_connector_link_category',
+            IdentityType::CROSS_SELLING =>
+                'jtl_connector_link_crossselling',
+            IdentityType::CROSS_SELLING_GROUP =>
+                'jtl_connector_link_crossselling_group',
+            IdentityType::CUSTOMER =>
+                'jtl_connector_link_customer',
+            IdentityType::CUSTOMER_GROUP =>
+                'jtl_connector_link_customer_group',
+            IdentityType::CONFIG_GROUP_IMAGE,
+            IdentityType::PRODUCT_VARIATION_VALUE_IMAGE,
+            IdentityType::SPECIFIC_IMAGE,
+            IdentityType::SPECIFIC_VALUE_IMAGE,
+            IdentityType::MANUFACTURER_IMAGE,
+            IdentityType::CATEGORY_IMAGE,
+            IdentityType::PRODUCT_IMAGE =>
+                'jtl_connector_link_image',
+            IdentityType::MANUFACTURER =>
+                'jtl_connector_link_manufacturer',
+            IdentityType::CUSTOMER_ORDER =>
+                'jtl_connector_link_order',
+            IdentityType::PAYMENT =>
+                'jtl_connector_link_payment',
+            IdentityType::PRODUCT =>
+                'jtl_connector_link_product',
+            IdentityType::SHIPPING_CLASS =>
+                'jtl_connector_link_shipping_class',
+            IdentityType::SPECIFIC =>
+                'jtl_connector_link_specific',
+            IdentityType::SPECIFIC_VALUE =>
+                'jtl_connector_link_specific_value',
+            IdentityType::TAX_CLASS =>
+                'jtl_connector_link_tax_class',
+            default =>
+                null,
+        };
     }
 }

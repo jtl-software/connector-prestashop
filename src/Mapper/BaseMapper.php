@@ -2,14 +2,14 @@
 
 namespace jtl\Connector\Presta\Mapper;
 
-use jtl\Connector\Model\Identity;
+use Jtl\Connector\Core\Model\Identity;
 
 class BaseMapper
 {
-    protected $db            = null;
-    protected $endpointModel = null;
-    private $model           = null;
-    private $type;
+    protected ?\Db $db               = null;
+    protected ?string $endpointModel = null;
+    private string $model;
+    private mixed $type;
 
     public function __construct()
     {
@@ -32,11 +32,11 @@ class BaseMapper
             if (\method_exists($this, $fnName)) {
                 $value = $this->$fnName($data);
             } else {
-                $value    = isset($data[$endpoint]) ? $data[$endpoint] : null;
+                $value    = $data[$endpoint] ?? null;
                 $property = $this->type->getProperty($host);
 
                 if ($property->isNavigation()) {
-                    $subControllerName = "\\jtl\\Connector\\Presta\\Controller\\" . $endpoint;
+                    $subControllerName = "\\jtl\\Connector\\Connector\\Controller\\" . $endpoint;
 
                     if (\class_exists($subControllerName)) {
                         $subController = new $subControllerName();
@@ -89,7 +89,7 @@ class BaseMapper
                 $property = $this->type->getProperty($host);
 
                 if ($property->isNavigation()) {
-                    $subControllerName = "\\jtl\\Connector\\Presta\\Controller\\" . $endpoint;
+                    $subControllerName = "\\jtl\\Connector\\Connector\\Controller\\" . $endpoint;
 
                     if (\class_exists($subControllerName)) {
                         $subController = new $subControllerName();

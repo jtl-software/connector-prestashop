@@ -138,7 +138,7 @@ class Specific extends BaseController
             Logger::write(
                 \sprintf(
                     '
-                Error saving Specific: %s. Presta doesn\'t allow special characters in their specifics',
+                Error saving Specific: %s. Connector doesn\'t allow special characters in their specifics',
                     \reset($specificI18ns)->getName()
                 ),
                 Logger::ERROR,
@@ -176,7 +176,7 @@ class Specific extends BaseController
                 Logger::write(
                     \sprintf(
                         '
-                Error saving SpecificValue: %s for the specific: %s. Presta doesn\'t allow special characters in their 
+                Error saving SpecificValue: %s for the specific: %s. Connector doesn\'t allow special characters in their 
                 specifics_value',
                         \reset($specificValueI18ns)->getValue(),
                         \reset($specificI18ns)->getName()

@@ -7,7 +7,7 @@ use jtl\Connector\Model\Identity;
 
 /**
  * Class CustomerOrderItem
- * @package jtl\Connector\Presta\Controller
+ * @package jtl\Connector\Connector\Controller
  */
 class CustomerOrderItem extends BaseController
 {
