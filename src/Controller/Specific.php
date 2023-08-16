@@ -11,7 +11,7 @@ use jtl\Connector\Model\SpecificI18n as SpecificI18nModel;
 use jtl\Connector\Model\SpecificValue as SpecificValueModel;
 use jtl\Connector\Model\SpecificValueI18n as SpecificValueI18nModel;
 
-class Specific extends BaseController
+class Specific extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

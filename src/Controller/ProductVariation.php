@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class ProductVariation extends BaseController
+class ProductVariation extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

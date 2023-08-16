@@ -11,7 +11,7 @@ use jtl\Connector\Presta\Utils\Utils;
  * Class ProductSpecialPrice
  * @package jtl\Connector\Connector\Controller
  */
-class ProductSpecialPrice extends BaseController
+class ProductSpecialPrice extends AbstractController
 {
     /**
      * @param $data

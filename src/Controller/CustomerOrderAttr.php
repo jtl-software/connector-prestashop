@@ -5,7 +5,7 @@ namespace jtl\Connector\Presta\Controller;
 use jtl\Connector\Model\CustomerOrderAttr as CustomerOrderAttrModel;
 use jtl\Connector\Model\Identity;
 
-class CustomerOrderAttr extends BaseController
+class CustomerOrderAttr extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

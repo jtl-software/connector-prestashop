@@ -7,7 +7,7 @@ use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Model\Product as ProductModel;
 use jtl\Connector\Model\ProductSpecific as ProductSpecificModel;
 
-class ProductSpecific extends BaseController
+class ProductSpecific extends AbstractController
 {
     public function pullData(ProductModel $product)
     {

@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\ProductStockLevel as ProductStockLevelModel;
 
-class ProductStockLevel extends BaseController
+class ProductStockLevel extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

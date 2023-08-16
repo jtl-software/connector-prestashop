@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Presta\Utils\Utils;
 
-class Language extends BaseController
+class Language extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class GlobalData extends BaseController
+class GlobalData extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

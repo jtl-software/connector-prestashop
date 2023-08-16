@@ -13,7 +13,7 @@ use PrestaShopException;
  * @package jtl\Connector\Connector\Controller
  * @property \jtl\Connector\Presta\Mapper\ProductAttr $mapper
  */
-class ProductAttr extends BaseController
+class ProductAttr extends AbstractController
 {
     public const
         DELIVERY_OUT_STOCK       = 'delivery_out_stock',

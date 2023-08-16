@@ -9,7 +9,7 @@ use jtl\Connector\Model\Identity;
  * Class CustomerOrderItem
  * @package jtl\Connector\Connector\Controller
  */
-class CustomerOrderItem extends BaseController
+class CustomerOrderItem extends AbstractController
 {
     /**
      * @param $data

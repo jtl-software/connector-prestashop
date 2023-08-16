@@ -17,7 +17,7 @@ use jtl\Connector\Model\ProductVariation;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
-class Product extends BaseController
+class Product extends AbstractController
 {
     private static $idCache = [];
 

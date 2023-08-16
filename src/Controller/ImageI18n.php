@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Class ImageI18n
  * @package jtl\Connector\Connector\Controller
  */
-class ImageI18n extends BaseController
+class ImageI18n extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

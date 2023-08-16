@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class CustomerGroup extends BaseController
+class CustomerGroup extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

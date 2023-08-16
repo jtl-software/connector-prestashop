@@ -20,7 +20,7 @@ class Connector extends Controller
         $return = [];
 
         $mainControllers = [
-            'Category',
+            'CategoryController',
             'Customer',
             'CustomerOrder',
             'Image',

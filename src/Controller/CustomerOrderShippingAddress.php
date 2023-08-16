@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class CustomerOrderShippingAddress extends BaseController
+class CustomerOrderShippingAddress extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class Payment extends BaseController
+class Payment extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

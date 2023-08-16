@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class TaxRate extends BaseController
+class TaxRate extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

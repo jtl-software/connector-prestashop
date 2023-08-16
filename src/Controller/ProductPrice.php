@@ -7,7 +7,7 @@ use jtl\Connector\Model\ProductPrice as ProductPriceModel;
 use jtl\Connector\Model\ProductPriceItem as ProductPriceItemModel;
 use jtl\Connector\Presta\Utils\Utils;
 
-class ProductPrice extends BaseController
+class ProductPrice extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

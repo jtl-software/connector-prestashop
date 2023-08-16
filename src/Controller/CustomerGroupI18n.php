@@ -5,7 +5,7 @@ namespace jtl\Connector\Presta\Controller;
 use jtl\Connector\Model\CustomerGroupI18n as CustomerGroupI18nModel;
 use jtl\Connector\Presta\Utils\Utils;
 
-class CustomerGroupI18n extends BaseController
+class CustomerGroupI18n extends AbstractController
 {
     public function pullData($data, $model)
     {

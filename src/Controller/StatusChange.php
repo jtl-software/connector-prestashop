@@ -4,7 +4,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\CustomerOrder;
 
-class StatusChange extends BaseController
+class StatusChange extends AbstractController
 {
     public function pushData($status)
     {

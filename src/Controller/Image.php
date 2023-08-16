@@ -7,7 +7,7 @@ use jtl\Connector\Formatter\ExceptionFormatter;
 use jtl\Connector\Presta\Utils\Utils;
 use Context;
 
-class Image extends BaseController
+class Image extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

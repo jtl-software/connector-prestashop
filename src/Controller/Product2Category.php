@@ -5,7 +5,7 @@ namespace jtl\Connector\Presta\Controller;
 use jtl\Connector\Model\Product2Category as Product2CategoryModel;
 use jtl\Connector\Model\Identity;
 
-class Product2Category extends BaseController
+class Product2Category extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {

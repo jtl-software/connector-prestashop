@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class DeliveryNote extends BaseController
+class DeliveryNote extends AbstractController
 {
     public function pushData($data)
     {

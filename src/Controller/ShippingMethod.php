@@ -2,7 +2,7 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-class ShippingMethod extends BaseController
+class ShippingMethod extends AbstractController
 {
     public function pullData($data, $model, $limit = null)
     {
