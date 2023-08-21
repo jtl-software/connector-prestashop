@@ -3,6 +3,8 @@
 namespace jtl\Connector\Presta\Controller;
 
 use DI\Container;
+use jtl\Connector\Presta\Utils\QueryBuilder;
+use PrestaShopDatabaseException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -44,16 +46,32 @@ abstract class AbstractController implements LoggerAwareInterface
         $this->logger = $logger;
     }
 
-    protected function getPrestaLanguage(int $langId): string
+    /**
+     * @param int $langId
+     * @return string
+     * @throws PrestaShopDatabaseException
+     */
+    protected function getJtlLanguageIsoFromLanguageId(int $langId): string
     {
-        $result = $this->db->executeS(
-            'SELECT iso_code
-            FROM ' . \_DB_PREFIX_ . 'lang
-            WHERE id_lang = ' . $langId
-        );
+        $sql = (new QueryBuilder())
+            ->select('iso_code')
+            ->from('lang')
+            ->where("id_lang = $langId");
+
+        $result = $this->db->executeS($sql);
 
         $linguaConverter = Service::createFromISO_639_1($result[0]['iso_code']);
 
         return $linguaConverter->toISO_639_2b();
+    }
+
+    protected function getPrestaLanguageIdFromIso(string $languageIso): int
+    {
+        $sql = (new QueryBuilder())
+            ->select('id_lang')
+            ->from('lang')
+            ->where("iso_code = '$languageIso'");
+
+        return $this->db->executeS($sql)[0]['id_lang'];
     }
 }
