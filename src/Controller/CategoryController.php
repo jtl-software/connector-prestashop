@@ -13,12 +13,18 @@ use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
+use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
+use PrestaShopDatabaseException;
 use PrestaShopException;
 
 class CategoryController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
 {
-    private static array $idCache = [];
 
+    /**
+     * @param QueryFilter $queryFilter
+     * @return array|AbstractModel[]
+     * @throws PrestaShopDatabaseException
+     */
     public function pull(QueryFilter $queryFilter): array
     {
         $queryBuilder = new QueryBuilder();
@@ -44,17 +50,24 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return $jtlCategories;
     }
 
+    /**
+     * @param $prestaCategory
+     * @return JtlCategory
+     * @throws PrestaShopDatabaseException
+     */
     protected function createJtlCategory($prestaCategory): JtlCategory
     {
         $jtlCategory = (new JtlCategory())
             ->setId(new Identity($prestaCategory['id_category']))
             ->setIsActive($prestaCategory['active'])
-            ->setLevel($prestaCategory['level_depth']);
+            ->setLevel($prestaCategory['level_depth'])
+            ->setParentCategoryId(
+                $prestaCategory['id_parent'] == PrestaCategory::getRootCategory()->id
+                || $prestaCategory['id_parent'] == 2
+                ? new Identity('')
+                : new Identity($prestaCategory['id_parent'])
+            );
 
-        if (!\is_null($prestaCategory['id_parent'])) {
-            $jtlCategory
-                ->setParentCategoryId(new Identity($prestaCategory['id_parent']));
-        }
 
         $prestaCategoryI18ns = $this->createJtlCategoryTranslations($prestaCategory['id_category']);
 
@@ -64,6 +77,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return $jtlCategory;
     }
 
+    /**
+     * @param array $prestaCategory
+     * @return JtlCategoryI18n
+     * @throws PrestaShopDatabaseException
+     */
     protected function createJtlCategoryTranslation(array $prestaCategory): JtlCategoryI18n
     {
         return (new JtlCategoryI18n())
@@ -75,6 +93,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCategory['id_lang']));
     }
 
+    /**
+     * @param int $prestaCategoryId
+     * @return array
+     * @throws PrestaShopDatabaseException
+     */
     protected function createJtlCategoryTranslations(int $prestaCategoryId): array
     {
         $shopId = \Context::getContext()->shop->id;
@@ -96,6 +119,12 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return $i18ns;
     }
 
+    /**
+     * @param AbstractModel $jtlCategory
+     * @return AbstractModel
+     * @throws PrestaShopException
+     * @throws PrestaShopDatabaseException
+     */
     public function push(AbstractModel $jtlCategory): AbstractModel
     {
         $queryBuilder = new QueryBuilder();
@@ -117,14 +146,20 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return $jtlCategory;
     }
 
+    /**
+     * @param JtlCategory $jtlCategory
+     * @param PrestaCategory $prestaCategory
+     * @return PrestaCategory
+     */
     protected function createPrestaCategory(JtlCategory $jtlCategory, PrestaCategory $prestaCategory): PrestaCategory
     {
-        $translations                     = $this->createPrestaCategoryTranslations(...$jtlCategory->getI18ns());
-        $prestaCategory->id_parent        = $jtlCategory->getParentCategoryId()->getEndpoint();
-        $prestaCategory->active           = $jtlCategory->getIsActive();
-        $prestaCategory->position         = $jtlCategory->getSort();
-        $prestaCategory->level_depth      = $jtlCategory->getLevel();
-        $prestaCategory->is_root_category = 0;
+        $translations              = $this->createPrestaCategoryTranslations(...$jtlCategory->getI18ns());
+        $prestaCategory->active    = $jtlCategory->getIsActive();
+        $prestaCategory->position  = $jtlCategory->getSort();
+        $prestaCategory->id_parent =
+            $jtlCategory->getParentCategoryId()->getEndpoint() == ''
+                ? PrestaCategory::getRootCategory()->id
+                : $jtlCategory->getParentCategoryId()->getEndpoint();
 
         foreach ($translations as $key => $translation) {
             $prestaCategory->name[$key]             = $translation['name'];
@@ -137,6 +172,12 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return $prestaCategory;
     }
 
+    /**
+     * @param JtlCategoryI18n ...$jtlCategoryI18ns
+     * @return array
+     * @throws PrestaShopDatabaseException
+     * @throws Exception
+     */
     protected function createPrestaCategoryTranslations(JtlCategoryI18n ...$jtlCategoryI18ns): array
     {
         $translations = [];
@@ -155,6 +196,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
+     * @param AbstractModel $model
+     * @return AbstractModel
      * @throws PrestaShopException
      */
     public function delete(AbstractModel $model): AbstractModel
@@ -168,6 +211,10 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return $model;
     }
 
+
+    /**
+     * @return Statistic
+     */
     public function statistic(): Statistic
     {
         $queryBuilder = new QueryBuilder();
