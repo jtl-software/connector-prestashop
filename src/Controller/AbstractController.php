@@ -4,6 +4,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use DI\Container;
 use jtl\Connector\Presta\Utils\QueryBuilder;
+use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
 use PrestaShopDatabaseException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -65,12 +66,22 @@ abstract class AbstractController implements LoggerAwareInterface
         return $linguaConverter->toISO_639_2b();
     }
 
+    /**
+     * @throws PrestaShopDatabaseException
+     * @throws Exception
+     */
     protected function getPrestaLanguageIdFromIso(string $languageIso): int
     {
         $sql = (new QueryBuilder())
             ->select('id_lang')
             ->from('lang')
             ->where("iso_code = '$languageIso'");
+
+        $result = $this->db->executeS($sql)[0]['id_lang'];
+
+        if (\is_null($result)) {
+            throw new Exception("Language '$languageIso' is missing in Prestashop");
+        }
 
         return $this->db->executeS($sql)[0]['id_lang'];
     }

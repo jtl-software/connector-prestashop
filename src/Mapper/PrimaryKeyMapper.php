@@ -4,6 +4,7 @@ namespace jtl\Connector\Presta\Mapper;
 
 use Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
+use jtl\Connector\Presta\Utils\QueryBuilder;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -57,10 +58,14 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
         $hostId = null;
 
         if (!\is_null($tableName)) {
-            $dbResult = $this->db->getValue(
-                'SELECT host_id FROM jtl_connector_link_' . $tableName . " 
-                WHERE endpoint_id = '" . $endpointId . "'"
-            );
+            $queryBuilder = new QueryBuilder();
+            $queryBuilder->setUsePrefix(false);
+            $sql = $queryBuilder
+                ->select('host_id')
+                ->from($tableName)
+                ->where("endpoint_id=$endpointId");
+
+            $dbResult = $this->db->getValue($sql);
 
             $hostId = $dbResult ?: null;
 
@@ -90,16 +95,15 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             return null;
         }
 
-        $relation = '';
+        $queryBuilder = new QueryBuilder();
+        $queryBuilder->setUsePrefix(false);
 
-        $dbResult = $this->db->getValue(
-            \sprintf(
-                'SELECT endpoint_id FROM jtl_connector_link_%s WHERE host_id = %s%s',
-                $tableName,
-                $hostId,
-                $relation
-            )
-        );
+        $sql = $queryBuilder
+            ->select('endpoint_id')
+            ->from($tableName)
+            ->where("host_id=$hostId");
+
+        $dbResult = $this->db->getValue($sql);
 
         $endpointId = $dbResult ?: null;
 
@@ -171,9 +175,15 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             $where[] = 'host_id = ' . $hostId;
         }
 
-        return $this->db->execute(
-            \sprintf('DELETE FROM jtl_connector_link_%s WHERE %s', $tableName, \implode(' AND ', $where))
-        );
+        $queryBuilder = new QueryBuilder();
+        $queryBuilder->setUsePrefix(false);
+
+        $sql = $queryBuilder
+            ->type('DELETE')
+            ->from($tableName)
+            ->where("endpoint_id=$endpointId AND host_id=$hostId");
+
+        return $this->db->execute($sql);
     }
 
     /**

@@ -119,11 +119,12 @@ class CategoryController extends AbstractController implements PullInterface, Pu
 
     protected function createPrestaCategory(JtlCategory $jtlCategory, PrestaCategory $prestaCategory): PrestaCategory
     {
-        $translations                = $this->createPrestaCategoryTranslations(...$jtlCategory->getI18ns());
-        $prestaCategory->id_parent   = $jtlCategory->getParentCategoryId()->getEndpoint();
-        $prestaCategory->active      = $jtlCategory->getIsActive();
-        $prestaCategory->position    = $jtlCategory->getSort();
-        $prestaCategory->level_depth = $jtlCategory->getLevel();
+        $translations                     = $this->createPrestaCategoryTranslations(...$jtlCategory->getI18ns());
+        $prestaCategory->id_parent        = $jtlCategory->getParentCategoryId()->getEndpoint();
+        $prestaCategory->active           = $jtlCategory->getIsActive();
+        $prestaCategory->position         = $jtlCategory->getSort();
+        $prestaCategory->level_depth      = $jtlCategory->getLevel();
+        $prestaCategory->is_root_category = 0;
 
         foreach ($translations as $key => $translation) {
             $prestaCategory->name[$key]             = $translation['name'];
