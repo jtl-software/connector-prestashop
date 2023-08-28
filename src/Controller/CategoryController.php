@@ -19,7 +19,6 @@ use PrestaShopException;
 
 class CategoryController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
 {
-
     /**
      * @param QueryFilter $queryFilter
      * @return array|AbstractModel[]
@@ -51,11 +50,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param $prestaCategory
+     * @param array $prestaCategory
      * @return JtlCategory
      * @throws PrestaShopDatabaseException
      */
-    protected function createJtlCategory($prestaCategory): JtlCategory
+    protected function createJtlCategory(array $prestaCategory): JtlCategory
     {
         $jtlCategory = (new JtlCategory())
             ->setId(new Identity($prestaCategory['id_category']))
@@ -127,19 +126,17 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      */
     public function push(AbstractModel $jtlCategory): AbstractModel
     {
-        $queryBuilder = new QueryBuilder();
-        $queryBuilder->setUsePrefix(false);
-
-        $prestaCategory = new PrestaCategory();
-        $endpoint       = $jtlCategory->getId()->getEndpoint();
-        $isNew          = $endpoint === '';
+        $endpoint = $jtlCategory->getId()->getEndpoint();
+        $isNew    = $endpoint === '';
 
         if (!$isNew) {
             $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory($endpoint));
             $prestaCategory->update();
+
+            return $jtlCategory;
         }
 
-        $prestaCategory = $this->createPrestaCategory($jtlCategory, $prestaCategory);
+        $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
         $prestaCategory->add();
 
 
@@ -157,7 +154,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $prestaCategory->active    = $jtlCategory->getIsActive();
         $prestaCategory->position  = $jtlCategory->getSort();
         $prestaCategory->id_parent =
-            $jtlCategory->getParentCategoryId()->getEndpoint() == ''
+            empty($jtlCategory->getParentCategoryId()->getEndpoint())
                 ? PrestaCategory::getRootCategory()->id
                 : $jtlCategory->getParentCategoryId()->getEndpoint();
 

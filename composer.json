@@ -33,7 +33,9 @@
     "psr/cache": "^2",
     "monolog/monolog": "^2",
     "psr/log": "^2",
-    "symfony/http-foundation": "^4.4"
+    "symfony/http-foundation": "^4.4",
+    "jms/serializer": ">=3.3 <=3.24",
+    "doctrine/lexer": "^1"
   },
   "autoload": {
     "psr-4": {

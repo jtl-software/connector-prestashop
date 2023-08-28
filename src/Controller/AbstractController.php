@@ -72,6 +72,11 @@ abstract class AbstractController implements LoggerAwareInterface
      */
     protected function getPrestaLanguageIdFromIso(string $languageIso): int
     {
+        if (\strlen($languageIso) === 3) {
+            $linguaConverter = Service::createFromISO_639_2b($languageIso);
+            $languageIso     = $linguaConverter->toISO_639_1();
+        }
+
         $sql = (new QueryBuilder())
             ->select('id_lang')
             ->from('lang')
@@ -84,5 +89,15 @@ abstract class AbstractController implements LoggerAwareInterface
         }
 
         return $this->db->executeS($sql)[0]['id_lang'];
+    }
+
+    protected function getPrestaCountryIdFromIso(string $languageIso): int
+    {
+        $sql = (new QueryBuilder())
+            ->select('id_country')
+            ->from('country')
+            ->where("iso_code = '$languageIso'");
+
+        return $this->db->executeS($sql)[0]['id_country'];
     }
 }
