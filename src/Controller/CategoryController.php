@@ -32,7 +32,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $sql = $queryBuilder
             ->select('c.*')
             ->from(\_DB_PREFIX_ . 'category', 'c')
-            ->leftJoin('jtl_connector_link_category', 'l', 'c.id_category = l.endpoint_id')
+            ->leftJoin(self::CATEGORY_LINKING_TABLE, 'l', 'c.id_category = l.endpoint_id')
             ->where('l.host_id IS NULL AND c.id_parent != 0 AND c.is_root_category = 0')
             ->orderBy('c.nleft')
             ->limit($this->db->escape($queryFilter->getLimit()));
@@ -220,7 +220,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $sql = $queryBuilder
             ->select('COUNT(*)')
             ->from(\_DB_PREFIX_ . 'category', 'c')
-            ->leftJoin('jtl_connector_link_category', 'l', 'c.id_category = l.endpoint_id')
+            ->leftJoin(self::CATEGORY_LINKING_TABLE, 'l', 'c.id_category = l.endpoint_id')
             ->where('l.host_id IS NULL AND c.id_parent != 0 AND c.is_root_category = 0');
 
         $result = $this->db->getValue($sql);

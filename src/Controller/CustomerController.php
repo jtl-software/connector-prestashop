@@ -33,7 +33,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->leftJoin(\_DB_PREFIX_ . 'address', 'a', 'a.id_customer = c.id_customer')
             ->leftJoin(\_DB_PREFIX_ . 'country', 'co', 'co.id_country = a.id_country')
             ->leftJoin(\_DB_PREFIX_ . 'customer_group', 'cg', 'c.id_customer = cg.id_customer')
-            ->leftJoin('jtl_connector_link_customer', 'l', 'c.id_customer = l.endpoint_id')
+            ->leftJoin(self::CUSTOMER_LINKING_TABLE, 'l', 'c.id_customer = l.endpoint_id')
             ->where('l.host_id IS NULL AND a.id_address IS NOT NULL')
             ->groupBy('c.id_customer')
             ->limit($this->db->escape($queryFilter->getLimit()));
@@ -77,27 +77,13 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setLastName($prestaCustomer['lastname'])
             ->setMobile($prestaCustomer['phone_mobile'])
             ->setPhone($prestaCustomer['phone'])
-            ->setSalutation($this->determineSalutation($prestaCustomer))
+            ->setSalutation($this->determineSalutation($prestaCustomer['id_gender']))
             ->setStreet($prestaCustomer['address1'])
             ->setVatNumber($prestaCustomer['vat_number'])
             ->setWebsiteUrl($prestaCustomer['website'])
             ->setZipCode($prestaCustomer['postcode']);
 
         return $jtlCustomer;
-    }
-
-    /**
-     * @param array $prestaCustomer
-     * @return string
-     */
-    protected function determineSalutation(array $prestaCustomer): string
-    {
-        $mappings = ['1' => 'm', '2' => 'w'];
-        if (isset($mappings[$prestaCustomer['id_gender']])) {
-            return $mappings[$prestaCustomer['id_gender']];
-        }
-
-        return '';
     }
 
     /**
@@ -225,7 +211,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
         $sql = $queryBuilder
             ->select('COUNT(DISTINCT(c.id_customer))')
             ->from(\_DB_PREFIX_ . 'customer', 'c')
-            ->leftJoin('jtl_connector_link_customer', 'l', 'c.id_customer = l.endpoint_id')
+            ->leftJoin(self::CUSTOMER_LINKING_TABLE, 'l', 'c.id_customer = l.endpoint_id')
             ->leftJoin(\_DB_PREFIX_ . 'address', 'a', 'c.id_customer = a.id_customer')
             ->where('l.host_id IS NULL AND a.id_address IS NOT NULL');
 

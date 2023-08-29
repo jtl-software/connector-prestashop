@@ -61,7 +61,7 @@ class Connector implements ConnectorInterface
 
     public function getPlatformVersion(): string
     {
-        return '';
+        return '1';
     }
 
     public function getPlatformName(): string
