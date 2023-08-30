@@ -4,6 +4,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Definition\PaymentType;
+use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\CustomerOrderBillingAddress as JtlCustomerOrderBillingAddress;
 use Jtl\Connector\Core\Model\CustomerOrderShippingAddress as JtlCustomerOrderShippingAddress;
 use Jtl\Connector\Core\Model\CustomerOrder as JtlCustomerOrder;
@@ -21,6 +22,12 @@ use Customer as PrestaCustomer;
 
 class CustomerOrderController extends AbstractController implements PullInterface
 {
+    /**
+     * @param QueryFilter $queryFilter
+     * @return array|AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     public function pull(QueryFilter $queryFilter): array
     {
         $fromDate = !empty(\Configuration::get('jtlconnector_from_date'))
@@ -44,6 +51,11 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         return $jtlOrders;
     }
 
+    /**
+     * @param PrestaCustomerOrder $prestaOrder
+     * @return JtlCustomerOrder
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlCustomerOrder(PrestaCustomerOrder $prestaOrder): JtlCustomerOrder
     {
         $prestaCurrency        = new PrestaCurrency($prestaOrder->id_currency);
@@ -82,6 +94,10 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         return $jtlOrder;
     }
 
+    /**
+     * @param PrestaCart $prestaCart
+     * @return array
+     */
     protected function getCustomerOrderItems(PrestaCart $prestaCart): array
     {
         $prestaProducts = $prestaCart->getProducts();
@@ -94,6 +110,10 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         return $jtlOrderItems;
     }
 
+    /**
+     * @param array $prestaProduct
+     * @return JtlCustomerOrderItem
+     */
     protected function createJtlCustomerOrderItem(array $prestaProduct): JtlCustomerOrderItem
     {
         return (new JtlCustomerOrderItem())
@@ -107,6 +127,10 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setVat($prestaProduct['rate']);
     }
 
+    /**
+     * @param string $module
+     * @return string
+     */
     protected function mapPaymentModule(string $module): string
     {
         return match ($module) {
@@ -118,6 +142,12 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         };
     }
 
+    /**
+     * @param PrestaAddress $prestaAddress
+     * @param PrestaCustomer $prestaCustomer
+     * @return JtlCustomerOrderBillingAddress
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlCustomerOrderBillingAddress(
         PrestaAddress $prestaAddress,
         PrestaCustomer $prestaCustomer
@@ -138,6 +168,12 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setZipCode($prestaAddress->postcode);
     }
 
+    /**
+     * @param PrestaAddress $prestaAddress
+     * @param PrestaCustomer $prestaCustomer
+     * @return JtlCustomerOrderShippingAddress
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlCustomerOrderShippingAddress(
         PrestaAddress $prestaAddress,
         PrestaCustomer $prestaCustomer
@@ -157,7 +193,12 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setZipCode($prestaAddress->postcode);
     }
 
-    private function setStates(PrestaCustomerOrder $prestaOrder, JtlCustomerOrder $jtlOrder)
+    /**
+     * @param PrestaCustomerOrder $prestaOrder
+     * @param JtlCustomerOrder $jtlOrder
+     * @return void
+     */
+    private function setStates(PrestaCustomerOrder $prestaOrder, JtlCustomerOrder $jtlOrder): void
     {
         $jtlOrder->setPaymentStatus(
             $prestaOrder->hasBeenPaid(
@@ -168,6 +209,9 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         }
     }
 
+    /**
+     * @return Statistic
+     */
     public function statistic(): Statistic
     {
         $queryBuilder = new QueryBuilder();

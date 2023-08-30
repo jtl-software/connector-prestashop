@@ -68,10 +68,10 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             );
 
 
-        $prestaCategoryI18ns = $this->createJtlCategoryTranslations($prestaCategory['id_category']);
+        $jtlCategoryI18ns = $this->createJtlCategoryTranslations($prestaCategory['id_category']);
 
         $jtlCategory
-            ->setI18ns(...$prestaCategoryI18ns);
+            ->setI18ns(...$jtlCategoryI18ns);
 
         return $jtlCategory;
     }
@@ -123,22 +123,27 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      * @return AbstractModel
      * @throws PrestaShopException
      * @throws PrestaShopDatabaseException
+     * @throws \Exception
      */
     public function push(AbstractModel $jtlCategory): AbstractModel
     {
+        /** @var JtlCategory $jtlCategory */
         $endpoint = $jtlCategory->getId()->getEndpoint();
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
             $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory($endpoint));
-            $prestaCategory->update();
+            if (!$prestaCategory->update()) {
+                throw new \Exception('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
+            }
 
             return $jtlCategory;
         }
 
         $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
-        $prestaCategory->add();
-
+        if (!$prestaCategory->add()) {
+            throw new \Exception('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
+        }
 
         return $jtlCategory;
     }

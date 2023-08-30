@@ -91,18 +91,24 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException|Exception
+     * @throws \Exception
      */
     public function push(AbstractModel $jtlCustomer): AbstractModel
     {
+        /** @var JtlCustomer $jtlCustomer */
         $endpoint = $jtlCustomer->getId()->getEndpoint();
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
             $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer($endpoint));
-            $prestaCustomer->update();
-            $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, $jtlCustomer->getId()->getEndpoint() === '');
+            if (!$prestaCustomer->update()) {
+                throw new \Exception('Error updating Customer' . $jtlCustomer->getCustomerNumber());
+            }
+            $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, empty($jtlCustomer->getId()->getEndpoint()));
             $prestaAddress = $this->createPrestaAddress($jtlCustomer, new PrestaAddress($endpoint), $prestaCustomer);
-            $prestaAddress->update();
+            if (!$prestaCustomer->update()) {
+                throw new \Exception('Error updating address on Customer' . $jtlCustomer->getCustomerNumber());
+            }
 
             return $jtlCustomer;
         }
