@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Controller;
 
 use Category as PrestaCategory;
@@ -134,7 +136,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         if (!$isNew) {
             $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory($endpoint));
             if (!$prestaCategory->update()) {
-                throw new \Exception('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
+                throw new \RuntimeException('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
             }
 
             return $jtlCategory;
@@ -142,7 +144,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
 
         $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
         if (!$prestaCategory->add()) {
-            throw new \Exception('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
+            throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
         }
 
         return $jtlCategory;
@@ -178,7 +180,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      * @param JtlCategoryI18n ...$jtlCategoryI18ns
      * @return array
      * @throws PrestaShopDatabaseException
-     * @throws Exception
+     * @throws \RuntimeException
      */
     protected function createPrestaCategoryTranslations(JtlCategoryI18n ...$jtlCategoryI18ns): array
     {
@@ -207,7 +209,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $category = new PrestaCategory($model->getId()->getEndpoint());
 
         if (!$category->delete()) {
-            throw new \Exception('Error deleting category with id: ' . $model->getId()->getEndpoint());
+            throw new \RuntimeException('Error deleting category with id: ' . $model->getId()->getEndpoint());
         }
 
         return $model;
@@ -231,7 +233,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $result = $this->db->getValue($sql);
 
         return (new Statistic())
-            ->setAvailable($result)
+            ->setAvailable((int)$result)
             ->setControllerName($this->controllerName);
     }
 }

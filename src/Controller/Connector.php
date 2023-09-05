@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Controller;
 
 use jtl\Connector\Model\ConnectorServerInfo;

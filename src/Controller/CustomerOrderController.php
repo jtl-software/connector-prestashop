@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\PullInterface;
@@ -64,10 +66,15 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         $prestaInvoiceAddress  = new PrestaAddress($prestaOrder->id_address_invoice);
         $prestaDeliveryAddress = new PrestaAddress($prestaOrder->id_address_delivery);
         $prestaCart            = new PrestaCart($prestaOrder->id_cart);
-        $jtlOrder              = (new JtlCustomerOrder())
 
-            ->setId(new Identity($prestaOrder->id))
-            ->setCustomerId(new Identity($prestaOrder->id_customer))
+        if (\is_null($prestaOrder->id)) {
+            throw new \RuntimeException("Presta Order id can't be null");
+        }
+
+        $jtlOrder = (new JtlCustomerOrder())
+
+            ->setId(new Identity((string)$prestaOrder->id))
+            ->setCustomerId(new Identity((string)$prestaOrder->id_customer))
             ->setBillingAddress($this->createJtlCustomerOrderBillingAddress(
                 $prestaInvoiceAddress,
                 $prestaCustomer
@@ -75,7 +82,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setCreationDate(new \DateTime($prestaOrder->date_add))
             ->setCurrencyIso($prestaCurrency->iso_code)
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaOrder->id_lang))
-            ->setOrderNumber($prestaOrder->id)
+            ->setOrderNumber((string)$prestaOrder->id)
             ->setPaymentDate(new \DateTime($prestaOrder->invoice_date))
             ->setPaymentModuleCode($this->mapPaymentModule($prestaOrder->module))
             ->setShippingAddress($this->createJtlCustomerOrderShippingAddress(
@@ -111,7 +118,15 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     }
 
     /**
-     * @param array $prestaProduct
+     * @param array{
+     *     id_product:int,
+     *     name: string,
+     *     price_with_reduction_without_tax: float,
+     *     price_with_reduction: float,
+     *     cart_quantity: int,
+     *     reference: string,
+     *     rate: float
+     *     } $prestaProduct
      * @return JtlCustomerOrderItem
      */
     protected function createJtlCustomerOrderItem(array $prestaProduct): JtlCustomerOrderItem
@@ -233,7 +248,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         $result = $this->db->getValue($sql);
 
         return (new Statistic())
-            ->setAvailable($result)
+            ->setAvailable((int)$result)
             ->setControllerName($this->controllerName);
     }
 }

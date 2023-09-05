@@ -5,7 +5,6 @@ namespace jtl\Connector\Presta\Controller;
 use DI\Container;
 use Jtl\Connector\Core\Model\QueryFilter;
 use jtl\Connector\Presta\Utils\QueryBuilder;
-use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
 use PrestaShopDatabaseException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -86,7 +85,7 @@ abstract class AbstractController implements LoggerAwareInterface
 
     /**
      * @throws PrestaShopDatabaseException
-     * @throws Exception
+     * @throws \RuntimeException
      */
     protected function getPrestaLanguageIdFromIso(string $languageIso): int
     {
@@ -103,7 +102,7 @@ abstract class AbstractController implements LoggerAwareInterface
         $result = $this->db->executeS($sql)[0]['id_lang'];
 
         if (\is_null($result)) {
-            throw new Exception("Language '$languageIso' is missing in Prestashop");
+            throw new \RuntimeException("Language '$languageIso' is missing in Prestashop");
         }
 
         return $this->db->executeS($sql)[0]['id_lang'];
@@ -125,11 +124,11 @@ abstract class AbstractController implements LoggerAwareInterface
     }
 
     /**
-     * @param string $languageId
+     * @param int $languageId
      * @return string
      * @throws PrestaShopDatabaseException
      */
-    protected function getJtlCountryIsoFromPrestaCountryId(string $languageId): string
+    protected function getJtlCountryIsoFromPrestaCountryId(int $languageId): string
     {
         $sql = (new QueryBuilder())
             ->select('iso_code')

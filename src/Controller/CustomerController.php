@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
@@ -224,7 +226,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
         $result = $this->db->getValue($sql);
 
         return (new Statistic())
-            ->setAvailable($result)
+            ->setAvailable((int)$result)
             ->setControllerName($this->controllerName);
     }
 }
