@@ -15,7 +15,6 @@ use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
-use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
@@ -59,14 +58,14 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     protected function createJtlCategory(array $prestaCategory): JtlCategory
     {
         $jtlCategory = (new JtlCategory())
-            ->setId(new Identity($prestaCategory['id_category']))
-            ->setIsActive($prestaCategory['active'])
+            ->setId(new Identity((string)$prestaCategory['id_category']))
+            ->setIsActive((bool)$prestaCategory['active'])
             ->setLevel($prestaCategory['level_depth'])
             ->setParentCategoryId(
                 $prestaCategory['id_parent'] == PrestaCategory::getRootCategory()->id
                 || $prestaCategory['id_parent'] == 2
                 ? new Identity('')
-                : new Identity($prestaCategory['id_parent'])
+                : new Identity((string)$prestaCategory['id_parent'])
             );
 
 

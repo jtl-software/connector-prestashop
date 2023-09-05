@@ -92,8 +92,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setShippingDate(new \DateTime($prestaOrder->delivery_date))
             ->setShippingInfo($prestaOrder->getShippingNumber())
             ->setShippingMethodName($prestaCarrier->name)
-            ->setTotalSum($prestaOrder->total_paid)
-            ->setTotalSumGross($prestaOrder->total_paid_tax_incl)
+            ->setTotalSum((float)$prestaOrder->total_paid)
+            ->setTotalSumGross((float)$prestaOrder->total_paid_tax_incl)
             ->setItems(...$this->getCustomerOrderItems($prestaCart));
 
         $this->setStates($prestaOrder, $jtlOrder);
@@ -132,7 +132,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     protected function createJtlCustomerOrderItem(array $prestaProduct): JtlCustomerOrderItem
     {
         return (new JtlCustomerOrderItem())
-            ->setProductId(new Identity($prestaProduct['id_product']))
+            ->setProductId(new Identity((string)$prestaProduct['id_product']))
             ->setName($prestaProduct['name'])
             ->setPrice($prestaProduct['price_with_reduction_without_tax'])
             ->setPriceGross($prestaProduct['price_with_reduction'])

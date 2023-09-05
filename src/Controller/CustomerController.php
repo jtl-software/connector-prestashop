@@ -59,8 +59,8 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     protected function createJtlCustomer(array $prestaCustomer): JtlCustomer
     {
         $jtlCustomer = (new JtlCustomer())
-            ->setId(new Identity($prestaCustomer['id_customer']))
-            ->setCustomerGroupId(new Identity($prestaCustomer['id_group']))
+            ->setId(new Identity((string)$prestaCustomer['id_customer']))
+            ->setCustomerGroupId(new Identity((string)$prestaCustomer['id_group']))
             ->setBirthday($prestaCustomer['birthday'] === '0000-00-00'
                 ? null
                 : new \DateTime($prestaCustomer['birthday']))
@@ -68,18 +68,18 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setCompany($prestaCustomer['company'])
             ->setCountryIso($prestaCustomer['iso_code'])
             ->setCreationDate(new \DateTime($prestaCustomer['date_add']))
-            ->setCustomerNumber($prestaCustomer['id_customer'])
+            ->setCustomerNumber((string)$prestaCustomer['id_customer'])
             ->setEMail($prestaCustomer['email'])
             ->setExtraAddressLine($prestaCustomer['address2'])
             ->setFirstName($prestaCustomer['firstname'])
             ->setHasCustomerAccount(true)
-            ->setHasNewsletterSubscription($prestaCustomer['newsletter'])
-            ->setIsActive($prestaCustomer['active'])
+            ->setHasNewsletterSubscription((bool)$prestaCustomer['newsletter'])
+            ->setIsActive((bool)$prestaCustomer['active'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCustomer['id_lang']))
             ->setLastName($prestaCustomer['lastname'])
             ->setMobile($prestaCustomer['phone_mobile'])
             ->setPhone($prestaCustomer['phone'])
-            ->setSalutation($this->determineSalutation($prestaCustomer['id_gender']))
+            ->setSalutation($this->determineSalutation(new PrestaCustomer($prestaCustomer['id_gender'])))
             ->setStreet($prestaCustomer['address1'])
             ->setVatNumber($prestaCustomer['vat_number'])
             ->setWebsiteUrl($prestaCustomer['website'])
