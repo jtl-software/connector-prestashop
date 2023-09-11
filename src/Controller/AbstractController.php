@@ -140,6 +140,8 @@ abstract class AbstractController implements LoggerAwareInterface
         return $this->db->executeS($sql)[0]['iso_code'];
     }
 
+
+    //TODO: Rewrite to support multiple leftjoins or remove.
     /**
      * @param QueryFilter $queryFilter
      * @param string $linkingTable
