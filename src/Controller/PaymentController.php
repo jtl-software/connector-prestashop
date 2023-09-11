@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\PullInterface;
@@ -77,7 +79,7 @@ class PaymentController extends AbstractController implements PullInterface
         $result = $this->db->getValue($sql);
 
         return (new Statistic())
-            ->setAvailable($result)
+            ->setAvailable((int)$result)
             ->setControllerName($this->controllerName);
     }
 }
