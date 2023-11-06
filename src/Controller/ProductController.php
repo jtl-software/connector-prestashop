@@ -11,13 +11,14 @@ use Exception;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Exception\TranslatableAttributeException;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\Statistic;
+use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 use jtl\Connector\Presta\Utils\Utils;
-use PrestaShopBundle\Entity\Attribute;
 use Product as PrestaProduct;
 use Jtl\Connector\Core\Model\Product as JtlProduct;
 use Jtl\Connector\Core\Model\ProductI18n as JtlProductI18n;
@@ -37,10 +38,10 @@ use Jtl\Connector\Core\Model\Identity;
 class ProductController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
 {
     final public const
-        JTL_ATTRIBUTE_ACTIVE           = 'active',
-        JTL_ATTRIBUTE_ONLINE_ONLY      = 'online_only',
+        JTL_ATTRIBUTE_ACTIVE = 'active',
+        JTL_ATTRIBUTE_ONLINE_ONLY = 'online_only',
         JTL_ATTRIBUTE_MAIN_CATEGORY_ID = 'main_category_id',
-        JTL_ATTRIBUTE_CARRIERS         = 'carriers';
+        JTL_ATTRIBUTE_CARRIERS = 'carriers';
 
     protected array $jtlSpecialAttributes = [
         self::JTL_ATTRIBUTE_ACTIVE,
@@ -49,6 +50,14 @@ class ProductController extends AbstractController implements PullInterface, Pus
         self::JTL_ATTRIBUTE_CARRIERS
     ];
 
+    private PrimaryKeyMapper $mapper;
+
+
+    public function __construct(PrimaryKeyMapper $mapper)
+    {
+        $this->mapper = $mapper;
+        parent::__construct();
+    }
 
     public function pull(QueryFilter $queryFilter): array
     {
@@ -60,26 +69,46 @@ class ProductController extends AbstractController implements PullInterface, Pus
             'product',
             'id_product'
         );
-        // not linked vars
 
         foreach ($prestaProductIds as $prestaProductId) {
-            $jtlProducts[] = $this->createJtlProduct(new PrestaProduct($prestaProductId['id_product']));
-        }
-
-        foreach ($jtlProducts as $jtlProduct) {
-            if ($jtlProduct->getIsMasterProduct()) {
-                $prestaProduct = new PrestaProduct($jtlProduct->getId()->getEndpoint());
-                $products = $this->createJtlProductsFromVariations(
-                    $jtlProduct,
-                    $prestaProduct->getAttributesGroups(Context::getContext()->language->id));
+            $product = $this->createJtlProduct(new PrestaProduct($prestaProductId['id_product']));
+            if (isset($prestaProductId['id_product_attribute'])) {
+                $prestaProduct = new PrestaProduct($product->getId()->getEndpoint());
+                $jtlProducts[] = $this->createJtlProductsFromVariations(
+                    $product,
+                    $prestaProductId['id_product_attribute'],
+                    $prestaProduct->id);
+            } else {
+                $jtlProducts[] = $product;
             }
         }
 
-        foreach ($products as $product) {
-            $jtlProducts[] = $product;
+        return $jtlProducts;
+    }
+
+    protected function getNotLinkedEntities(
+        QueryFilter $queryFilter,
+        string      $linkingTable,
+        string      $prestaTable,
+        string      $columns,
+        ?string     $fromDate = null): array
+    {
+        $foo = parent::getNotLinkedEntities($queryFilter, $linkingTable, $prestaTable, $columns, $fromDate);
+
+        if (\count($foo) < $queryFilter->getLimit()) {
+            $sql = 'SELECT p.id_product as id_product, p.id_product_attribute as id_product_attribute FROM ps_product_attribute p
+                LEFT JOIN ps_product pr ON pr.id_product = p.id_product
+                LEFT JOIN jtl_connector_link_product l 
+                ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
+                WHERE l.host_id IS NULL AND p.id_product > 0
+                LIMIT 100';
+
+            $bar = $this->db->executeS($sql);
+
+            $foo = \array_merge($foo, $bar);
         }
 
-        return $jtlProducts;
+        return $foo;
     }
 
     /**
@@ -89,7 +118,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
     protected function createJtlProduct(PrestaProduct $prestaProduct): JtlProduct
     {
         $prestaAttributes = $prestaProduct->getAttributesGroups(Context::getContext()->language->id);
-        $prestaStock      = new \StockAvailable($prestaProduct->id);
+        $prestaStock = new \StockAvailable($prestaProduct->id);
 
         $jtlProduct = (new JtlProduct())
             ->setId(new Identity((string)$prestaProduct->id))
@@ -110,7 +139,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
             ->setVat($prestaProduct->getTaxesRate())
             ->setAttributes(...$this->createJtlSpecialAttributes($prestaProduct))
             ->setCategories(...$this->createJtlProductCategories($prestaProduct))
-            ->setPrices($this->createJtlPrice($prestaProduct))
+            ->setPrices($this->createJtlPrice((float)$prestaProduct->price))
             ->setI18ns(...$this->createJtlProductTranslations($prestaProduct->id))
             ->setAvailableFrom($this->createDateTime($prestaProduct->available_date))
             ->setBasePriceUnitName($prestaProduct->unity)
@@ -125,41 +154,36 @@ class ProductController extends AbstractController implements PullInterface, Pus
         if ($jtlProduct->getIsMasterProduct()) {
             $jtlProduct
                 ->setMasterProductId(new Identity(""))
-                ->setVariations(...$this->createJtlProductVariations($prestaProduct));
+                ->setVariations(...$this->createJtlProductVariations(
+                    $prestaProduct->getAttributesGroups(Context::getContext()->language->id)
+                ));
         }
 
         return $jtlProduct;
     }
 
-    protected function createJtlProductsFromVariations(JtlProduct $product, array $variations): array
+    protected function createJtlProductsFromVariations(JtlProduct $product, int $variationId, int $prestaId): JtlProduct
     {
-        $jtlProducts = [];
-        $prestaVariations = [];
+            $comb = new Combination($variationId);
 
-        foreach ($variations as $variation) {
-            $prestaVariations[$variation['id_product_attribute']][] = $variation;
-        }
-
-        foreach ($prestaVariations as $key => $prestaVariation) {
-            $jtlProducts[] = (new JtlProduct())
-                ->setId(new Identity($product->getId()->getEndpoint() . '_' . (string)$key))
+            return (new JtlProduct())
+                ->setId(new Identity($product->getId()->getEndpoint() . '_' . (string)$variationId))
                 ->setManufacturerId($product->getManufacturerId())
                 ->setCreationDate($product->getCreationDate())
-                ->setEan($product->getEan())
-                ->setIsbn($product->getIsbn())
+                ->setEan($comb->ean13)
+                ->setIsbn($comb->isbn)
                 ->setHeight($product->getHeight())
                 ->setIsMasterProduct(false)
                 ->setMasterProductId($product->getId())
                 ->setModified($product->getModified())
                 ->setShippingWeight($product->getShippingWeight())
                 ->setSku($product->getSku())
-                ->setUpc($product->getUpc())
-                ->setStockLevel($product->getStockLevel())
-                ->setSpecialPrices(...$product->getSpecialPrices())
+                ->setUpc($comb->upc)
+                ->setStockLevel(\StockAvailable::getQuantityAvailableByProduct($prestaId, $variationId))
                 ->setVat($product->getVat())
                 ->setAttributes(...$product->getAttributes())
                 ->setCategories(...$product->getCategories())
-                ->setPrices(...$product->getPrices())
+                ->setPrices($this->createJtlPrice($product->getPrices()[0]->getItems()[0]->getNetPrice(), $comb))
                 ->setI18ns(...$product->getI18ns())
                 ->setAvailableFrom($product->getAvailableFrom())
                 ->setBasePriceUnitName($product->getBasePriceUnitName())
@@ -168,11 +192,9 @@ class ProductController extends AbstractController implements PullInterface, Pus
                 ->setIsActive(true)
                 ->setIsTopProduct($product->getIsTopProduct())
                 ->setPurchasePrice($product->getPurchasePrice())
-                ->setMinimumOrderQuantity($product->getMinimumOrderQuantity())
-                ->setManufacturerNumber($product->getManufacturerNumber());
-        }
-
-        return $jtlProducts;
+                ->setMinimumOrderQuantity($comb->minimal_quantity)
+                ->setManufacturerNumber($comb->mpn);
+                //->setVariations(...$this->createJtlProductVariations($prestaVariation));
     }
 
     protected function getPrestaCarriers(PrestaProduct $prestaproduct): array
@@ -197,7 +219,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
 
     protected function getPrestaSpecialPrices(int $productId): array
     {
-        $queryBuilder        = new QueryBuilder();
+        $queryBuilder = new QueryBuilder();
         $prestaSpecialPrices = [];
 
         $sql = $queryBuilder
@@ -214,13 +236,15 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $prestaSpecialPrices;
     }
 
-    protected function createJtlPrice(PrestaProduct $prestaProduct): JtlPrice
+    protected function createJtlPrice(float $prestaPrice, Combination $combination = null): JtlPrice
     {
+        $price = isset($combination) ? ($combination->price + $prestaPrice) : $prestaPrice;
+
         return (new JtlPrice())
             ->setCustomerGroupId(new Identity(""))
             ->setItems(
                 (new JtlPriceItem())
-                    ->setNetPrice((float)$prestaProduct->price)
+                    ->setNetPrice((float)$price)
                     ->setQuantity(0)
             );
     }
@@ -228,7 +252,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
     protected function createJtlSpecialPrices(PrestaProduct $prestaProduct): array
     {
         $prestaSpecialPrices = $this->getPrestaSpecialPrices($prestaProduct->id);
-        $jtlSpecialPrices    = [];
+        $jtlSpecialPrices = [];
 
         foreach ($prestaSpecialPrices as $prestaSpecialPrice) {
             /** @var \SpecificPrice $prestaSpecialPrice */
@@ -246,20 +270,21 @@ class ProductController extends AbstractController implements PullInterface, Pus
 
     protected function createJtlSpecialPriceItem(
         \SpecificPrice $prestaSpecialPrice,
-        PrestaProduct $prestaProduct
-    ): JtlSpecialPriceItem {
-        $priceType  = $prestaSpecialPrice->reduction_type;
-        $netPrice   = $prestaProduct->price;
+        PrestaProduct  $prestaProduct
+    ): JtlSpecialPriceItem
+    {
+        $priceType = $prestaSpecialPrice->reduction_type;
+        $netPrice = $prestaProduct->price;
         $grossPrice = $netPrice / 100 * (100 + $prestaProduct->getTaxesRate());
 
         if ($priceType === 'percentage') {
-            $priceReduction    = $grossPrice * $prestaSpecialPrice->reduction;
+            $priceReduction = $grossPrice * $prestaSpecialPrice->reduction;
             $reducedGrossPrice = $grossPrice - $priceReduction;
-            $reducedNetPrice   = $reducedGrossPrice / (100 + $prestaProduct->getTaxesRate()) * 100;
+            $reducedNetPrice = $reducedGrossPrice / (100 + $prestaProduct->getTaxesRate()) * 100;
         } else {
             if ($prestaSpecialPrice->reduction_tax === 1) {
                 $reducedGrossPrice = $grossPrice - $prestaSpecialPrice->reduction;
-                $reducedNetPrice   = $reducedGrossPrice / (100 + $prestaProduct->getTaxesRate()) * 100;
+                $reducedNetPrice = $reducedGrossPrice / (100 + $prestaProduct->getTaxesRate()) * 100;
             } else {
                 $reducedNetPrice = $netPrice - $prestaSpecialPrice->reduction;
             }
@@ -309,8 +334,8 @@ class ProductController extends AbstractController implements PullInterface, Pus
      */
     protected function createJtlSpecialAttributes(PrestaProduct $prestaProduct): array
     {
-        $jtlAttributes  = [];
-        $langIso        = $this->getJtlLanguageIsoFromLanguageId(\Context::getContext()->language->id);
+        $jtlAttributes = [];
+        $langIso = $this->getJtlLanguageIsoFromLanguageId(\Context::getContext()->language->id);
         $prestaCarriers = $this->getPrestaCarriers($prestaProduct);
 
         if (!empty($prestaProduct->id_category_default)) {
@@ -354,7 +379,8 @@ class ProductController extends AbstractController implements PullInterface, Pus
         $jtlProductCategories = [];
 
         foreach ($prestaProduct->getCategories() as $category) {
-            $jtlProductCategories[] = (new JtlProductCategory())->setCategoryId(new Identity((string)$category));
+            $host = $this->mapper->getHostId(IdentityType::CATEGORY, (string)$category);
+            $jtlProductCategories[] = (new JtlProductCategory())->setCategoryId(new Identity((string)$category, $host ?? ''));
         }
 
         return $jtlProductCategories;
@@ -364,40 +390,45 @@ class ProductController extends AbstractController implements PullInterface, Pus
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    protected function createJtlProductVariations(PrestaProduct $prestaProduct): array
+    protected function createJtlProductVariations(array $variations): array
     {
         $jtlProductVariations = [];
-        $prestaVariations     = [];
-        $combinations         = $prestaProduct->getAttributesGroups(Context::getContext()->language->id);
+        $prestaVariations = [];
+        $prestaAttributes = [];
 
-
-
-        foreach ($combinations as $combination) {
-            $prestaVariations[$combination['id_attribute_group']] = $combination['group_name'];
+        foreach ($variations as $variation) {
+            $prestaVariations[$variation['id_attribute_group']] = $variation['group_name'];
+            $prestaAttributes[$variation['id_attribute']] = $variation;
         }
 
-        foreach ($prestaVariations as $key => $prestaVariation) {
-            $jtlProductVariations[] = $this->createJtlProductVariation($prestaProduct, $key);
+        foreach ($prestaVariations as $id => $prestaVariation) {
+            $jtlProductVariations[] = $this->createJtlProductVariation($id);
+        }
+
+        foreach ($jtlProductVariations as $jtlProductVariation) {
+            $jtlProductVariation->setValues(...$this->createJtlProductVariationValues(
+                (int)$jtlProductVariation->getId()->getEndpoint(),
+                $prestaAttributes));
         }
 
         return $jtlProductVariations;
     }
 
     protected function createJtlProductVariation(
-        PrestaProduct $prestaProduct,
         int $prestaVariationId
-    ): JtlProductVariation {
+    ): JtlProductVariation
+    {
         return (new JtlProductVariation())
             ->setId(new Identity((string)$prestaVariationId))
-            ->setI18ns(...$this->createJtlProductVariationI18ns($prestaVariationId))
-            ->setValues(...$this->createJtlProductVariationValues($prestaVariationId, $prestaProduct));
+            ->setI18ns(...$this->createJtlProductVariationI18ns($prestaVariationId));
     }
 
-    protected function createJtlProductVariationI18ns(int $prestaVariationId): array {
+    protected function createJtlProductVariationI18ns(int $prestaVariationId): array
+    {
         $jtlProductVariationI18ns = [];
-        $prestaVariation          = new AttributeGroup($prestaVariationId);
+        $attributeGroup = new AttributeGroup($prestaVariationId);
 
-        foreach ($prestaVariation->name as $key => $prestaVariationName) {
+        foreach ($attributeGroup->name as $key => $prestaVariationName) {
             $jtlProductVariationI18ns[] = (new JtlProductVariationI18n())
                 ->setName($prestaVariationName)
                 ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($key));
@@ -406,37 +437,42 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlProductVariationI18ns;
     }
 
-    protected function createJtlProductVariationValues(int $prestaVariationId, PrestaProduct $prestaProduct): array
+    protected function createJtlProductVariationValues(int $variationId, array $prestaVariations): array
     {
-        $languages             = \Language::getLanguages();
-        $prestaVariation       = new AttributeGroup($prestaVariationId);
+        $languages = \Language::getLanguages();
         $prestaVariationValuesByLangIds = [];
-        $prestaVariationValues = [];
-        $jtlVariationValues    = [];
+        $jtlVariationValues = [];
 
         foreach ($languages as $language) {
-            $langId                         = $language['id_lang'];
-            $prestaVariationValuesByLangIds[] = $prestaVariation->getAttributes($langId, $prestaVariationId);
-        }
-
-        foreach ($prestaVariationValuesByLangIds as $prestaVariationValuesByLangId) {
-            foreach ($prestaVariationValuesByLangId as $prestaVariation) {
-                $prestaVariationValues[$prestaVariation['id_attribute']][] = $prestaVariation;
+            $langId = $language['id_lang'];
+            foreach ($prestaVariations as $prestaVariation) {
+                if ($prestaVariation['id_attribute_group'] === $variationId) {
+                    $comb = new \ProductAttribute($prestaVariation['id_attribute'], $langId);
+                    $prestaVariationValuesByLangIds[$prestaVariation['id_attribute']][$langId] = $comb->name;
+                }
             }
         }
 
-        foreach ($prestaVariationValues as $prestaVariationValue) {
-            $jtlVariationValues[] = $this->createJtlProductVariationValue($prestaProduct, $prestaVariationValue);
+//        foreach ($prestaVariationValuesByLangIds as $prestaVariationValuesByLangId) {
+//            foreach ($prestaVariationValuesByLangId as $key => $prestaVariation) {
+//                $prestaVariationValues[$key][$langId] = $prestaVariation;
+//            }
+//        }
+
+        foreach ($prestaVariationValuesByLangIds as $key => $prestaVariationValuesByLangId) {
+            $jtlVariationValues[] = $this->createJtlProductVariationValue($key, $prestaVariationValuesByLangId);
         }
 
         return $jtlVariationValues;
     }
 
-    protected function createJtlProductVariationValue(PrestaProduct $prestaProduct, array $prestaVariationValue): JtlProductVariationValue
+    protected function createJtlProductVariationValue(int $prestaAttributeId, array $prestaVariationValue): JtlProductVariationValue
     {
+        $attribute = new \ProductAttribute($prestaAttributeId);
+
         return (new JtlProductVariationValue())
-            ->setId(new Identity((string) $prestaProduct->id . '_' . $prestaVariationValue[0]['id_attribute']))
-            ->setSort($prestaVariationValue[0]['position'])
+            ->setId(new Identity((string)$prestaAttributeId))
+            ->setSort((int)$attribute->position)
             ->setI18ns(...$this->createJtlProductVariationValueI18ns($prestaVariationValue));
     }
 
@@ -444,10 +480,10 @@ class ProductController extends AbstractController implements PullInterface, Pus
     {
         $attributeI18ns = [];
 
-        foreach ($prestaVariationI18ns as $prestaVariationI18n) {
+        foreach ($prestaVariationI18ns as $langId => $prestaVariationI18n) {
             $attributeI18ns[] = (new JtlProductVariationValueI18n())
-                ->setName($prestaVariationI18n['name'])
-                ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaVariationI18n['id_lang']));
+                ->setName($prestaVariationI18n)
+                ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($langId));
         }
 
         return $attributeI18ns;
@@ -459,12 +495,10 @@ class ProductController extends AbstractController implements PullInterface, Pus
 
         if (empty($masterId)) {
             $this->db->execute(
-                'UPDATE ' . \_DB_PREFIX_ . 'product SET unit_price_ratio=' . $data->getBasePriceDivisor(
-                ) . ' WHERE id_product=' . $data->getId()->getEndpoint()
+                'UPDATE ' . \_DB_PREFIX_ . 'product SET unit_price_ratio=' . $data->getBasePriceDivisor() . ' WHERE id_product=' . $data->getId()->getEndpoint()
             );
             $this->db->execute(
-                'UPDATE ' . \_DB_PREFIX_ . 'product_shop SET unit_price_ratio=' . $data->getBasePriceDivisor(
-                ) . ' WHERE id_product=' . $data->getId()->getEndpoint()
+                'UPDATE ' . \_DB_PREFIX_ . 'product_shop SET unit_price_ratio=' . $data->getBasePriceDivisor() . ' WHERE id_product=' . $data->getId()->getEndpoint()
             );
         }
 
@@ -689,11 +723,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
         $specialAttributes = ProductAttr::getSpecialAttributes();
 
         $foundSpecialAttributes = [];
-        $tags                   = [];
+        $tags = [];
         foreach ($data->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
                 if ($i18n->getName() === ProductAttr::TAGS) {
-                    $id        = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
+                    $id = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
                     $tags[$id] = \explode(',', $i18n->getValue());
                 }
 
@@ -738,7 +772,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
             \Tag::addTags($languageId, $product->id_product, $tagList);
         }
 
-        $prices         = $data->getPrices();
+        $prices = $data->getPrices();
         $product->price = \round(\end($prices)->getItems()[0]->getNetPrice(), 6);
 
         $rrp = $data->getRecommendedRetailPrice();
@@ -762,7 +796,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
         $translations = [];
         foreach (Utils::getInstance()->getLanguages() as $language) {
             $translations[$language['id_lang']] = [
-                'name'  => ProductAttr::RECOMMENDED_RETAIL_PRICE,
+                'name' => ProductAttr::RECOMMENDED_RETAIL_PRICE,
                 'value' => $rrp
             ];
         }
@@ -786,7 +820,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
                 $obj = new \Product($endpoint);
             } else {
                 list($productId, $combiId) = \explode('_', $data->getId()->getEndpoint());
-                $obj                       = new Combination($combiId);
+                $obj = new Combination($combiId);
             }
 
             $obj->delete();

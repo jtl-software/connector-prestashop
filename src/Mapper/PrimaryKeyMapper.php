@@ -179,7 +179,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
         $sql = $queryBuilder
             ->type('DELETE')
             ->from($tableName)
-            ->where("endpoint_id=$endpointId AND host_id=$hostId");
+            ->where("endpoint_id='$endpointId' AND host_id=$hostId");
 
         return $this->db->execute($sql);
     }
