@@ -187,4 +187,19 @@ abstract class AbstractController implements LoggerAwareInterface
 
         return '';
     }
+
+    protected function createDateTime(string $date): ?\DateTimeInterface
+    {
+        if ($date === '0000-00-00') {
+            return null;
+        }
+
+        $object = new \DateTime($date);
+
+        if ($object < new \DateTime('1970-01-01 00:00:00')) {
+            return null;
+        }
+
+        return $object;
+    }
 }

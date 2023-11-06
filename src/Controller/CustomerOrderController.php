@@ -79,17 +79,17 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                 $prestaInvoiceAddress,
                 $prestaCustomer
             ))
-            ->setCreationDate(new \DateTime($prestaOrder->date_add))
+            ->setCreationDate($this->createDateTime($prestaOrder->date_add))
             ->setCurrencyIso($prestaCurrency->iso_code)
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaOrder->id_lang))
             ->setOrderNumber((string)$prestaOrder->id)
-            ->setPaymentDate(new \DateTime($prestaOrder->invoice_date))
+            ->setPaymentDate($this->createDateTime($prestaOrder->invoice_date))
             ->setPaymentModuleCode($this->mapPaymentModule($prestaOrder->module))
             ->setShippingAddress($this->createJtlCustomerOrderShippingAddress(
                 $prestaDeliveryAddress,
                 $prestaCustomer
             ))
-            ->setShippingDate(new \DateTime($prestaOrder->delivery_date))
+            ->setShippingDate($this->createDateTime($prestaOrder->delivery_date))
             ->setShippingInfo($prestaOrder->getShippingNumber())
             ->setShippingMethodName($prestaCarrier->name)
             ->setTotalSum((float)$prestaOrder->total_paid)

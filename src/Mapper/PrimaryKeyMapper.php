@@ -18,13 +18,11 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             'jtl_connector_link_crossselling',
             'jtl_connector_link_crossselling_group',
             'jtl_connector_link_customer',
-            'jtl_connector_link_customer_group',
             'jtl_connector_link_image',
             'jtl_connector_link_manufacturer',
-            'jtl_connector_link_order',
+            'jtl_connector_link_customer_order',
             'jtl_connector_link_payment',
             'jtl_connector_link_product',
-            'jtl_connector_link_shipping_class',
             'jtl_connector_link_specific',
             'jtl_connector_link_specific_value',
             'jtl_connector_link_tax_class'
@@ -139,7 +137,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 
         return $this->db->execute(
             \sprintf(
-                'INSERT IGNORE INTO jtl_connector_link_%s (endpoint_id, host_id) VALUES ("%s",%s)',
+                'INSERT IGNORE INTO %s (endpoint_id, host_id) VALUES ("%s",%s)',
                 $tableName,
                 $endpointId,
                 $hostId
@@ -215,10 +213,9 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
                 'jtl_connector_link_crossselling',
             IdentityType::CROSS_SELLING_GROUP =>
                 'jtl_connector_link_crossselling_group',
-            IdentityType::CUSTOMER =>
-                'jtl_connector_link_customer',
+            IdentityType::CUSTOMER,
             IdentityType::CUSTOMER_GROUP =>
-                'jtl_connector_link_customer_group',
+                'jtl_connector_link_customer',
             IdentityType::CONFIG_GROUP_IMAGE,
             IdentityType::PRODUCT_VARIATION_VALUE_IMAGE,
             IdentityType::SPECIFIC_IMAGE,
@@ -230,13 +227,11 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             IdentityType::MANUFACTURER =>
                 'jtl_connector_link_manufacturer',
             IdentityType::CUSTOMER_ORDER =>
-                'jtl_connector_link_order',
+                'jtl_connector_link_customer_order',
             IdentityType::PAYMENT =>
                 'jtl_connector_link_payment',
             IdentityType::PRODUCT =>
                 'jtl_connector_link_product',
-            IdentityType::SHIPPING_CLASS =>
-                'jtl_connector_link_shipping_class',
             IdentityType::SPECIFIC =>
                 'jtl_connector_link_specific',
             IdentityType::SPECIFIC_VALUE =>

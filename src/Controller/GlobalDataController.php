@@ -12,6 +12,7 @@ use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\GlobalData;
 use Jtl\Connector\Core\Model\Currency as JtlCurrency;
 use Jtl\Connector\Core\Model\CustomerGroup as JtlCustomerGroup;
+use Jtl\Connector\Core\Model\CustomerGroupI18n as JtlCustomerGroupI18n;
 use Jtl\Connector\Core\Model\TaxRate as JtlTaxRate;
 use Jtl\Connector\Core\Model\Language as JtlLanguage;
 use Jtl\Connector\Core\Model\ShippingMethod as JtlShippingMethod;
@@ -64,15 +65,25 @@ class GlobalDataController extends AbstractController implements PullInterface, 
         $prestaCustomerGroups = \Group::getGroups(\Context::getContext()->language->id);
         $jtlCustomerGroups    = [];
 
+
+        //TODO: Customer Group I18n hinzufügen
         foreach ($prestaCustomerGroups as $prestaCustomerGroup) {
             $jtlCustomerGroup = (new JtlCustomerGroup())
                 ->setId(new Identity((string)$prestaCustomerGroup['id_group']))
+                ->addI18n($this->createJtlCustomerGroupI18n($prestaCustomerGroup))
                 ->setApplyNetPrice($prestaCustomerGroup['show_prices'] === 1);
 
             $jtlCustomerGroups[] = $jtlCustomerGroup;
         }
 
         return $jtlCustomerGroups;
+    }
+
+    protected function createJtlCustomerGroupI18n(array $prestaCustomerGroup): JtlCustomerGroupI18n
+    {
+        return (new JtlCustomerGroupI18n())
+            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId(\Context::getContext()->language->id))
+            ->setName($prestaCustomerGroup['name']);
     }
 
     /**

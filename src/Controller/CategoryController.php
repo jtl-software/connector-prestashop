@@ -78,19 +78,19 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param array $prestaCategory
+     * @param array $prestaCategoryI18n
      * @return JtlCategoryI18n
      * @throws PrestaShopDatabaseException
      */
-    protected function createJtlCategoryTranslation(array $prestaCategory): JtlCategoryI18n
+    protected function createJtlCategoryTranslation(array $prestaCategoryI18n): JtlCategoryI18n
     {
         return (new JtlCategoryI18n())
-            ->setName($prestaCategory['name'])
-            ->setTitleTag($prestaCategory['meta_title'])
-            ->setDescription($prestaCategory['description'])
-            ->setMetaDescription($prestaCategory['meta_description'])
-            ->setMetaKeywords($prestaCategory['meta_keywords'])
-            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCategory['id_lang']));
+            ->setName($prestaCategoryI18n['name'])
+            ->setTitleTag($prestaCategoryI18n['meta_title'])
+            ->setDescription($prestaCategoryI18n['description'])
+            ->setMetaDescription($prestaCategoryI18n['meta_description'])
+            ->setMetaKeywords($prestaCategoryI18n['meta_keywords'])
+            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCategoryI18n['id_lang']));
     }
 
     /**
@@ -117,6 +117,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         }
 
         return $i18ns;
+    }
+
+    protected function createJtlProductCategories()
+    {
+        
     }
 
     /**
