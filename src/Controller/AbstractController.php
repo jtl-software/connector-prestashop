@@ -74,13 +74,15 @@ abstract class AbstractController implements LoggerAwareInterface
     protected function getJtlLanguageIsoFromLanguageId(int $langId): string
     {
         $sql = (new QueryBuilder())
-            ->select('iso_code')
+            ->select('language_code')
             ->from('lang')
             ->where("id_lang = $langId");
 
         $result = $this->db->executeS($sql);
+        $code = $result[0]['language_code'];
+        $code = \explode('-', $code)[0];
 
-        $linguaConverter = Service::createFromISO_639_1($result[0]['iso_code']);
+        $linguaConverter = Service::createFromISO_639_1($code);
 
         return $linguaConverter->toISO_639_2b();
     }

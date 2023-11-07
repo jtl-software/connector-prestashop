@@ -7,6 +7,11 @@ use DI\Container;
 use Jtl\Connector\Core\Authentication\TokenValidatorInterface;
 use Jtl\Connector\Core\Connector\ConnectorInterface;
 use Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface;
+use jtl\Connector\Presta\Controller\CategoryController;
+use jtl\Connector\Presta\Controller\CustomerController;
+use jtl\Connector\Presta\Controller\ImageController;
+use jtl\Connector\Presta\Controller\ManufacturerController;
+use jtl\Connector\Presta\Controller\ProductController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Auth\TokenValidator;
 use jtl\Connector\Presta\Checksum\ChecksumLoader;
@@ -36,6 +41,26 @@ class Connector implements ConnectorInterface
         $this->container->set(
             TokenValidator::class,
             fn(ContainerInterface $container) => new TokenValidator(\Configuration::get('jtlconnector_pass'))
+        );
+        $this->container->set(
+            'Product',
+            \DI\autowire(ProductController::class)
+        );
+        $this->container->set(
+            'Category',
+            \DI\autowire(CategoryController::class)
+        );
+        $this->container->set(
+            'Image',
+            \DI\autowire(ImageController::class)
+        );
+        $this->container->set(
+            'Customer',
+            \DI\autowire(CustomerController::class)
+        );
+        $this->container->set(
+            'Manufacturer',
+            \DI\autowire(ManufacturerController::class)
         );
     }
 
