@@ -130,14 +130,6 @@ class JTLConnector extends Module
     {
         $db = Db::getInstance();
 
-        $link = $db->getLink();
-
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
-        }
-
         try {
             $types = [
                 1    => 'category',
@@ -201,11 +193,8 @@ class JTLConnector extends Module
                 }
             }
 
-            \Db::getInstance()->getLink()->commit();
-
             return true;
         } catch (\Exception $e) {
-            $link->rollback();
             throw $e;
         }
     }
@@ -213,14 +202,6 @@ class JTLConnector extends Module
     private function convertLinkingTables()
     {
         $db = Db::getInstance();
-
-        $link = $db->getLink();
-
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
-        }
 
         try {
             $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
@@ -238,11 +219,8 @@ class JTLConnector extends Module
                 }
             }
 
-            \Db::getInstance()->getLink()->commit();
-
             return true;
         } catch (\Exception $e) {
-            $link->rollback();
             throw $e;
         }
     }
