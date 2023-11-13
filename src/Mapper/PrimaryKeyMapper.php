@@ -61,7 +61,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             $sql = $queryBuilder
                 ->select('host_id')
                 ->from($tableName)
-                ->where("endpoint_id=\"$endpointId\"");
+                ->where("endpoint_id='$endpointId'");
 
             $dbResult = $this->db->getValue($sql);
 

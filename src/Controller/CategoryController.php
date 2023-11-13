@@ -119,11 +119,6 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return $i18ns;
     }
 
-    protected function createJtlProductCategories()
-    {
-        
-    }
-
     /**
      * @param AbstractModel $jtlCategory
      * @return AbstractModel
@@ -197,7 +192,9 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             $translations[$langId]['description']     = $jtlCategoryI18n->getDescription();
             $translations[$langId]['metaDescription'] = $jtlCategoryI18n->getMetaDescription();
             $translations[$langId]['metaKeywords']    = $jtlCategoryI18n->getMetaKeywords();
-            $translations[$langId]['url']             = $jtlCategoryI18n->getUrlPath();
+            $translations[$langId]['url']             = empty($jtlCategoryI18n->getUrlPath())
+                ? $jtlCategoryI18n->getName()
+                : $jtlCategoryI18n->getUrlPath();
         }
 
         return $translations;
@@ -212,9 +209,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     {
         $category = new PrestaCategory($model->getId()->getEndpoint());
 
-        if (!$category->delete()) {
-            throw new \RuntimeException('Error deleting category with id: ' . $model->getId()->getEndpoint());
-        }
+        $category->delete();
 
         return $model;
     }

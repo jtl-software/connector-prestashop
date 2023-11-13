@@ -6,6 +6,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use DI\Container;
 use Jtl\Connector\Core\Model\QueryFilter;
+use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 use PrestaShopDatabaseException;
 use Psr\Log\LoggerAwareInterface;
@@ -35,6 +36,8 @@ abstract class AbstractController implements LoggerAwareInterface
      */
     protected LoggerInterface $logger;
 
+    protected PrimaryKeyMapper $mapper;
+
     protected const
         CATEGORY_LINKING_TABLE       = 'jtl_connector_link_category',
         CUSTOMER_LINKING_TABLE       = 'jtl_connector_link_customer',
@@ -48,13 +51,17 @@ abstract class AbstractController implements LoggerAwareInterface
         SPECIFIC_VALUE_LINKING_TABLE = 'jtl_connector_link_specific_value',
         TAX_CLASS_LINKING_TABLE      = 'jtl_connector_link_tax_class';
 
-    public function __construct()
+    /**
+     * @param PrimaryKeyMapper $mapper
+     */
+    public function __construct(PrimaryKeyMapper $mapper)
     {
         $this->db = \Db::getInstance();
 
         $reflect              = new \ReflectionClass($this);
         $this->controllerName = $reflect->getShortName();
         $this->logger         = new NullLogger();
+        $this->mapper         = $mapper;
     }
 
     /**
@@ -79,8 +86,8 @@ abstract class AbstractController implements LoggerAwareInterface
             ->where("id_lang = $langId");
 
         $result = $this->db->executeS($sql);
-        $code = $result[0]['language_code'];
-        $code = \explode('-', $code)[0];
+        $code   = $result[0]['language_code'];
+        $code   = \explode('-', $code)[0];
 
         $linguaConverter = Service::createFromISO_639_1($code);
 
@@ -114,10 +121,10 @@ abstract class AbstractController implements LoggerAwareInterface
 
     /**
      * @param string $languageIso
-     * @return int
+     * @return int|null
      * @throws PrestaShopDatabaseException
      */
-    protected function getPrestaCountryIdFromIso(string $languageIso): int
+    protected function getPrestaCountryIdFromIso(string $languageIso): ?int
     {
         $sql = (new QueryBuilder())
             ->select('id_country')
@@ -190,6 +197,11 @@ abstract class AbstractController implements LoggerAwareInterface
         return '';
     }
 
+    /**
+     * @param string $date
+     * @return \DateTimeInterface|null
+     * @throws \Exception
+     */
     protected function createDateTime(string $date): ?\DateTimeInterface
     {
         if ($date === '0000-00-00') {

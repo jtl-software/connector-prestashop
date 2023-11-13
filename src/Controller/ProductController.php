@@ -28,9 +28,9 @@ use Jtl\Connector\Core\Model\ProductVariationValue as JtlProductVariationValue;
 use Jtl\Connector\Core\Model\ProductVariationValueI18n as JtlProductVariationValueI18n;
 use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\Statistic;
+use Jtl\Connector\Core\Model\TaxRate;
 use Jtl\Connector\Core\Model\TranslatableAttribute as JtlTranslatableAttribute;
 use Jtl\Connector\Core\Model\TranslatableAttributeI18n as JtlTranslatableAttributeI18n;
-use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 use jtl\Connector\Presta\Utils\Utils;
 use Product as PrestaProduct;
@@ -38,10 +38,10 @@ use Product as PrestaProduct;
 class ProductController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
 {
     public const
-        JTL_ATTRIBUTE_ACTIVE = 'active',
-        JTL_ATTRIBUTE_ONLINE_ONLY = 'online_only',
+        JTL_ATTRIBUTE_ACTIVE           = 'active',
+        JTL_ATTRIBUTE_ONLINE_ONLY      = 'online_only',
         JTL_ATTRIBUTE_MAIN_CATEGORY_ID = 'main_category_id',
-        JTL_ATTRIBUTE_CARRIERS = 'carriers';
+        JTL_ATTRIBUTE_CARRIERS         = 'carriers';
 
     protected array $jtlSpecialAttributes = [
         self::JTL_ATTRIBUTE_ACTIVE,
@@ -49,15 +49,6 @@ class ProductController extends AbstractController implements PullInterface, Pus
         self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID,
         self::JTL_ATTRIBUTE_CARRIERS
     ];
-
-    private PrimaryKeyMapper $mapper;
-
-
-    public function __construct(PrimaryKeyMapper $mapper)
-    {
-        $this->mapper = $mapper;
-        parent::__construct();
-    }
 
     public function pull(QueryFilter $queryFilter): array
     {
@@ -462,7 +453,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
             $langId = $language['id_lang'];
             foreach ($prestaVariations as $prestaVariation) {
                 if ((int) $prestaVariation['id_attribute_group'] === $variationId) {
-                    $comb = new \ProductAttribute(
+                    $comb                                                                      = new \ProductAttribute(
                         $prestaVariation['id_attribute'],
                         $langId
                     );
@@ -522,210 +513,401 @@ class ProductController extends AbstractController implements PullInterface, Pus
     }
 
     /**
-     * @param \jtl\Connector\Model\Product $data
-     *
-     * @return mixed
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
+     * @param AbstractModel $jtlProduct
+     * @return AbstractModel
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function push(AbstractModel $jtlProduct): AbstractModel
     {
-//        /** @var \Product $product */
-//
-//        if (isset(static::$idCache[$data->getMasterProductId()->getHost()])) {
-//            $data->getMasterProductId()->setEndpoint(static::$idCache[$data->getMasterProductId()->getHost()]);
-//        }
-//
-//        $masterId = $data->getMasterProductId()->getEndpoint();
-//
-//        $exists = false;
-//
-//        try {
-//            if (empty($masterId)) {
-//                $product = $this->mapper->toEndpoint($data);
-//
-//                $exists = $product->id > 0;
-//
-//                $product->save();
-//
-//                $id = $product->id;
-//            } else {
-//                list($productId, $combiId) = Utils::explodeProductEndpoint($data->getId()->getEndpoint());
-//
-//                $product = new \Product($masterId);
-//
-//                $exists = $product->id > 0;
-//
-//                $minOrder = \ceil($data->getMinimumOrderQuantity());
-//                $minOrder = $minOrder < 1 ? 1 : $minOrder;
-//
-//                if (!empty($combiId)) {
-//                    $product->updateAttribute(
-//                        $combiId,
-//                        null,
-//                        null,
-//                        $data->getShippingWeight(),
-//                        null,
-//                        null,
-//                        null,
-//                        $data->getSku(),
-//                        $data->getEan(),
-//                        null,
-//                        null,
-//                        $data->getUpc(),
-//                        $minOrder
-//                    );
-//
-//                    $id = $data->getId()->getEndpoint();
-//                } else {
-//                    $combiId = $product->addAttribute(
-//                        null,
-//                        $data->getShippingWeight(),
-//                        null,
-//                        null,
-//                        null,
-//                        $data->getSku(),
-//                        $data->getEan(),
-//                        null,
-//                        null,
-//                        $data->getUpc(),
-//                        $minOrder
-//                    );
-//
-//                    $id = $data->getMasterProductId()->getEndpoint() . '_' . $combiId;
-//                }
-//
-//                $combi = new Combination($combiId);
-//
-//                $allowedGroupTypes = [
-//                    ProductVariation::TYPE_RADIO,
-//                    ProductVariation::TYPE_SELECT
-//                ];
-//
-//                $valIds = [];
-//                foreach ($data->getVariations() as $variation) {
-//                    $groupType       = \in_array(
-//                        $variation->getType(),
-//                        $allowedGroupTypes
-//                    ) ? $variation->getType() : ProductVariation::TYPE_SELECT;
-//                    $attrGrpId       = null;
-//                    $attrPublicNames = [];
-//                    $attrNames       = [];
-//                    foreach ($variation->getI18ns() as $varI18n) {
-//                        $langId  = Utils::getInstance()->getLanguageIdByIso($varI18n->getLanguageISO());
-//                        $varName = $varI18n->getName();
-//                        if (!empty($varName)) {
-//                            $attrNames[$langId]       = \sprintf('%s (%s)', $varName, \ucfirst($groupType));
-//                            $attrPublicNames[$langId] = $varName;
-//                        }
-//
-//                        if ($langId == Context::getContext()->language->id) {
-//                            $sql       = \sprintf(
-//                                'SELECT id_attribute_group FROM %sattribute_group_lang WHERE name = "%s"',
-//                                \_DB_PREFIX_,
-//                                $attrNames[$langId]
-//                            );
-//                            $attrGrpId = $this->db->getValue($sql);
-//                        }
-//                    }
-//
-//                    if (
-//                        \in_array($attrGrpId, [false, null], true) || \in_array(
-//                            $variation->getType(),
-//                            $allowedGroupTypes
-//                        )
-//                    ) {
-//                        $attrGrp              = new AttributeGroup($attrGrpId);
-//                        $attrGrp->name        = $attrNames;
-//                        $attrGrp->public_name = $attrPublicNames;
-//                        $attrGrp->group_type  = $groupType;
-//                        $attrGrp->save();
-//                        $attrGrpId = $attrGrp->id;
-//                    }
-//
-//                    foreach ($variation->getValues() as $value) {
-//                        $valNames = [];
-//                        foreach ($value->getI18ns() as $valI18n) {
-//                            $langId = Utils::getInstance()->getLanguageIdByIso($valI18n->getLanguageISO());
-//
-//                            $valName = $valI18n->getName();
-//
-//                            if (!empty($valName)) {
-//                                $valNames[$langId] = $valName;
-//                            }
-//
-//                            if ($langId == Context::getContext()->language->id) {
-//                                $valId = $this->db->getValue(
-//                                    '
-//                              SELECT l.id_attribute
-//                              FROM ' . \_DB_PREFIX_ . 'attribute_lang l
-//                              LEFT JOIN ' . \_DB_PREFIX_ . 'attribute a ON a.id_attribute = l.id_attribute
-//                              WHERE l.name="' . $valName . '" && a.id_attribute_group = ' . $attrGrpId
-//                                );
-//                            }
-//                        }
-//
-//                        $val                     = new Attribute($valId);
-//                        $val->name               = $valNames;
-//                        $val->id_attribute_group = $attrGrpId;
-//                        $val->position           = $value->getSort();
-//
-//                        $val->save();
-//
-//                        $valId = $val->id;
-//
-//                        $valIds[] = $valId;
-//                    }
-//                }
-//
-//                $oldVariantImages = $combi->getWsImages();
-//                $combi->price     = 0;
-//                $combi->setAttributes($valIds);
-//                $combi->setWsImages($oldVariantImages);
-//                $combi->save();
-//
-//                $product->checkDefaultAttributes();
-//            }
-//
-//            $data->getId()->setEndpoint($id);
-//
-//            if ($id) {
-//                $data->getStockLevel()->getProductId()->setEndpoint($id);
-//                $stock = new ProductStockLevel();
-//                $stock->pushData($data->getStockLevel(), $product);
-//
-//                foreach ($data->getPrices() as $price) {
-//                    $price->getProductId()->setEndpoint($id);
-//                }
-//
-//                $price = new ProductPrice();
-//                foreach ($data->getPrices() as $priceData) {
-//                    $price->pushData($priceData);
-//                }
-//
-//                $specialPrices = new ProductSpecialPrice();
-//                $specialPrices->pushData($data);
-//
-//                $categories = new Product2Category();
-//                $categories->pushData($data);
-//
-//                if (isset($product) && $data->getMasterProductId()->getHost() === 0) {
-//                    ProductAttr::getInstance()->pushData($data, $product);
-//                    ProductSpecific::getInstance()->pushData($data, $product);
-//                    $this->pushSpecialAttributes($data, $product);
-//                }
-//            }
-//
-//            static::$idCache[$data->getId()->getHost()] = $id;
-//
-//            return $data;
-//        } catch (\Exception $e) {
-//            if (!empty($product) && !$exists) {
-//                $product->delete();
-//            }
-//            throw $e;
-//        }
+        /** @var JtlProduct $jtlProduct */
+        $endpoint        = $jtlProduct->getId()->getEndpoint();
+        $masterProductId = $jtlProduct->getMasterProductId()->getEndpoint();
+
+        $isNew = empty($endpoint);
+
+        //TODO: Create Product -> save, then update stock.
+
+        if (!$isNew || !empty($masterProductId)) {
+            if (!$jtlProduct->getIsMasterProduct()) {
+                $combiProductId = $this->createPrestaProductVariation($jtlProduct, new PrestaProduct($masterProductId));
+                $this->mapper->save(IdentityType::PRODUCT, $combiProductId, $jtlProduct->getId()->getHost());
+
+                return $jtlProduct;
+            }
+
+            $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct($endpoint));
+            $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
+
+            if (!$prestaProduct->update()) {
+                throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
+            }
+
+            return $jtlProduct;
+        }
+
+        $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct());
+
+        if (!$prestaProduct->add()) {
+            throw new \RuntimeException('Error creating product ' . $jtlProduct->getI18ns()[0]->getName());
+        }
+
+        $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
+
+        $jtlProduct->getId()->setEndpoint((string) $prestaProduct->id);
+
+        //save the endpoint id using the save method
+        $this->mapper->save(
+            IdentityType::PRODUCT,
+            $jtlProduct->getId()->getEndpoint(),
+            $jtlProduct->getId()->getHost()
+        );
+
         return new JtlProduct();
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return PrestaProduct
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    protected function createPrestaProduct(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
+    {
+        $translations  = $this->createPrestaProductTranslations(...$jtlProduct->getI18ns());
+        $categories    = $jtlProduct->getCategories();
+        $firstCategory = $categories > 0 ? \array_shift($categories) : null;
+
+        $prestaProduct->id                  = $jtlProduct->getId()->getEndpoint();
+        $prestaProduct->id_manufacturer     = $jtlProduct->getManufacturerId()->getEndpoint();
+        $prestaProduct->id_category_default =
+            \is_null($firstCategory)
+                ? null
+                : $firstCategory->getCategoryId()->getEndpoint();
+        $prestaProduct->date_add            = $jtlProduct->getCreationDate()?->format('Y-m-d H:i:s');
+        $prestaProduct->date_upd            = $jtlProduct->getModified()?->format('Y-m-d H:i:s');
+        $prestaProduct->ean13               = $jtlProduct->getEan();
+        $prestaProduct->height              = $jtlProduct->getHeight();
+        $prestaProduct->depth               = $jtlProduct->getLength();
+        $prestaProduct->width               = $jtlProduct->getWidth();
+        $prestaProduct->weight              = $jtlProduct->getShippingWeight();
+        $prestaProduct->reference           = $jtlProduct->getSku();
+        $prestaProduct->upc                 = $jtlProduct->getUpc();
+        $prestaProduct->isbn                = $jtlProduct->getIsbn();
+        $prestaProduct->id_tax_rules_group  = $this->findTaxClassId(...$jtlProduct->getTaxRates());
+        $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
+        $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s');
+        $prestaProduct->active              = $jtlProduct->getIsActive();
+        $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
+        $prestaProduct->minimal_quantity    = $jtlProduct->getMinimumOrderQuantity();
+        $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
+        $prestaProduct->price               =
+            \number_format($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
+        $prestaProduct->wholesale_price     =
+            $prestaProduct->price / 100 * (100 + (new \Tax($prestaProduct->id_tax_rules_group))->rate);
+
+        foreach ($translations as $key => $translation) {
+            $prestaProduct->name[$key]              = $translation['name'];
+            $prestaProduct->description[$key]       = $translation['description'];
+            $prestaProduct->description_short[$key] = $translation['description_short'];
+            $prestaProduct->link_rewrite[$key]      = $translation['link_rewrite'];
+            $prestaProduct->meta_description[$key]  = $translation['meta_description'];
+            $prestaProduct->meta_keywords[$key]     = $translation['meta_keywords'];
+            $prestaProduct->meta_title[$key]        = $translation['meta_title'];
+        }
+
+        return $prestaProduct;
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return bool
+     */
+    protected function updatePrestaProductCategories(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): bool
+    {
+        $categoryIds = [];
+
+        foreach ($jtlProduct->getCategories() as $category) {
+            $categoryIds[] = $category->getCategoryId()->getEndpoint();
+        }
+
+        return $prestaProduct->updateCategories($categoryIds);
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return string
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    protected function createPrestaProductVariation(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): string
+    {
+        $valueIds = [];
+        foreach ($jtlProduct->getVariations() as $jtlVariation) {
+            $groupId = $this->createPrestaAttributeGroup($jtlVariation);
+            foreach ($jtlVariation->getValues() as $jtlVariationValue) {
+                $valueIds[] = $this->createPrestaAttribute($jtlVariationValue, $groupId);
+            }
+        }
+
+        $combiId = $this->createPrestaCombination(
+            $valueIds,
+            (int)$jtlProduct->getMasterProductId()->getEndpoint()
+        );
+
+
+        $taxRate        = (new \Tax($this->findTaxClassId(...$jtlProduct->getTaxRates())))->rate;
+        $price          = \number_format($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
+        $wholeSalePrice = \number_format(
+            $jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice() / 100 * (100 + $taxRate),
+            6
+        );
+        $prestaProduct->updateAttribute(
+            $combiId,
+            $wholeSalePrice - $prestaProduct->wholesale_price,
+            $price - $prestaProduct->price,
+            $jtlProduct->getShippingWeight(),
+            null,
+            null,
+            null,
+            $jtlProduct->getSku(),
+            $jtlProduct->getEan(),
+            null,
+            null,
+            $jtlProduct->getUpc(),
+            $jtlProduct->getMinimumOrderQuantity() < 1 ? 1 : \ceil($jtlProduct->getMinimumOrderQuantity()),
+            null,
+            true,
+            [],
+            $jtlProduct->getIsbn(),
+            null,
+            null,
+            $jtlProduct->getManufacturerNumber()
+        );
+
+        return $jtlProduct->getMasterProductId()->getEndpoint() . '_' . $combiId;
+    }
+
+    /**
+     * @param JtlProductVariation $jtlVariation
+     * @return int
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    protected function createPrestaAttributeGroup(JtlProductVariation $jtlVariation): int
+    {
+        $allowedTypes = [
+            JtlProductVariation::TYPE_SELECT,
+            JtlProductVariation::TYPE_RADIO
+        ];
+
+        $name = $jtlVariation->getI18ns()[0]->getName();
+        $sql  = (new QueryBuilder())
+                ->select('id_attribute_group')
+                ->from('attribute_group_lang')
+                ->where("name = '$name'");
+
+        $groupId   = $this->db->getValue($sql);
+        $groupType = \in_array(
+            $jtlVariation->getType(),
+            $allowedTypes
+        ) ? $jtlVariation->getType() : JtlProductVariation::TYPE_SELECT;
+
+        $groupTranslations = $this->createPrestaAttributeGroupTranslations($jtlVariation);
+
+        $group             = new AttributeGroup($groupId > 0 ? $groupId : null);
+        $group->group_type = $groupType;
+
+        foreach ($groupTranslations as $key => $translation) {
+            $group->name[$key]        = $translation['name'];
+            $group->public_name[$key] = $translation['public_name'];
+        }
+
+        $group->save();
+
+        return $group->id;
+    }
+
+    /**
+     * @param JtlProductVariation $jtlVariation
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
+    protected function createPrestaAttributeGroupTranslations(JtlProductVariation $jtlVariation): array
+    {
+        $translations = [];
+
+        foreach ($jtlVariation->getI18ns() as $i18n) {
+            $langId                               = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
+            $translations[$langId]['name']        = $i18n->getName();
+            $translations[$langId]['public_name'] = $i18n->getName();
+        }
+
+        return $translations;
+    }
+
+    /**
+     * @param JtlProductVariationValue $jtlValue
+     * @param int $prestaAttributeGroupId
+     * @return int
+     * @throws \PrestaShopException
+     */
+    protected function createPrestaAttribute(JtlProductVariationValue $jtlValue, int $prestaAttributeGroupId): int
+    {
+        $name = $jtlValue->getI18ns()[0]->getName();
+
+        $sql = (new QueryBuilder())
+            ->select('l.id_attribute')
+            ->from('attribute_lang', 'l')
+            ->leftJoin('attribute', 'a', 'a.id_attribute = l.id_attribute')
+            ->where("l.name = '$name' && a.id_attribute_group = $prestaAttributeGroupId");
+
+        $attributeId = $this->db->getValue($sql);
+
+        $attributeTranslations = $this->createPrestaAttributeTranslations($jtlValue);
+
+        $attribute                     = new \ProductAttribute($attributeId > 0 ? $attributeId : null);
+        $attribute->id_attribute_group = $prestaAttributeGroupId;
+        $attribute->position           = $jtlValue->getSort();
+
+        foreach ($attributeTranslations as $key => $attributeTranslation) {
+            $attribute->name[$key] = $attributeTranslation['name'];
+        }
+
+        $attribute->save();
+
+
+        return $attribute->id;
+    }
+
+    /**
+     * @param JtlProductVariationValue $jtlValue
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
+    protected function createPrestaAttributeTranslations(JtlProductVariationValue $jtlValue): array
+    {
+        $translations = [];
+
+        foreach ($jtlValue->getI18ns() as $i18n) {
+            $langId                        = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
+            $translations[$langId]['name'] = $i18n->getName();
+        }
+
+        return $translations;
+    }
+
+    /**
+     * @param array $prestaAttributeIds
+     * @param int $prestaProductId
+     * @return string
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    protected function createPrestaCombination(
+        array $prestaAttributeIds,
+        int $prestaProductId
+    ): string {
+        $ids      = \implode(',', $prestaAttributeIds);
+        $countIds = \count($prestaAttributeIds);
+        $sql      = (new QueryBuilder())
+            ->select('id_product_attribute')
+            ->from('product_attribute_combination')
+            ->where("id_attribute IN ($ids)")
+            ->groupBy('id_product_attribute')
+            ->having("COUNT(DISTINCT id_attribute) = $countIds");
+
+        $combiId = $this->db->getValue($sql);
+
+        $combi             = new Combination($combiId > 0 ? $combiId : null);
+        $combi->price      = 0;
+        $combi->id_product = $prestaProductId;
+        $combi->save();
+        $combi->setAttributes($prestaAttributeIds);
+
+        return (string)$combi->id;
+    }
+
+    /**
+     * @param JtlProductI18n ...$jtlProductI18ns
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
+    protected function createPrestaProductTranslations(JtlProductI18n ...$jtlProductI18ns): array
+    {
+        $translations = [];
+
+        foreach ($jtlProductI18ns as $jtlProductI18n) {
+            $langId = $this->getPrestaLanguageIdFromIso($jtlProductI18n->getLanguageIso());
+
+            $translations[$langId]['name']              = $jtlProductI18n->getName();
+            $translations[$langId]['description']       = $jtlProductI18n->getDescription();
+            $translations[$langId]['description_short'] = $jtlProductI18n->getShortDescription();
+            $translations[$langId]['link_rewrite']      = $jtlProductI18n->getUrlPath();
+            $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
+            $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
+            $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
+        }
+
+        return $translations;
+    }
+
+    /**
+     * @param TaxRate ...$taxRates
+     * @return int|null
+     * @throws \PrestaShopDatabaseException
+     */
+    protected function findTaxClassId(TaxRate ...$taxRates): ?int
+    {
+        $activeCountries = \Country::getCountries(Context::getContext()->language->id, true);
+        $jtlTaxes        = [];
+        $prestaTaxes     = [];
+        $conditions      = [];
+
+        foreach ($taxRates as $taxRate) {
+            if (\array_key_exists($this->getPrestaCountryIdFromIso($taxRate->getCountryIso()), $activeCountries)) {
+                $jtlTaxes[] = $taxRate;
+            }
+        }
+
+        foreach (\Tax::getTaxes() as $tax) {
+            $prestaTaxes[$tax['rate']] = $tax['id_tax'];
+        }
+
+        foreach ($jtlTaxes as $jtlTax) {
+            $conditions[] = \sprintf(
+                'id_country = %s AND id_tax = %s',
+                $this->getPrestaCountryIdFromIso($jtlTax->getCountryIso()),
+                $prestaTaxes[\number_format($jtlTax->getRate(), 3)]
+            );
+        }
+
+        $sql = (new QueryBuilder())
+            ->select('id_tax_rules_group, COUNT(id_tax_rules_group) AS hits')
+            ->from('tax_rule')
+            ->where(\join(' OR ', $conditions))
+            ->groupBy('id_tax_rules_group')
+            ->orderBy('hits DESC');
+
+        return $this->db->executeS($sql)[0]['id_tax_rules_group'] ?? null;
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
+     * @return string
+     */
+    protected function createPrestaBasePrice(JtlProduct $jtlProduct): string
+    {
+        $unit = '';
+        if ($jtlProduct->getConsiderBasePrice()) {
+            $basePriceQuantity =
+                $jtlProduct->getBasePriceQuantity() !== 1. ? (string)$jtlProduct->getBasePriceQuantity() : '';
+            $unit              = \sprintf('%s%s', $basePriceQuantity, $jtlProduct->getBasePriceUnitCode());
+        }
+        return $unit;
     }
 
     /**
@@ -833,20 +1015,20 @@ class ProductController extends AbstractController implements PullInterface, Pus
      */
     public function delete(AbstractModel $model): AbstractModel
     {
-        $endpoint = $data->getId()->getEndpoint();
+        $endpoint = $model->getId()->getEndpoint();
         if ($endpoint !== '') {
-            $isCombi = \strpos($data->getId()->getEndpoint(), '_') !== false;
+            $isCombi = \str_contains($model->getId()->getEndpoint(), '_');
             if (!$isCombi) {
                 $obj = new \Product($endpoint);
             } else {
-                list($productId, $combiId) = \explode('_', $data->getId()->getEndpoint());
-                $obj = new Combination($combiId);
+                $combiId = \explode('_', $model->getId()->getEndpoint());
+                $obj     = new Combination($combiId);
             }
 
             $obj->delete();
         }
 
-        return $data;
+        return $model;
     }
 
     public function statistic(): Statistic
