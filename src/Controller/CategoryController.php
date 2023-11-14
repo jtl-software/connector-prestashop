@@ -8,6 +8,7 @@ use Category as PrestaCategory;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\Category as JtlCategory;
 use Jtl\Connector\Core\Model\CategoryI18n as JtlCategoryI18n;
 use Jtl\Connector\Core\Model\Identity;
@@ -146,6 +147,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
         }
 
+        $this->mapper->save(IdentityType::CATEGORY, $prestaCategory->id, $jtlCategory->getId()->getHost());
+
         return $jtlCategory;
     }
 
@@ -169,7 +172,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             $prestaCategory->description[$key]      = $translation['description'];
             $prestaCategory->meta_description[$key] = $translation['metaDescription'];
             $prestaCategory->meta_keywords[$key]    = $translation['metaKeywords'];
-            $prestaCategory->link_rewrite[$key]     = $translation['url'];
+            $prestaCategory->link_rewrite[$key]     = \str_replace(' ', '_', $translation['url']);
         }
 
         return $prestaCategory;

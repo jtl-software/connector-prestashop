@@ -7,7 +7,6 @@ namespace jtl\Connector\Presta\Controller;
 use AttributeGroup;
 use Combination;
 use Context;
-use Exception;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
@@ -32,7 +31,6 @@ use Jtl\Connector\Core\Model\TaxRate;
 use Jtl\Connector\Core\Model\TranslatableAttribute as JtlTranslatableAttribute;
 use Jtl\Connector\Core\Model\TranslatableAttributeI18n as JtlTranslatableAttributeI18n;
 use jtl\Connector\Presta\Utils\QueryBuilder;
-use jtl\Connector\Presta\Utils\Utils;
 use Product as PrestaProduct;
 
 class ProductController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
@@ -50,6 +48,14 @@ class ProductController extends AbstractController implements PullInterface, Pus
         self::JTL_ATTRIBUTE_CARRIERS
     ];
 
+    /**
+     * @param QueryFilter $queryFilter
+     * @return array|AbstractModel[]
+     * @throws TranslatableAttributeException
+     * @throws \JsonException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     public function pull(QueryFilter $queryFilter): array
     {
         $jtlProducts = [];
@@ -78,6 +84,15 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlProducts;
     }
 
+    /**
+     * @param QueryFilter $queryFilter
+     * @param string $linkingTable
+     * @param string $prestaTable
+     * @param string $columns
+     * @param string|null $fromDate
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
     protected function getNotLinkedEntities(
         QueryFilter $queryFilter,
         string      $linkingTable,
@@ -104,6 +119,10 @@ class ProductController extends AbstractController implements PullInterface, Pus
     }
 
     /**
+     * @param PrestaProduct $prestaProduct
+     * @return JtlProduct
+     * @throws TranslatableAttributeException
+     * @throws \JsonException
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
@@ -156,6 +175,14 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlProduct;
     }
 
+    /**
+     * @param JtlProduct $product
+     * @param int $variationId
+     * @param PrestaProduct $presta
+     * @return JtlProduct
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     protected function createJtlProductsFromVariation(
         JtlProduct    $product,
         int           $variationId,
@@ -200,6 +227,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
     }
 
 
+    /**
+     * @param PrestaProduct $prestaproduct
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
     protected function getPrestaCarriers(PrestaProduct $prestaproduct): array
     {
         $prestaCarriers = [];
@@ -220,6 +252,12 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $prestaCarriers;
     }
 
+    /**
+     * @param int $productId
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     protected function getPrestaSpecialPrices(int $productId): array
     {
         $queryBuilder        = new QueryBuilder();
@@ -239,6 +277,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $prestaSpecialPrices;
     }
 
+    /**
+     * @param float $prestaPrice
+     * @param Combination|null $combination
+     * @return JtlPrice
+     */
     protected function createJtlPrice(float $prestaPrice, Combination $combination = null): JtlPrice
     {
         $price = isset($combination) ? ($combination->price + $prestaPrice) : $prestaPrice;
@@ -252,6 +295,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
             );
     }
 
+    /**
+     * @param PrestaProduct $prestaProduct
+     * @return array
+     * @throws \Exception
+     */
     protected function createJtlSpecialPrices(PrestaProduct $prestaProduct): array
     {
         $prestaSpecialPrices = $this->getPrestaSpecialPrices($prestaProduct->id);
@@ -271,6 +319,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlSpecialPrices;
     }
 
+    /**
+     * @param \SpecificPrice $prestaSpecialPrice
+     * @param PrestaProduct $prestaProduct
+     * @return JtlSpecialPriceItem
+     */
     protected function createJtlSpecialPriceItem(
         \SpecificPrice $prestaSpecialPrice,
         PrestaProduct  $prestaProduct
@@ -297,6 +350,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
             ->setCustomerGroupId(new Identity(""));
     }
 
+    /**
+     * @param int $prestaProductId
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlProductTranslations(int $prestaProductId): array
     {
         $shopId = \Context::getContext()->shop->id;
@@ -318,6 +376,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $i18ns;
     }
 
+    /**
+     * @param array $prestaProductI18n
+     * @return JtlProductI18n
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlProductTranslation(array $prestaProductI18n): JtlProductI18n
     {
         return (new JtlProductI18n())
@@ -330,9 +393,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
     }
 
     /**
-     * @throws \PrestaShopDatabaseException
+     * @param PrestaProduct $prestaProduct
+     * @return array
      * @throws TranslatableAttributeException
      * @throws \JsonException
+     * @throws \PrestaShopDatabaseException
      */
     protected function createJtlSpecialAttributes(PrestaProduct $prestaProduct): array
     {
@@ -376,6 +441,10 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlAttributes;
     }
 
+    /**
+     * @param PrestaProduct $prestaProduct
+     * @return array
+     */
     protected function createJtlProductCategories(PrestaProduct $prestaProduct): array
     {
         $jtlProductCategories = [];
@@ -391,6 +460,8 @@ class ProductController extends AbstractController implements PullInterface, Pus
     }
 
     /**
+     * @param array $variations
+     * @return array
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
@@ -421,6 +492,12 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlProductVariations;
     }
 
+    /**
+     * @param int $prestaVariationId
+     * @return JtlProductVariation
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     protected function createJtlProductVariation(
         int $prestaVariationId
     ): JtlProductVariation {
@@ -429,6 +506,12 @@ class ProductController extends AbstractController implements PullInterface, Pus
             ->setI18ns(...$this->createJtlProductVariationI18ns($prestaVariationId));
     }
 
+    /**
+     * @param int $prestaVariationId
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     protected function createJtlProductVariationI18ns(int $prestaVariationId): array
     {
         $jtlProductVariationI18ns = [];
@@ -443,6 +526,12 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlProductVariationI18ns;
     }
 
+    /**
+     * @param int $variationId
+     * @param array $prestaVariations
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlProductVariationValues(int $variationId, array $prestaVariations): array
     {
         $languages                      = \Language::getLanguages();
@@ -469,6 +558,12 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $jtlVariationValues;
     }
 
+    /**
+     * @param int $prestaAttributeId
+     * @param array $prestaVariationValue
+     * @return JtlProductVariationValue
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlProductVariationValue(
         int   $prestaAttributeId,
         array $prestaVariationValue
@@ -481,6 +576,11 @@ class ProductController extends AbstractController implements PullInterface, Pus
             ->setI18ns(...$this->createJtlProductVariationValueI18ns($prestaVariationValue));
     }
 
+    /**
+     * @param array $prestaVariationI18ns
+     * @return array
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlProductVariationValueI18ns(array $prestaVariationI18ns): array
     {
         $attributeI18ns = [];
@@ -492,24 +592,6 @@ class ProductController extends AbstractController implements PullInterface, Pus
         }
 
         return $attributeI18ns;
-    }
-
-    public function postPush($data)
-    {
-        $masterId = $data->getMasterProductId()->getEndpoint();
-
-        if (empty($masterId)) {
-            $this->db->execute(
-                'UPDATE ' . \_DB_PREFIX_ . 'product SET unit_price_ratio=' . $data->getBasePriceDivisor(
-                ) . ' WHERE id_product=' . $data->getId()->getEndpoint()
-            );
-            $this->db->execute(
-                'UPDATE ' . \_DB_PREFIX_ . 'product_shop SET unit_price_ratio=' . $data->getBasePriceDivisor(
-                ) . ' WHERE id_product=' . $data->getId()->getEndpoint()
-            );
-        }
-
-        \Product::flushPriceCache();
     }
 
     /**
@@ -526,10 +608,8 @@ class ProductController extends AbstractController implements PullInterface, Pus
 
         $isNew = empty($endpoint);
 
-        //TODO: Create Product -> save, then update stock.
-
         if (!$isNew || !empty($masterProductId)) {
-            if (!$jtlProduct->getIsMasterProduct()) {
+            if (!empty($masterProductId)) {
                 $combiProductId = $this->createPrestaProductVariation($jtlProduct, new PrestaProduct($masterProductId));
                 $this->mapper->save(IdentityType::PRODUCT, $combiProductId, $jtlProduct->getId()->getHost());
 
@@ -556,7 +636,6 @@ class ProductController extends AbstractController implements PullInterface, Pus
 
         $jtlProduct->getId()->setEndpoint((string) $prestaProduct->id);
 
-        //save the endpoint id using the save method
         $this->mapper->save(
             IdentityType::PRODUCT,
             $jtlProduct->getId()->getEndpoint(),
@@ -603,7 +682,7 @@ class ProductController extends AbstractController implements PullInterface, Pus
         $prestaProduct->minimal_quantity    = $jtlProduct->getMinimumOrderQuantity();
         $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
         $prestaProduct->price               =
-            \number_format($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
+            \round($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
         $prestaProduct->wholesale_price     =
             $prestaProduct->price / 100 * (100 + (new \Tax($prestaProduct->id_tax_rules_group))->rate);
 
@@ -616,6 +695,8 @@ class ProductController extends AbstractController implements PullInterface, Pus
             $prestaProduct->meta_keywords[$key]     = $translation['meta_keywords'];
             $prestaProduct->meta_title[$key]        = $translation['meta_title'];
         }
+
+        $this->pushSpecialAttributes($jtlProduct, $prestaProduct);
 
         return $prestaProduct;
     }
@@ -660,8 +741,8 @@ class ProductController extends AbstractController implements PullInterface, Pus
 
 
         $taxRate        = (new \Tax($this->findTaxClassId(...$jtlProduct->getTaxRates())))->rate;
-        $price          = \number_format($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
-        $wholeSalePrice = \number_format(
+        $price          = \round($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
+        $wholeSalePrice = \round(
             $jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice() / 100 * (100 + $taxRate),
             6
         );
@@ -911,26 +992,24 @@ class ProductController extends AbstractController implements PullInterface, Pus
     }
 
     /**
-     * @param \jtl\Connector\Model\Product $data
-     * @param \Product                     $product
-     *
-     * @throws PrestaShopException
+     * @param JtlProduct $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return void
+     * @throws TranslatableAttributeException
      */
-    private function pushSpecialAttributes($data, $product)
+    private function pushSpecialAttributes(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): void
     {
-        /** @var \jtl\Connector\Model\Product $data */
+        $specialAttributes = [
+            'online_only' => 'online_only',
+            'products_status' => 'active',
+            'main_category_id' => 'id_category_default',
+            'carriers' => 'carriers'
+        ];
 
-        $specialAttributes = ProductAttr::getSpecialAttributes();
 
         $foundSpecialAttributes = [];
-        $tags                   = [];
-        foreach ($data->getAttributes() as $attribute) {
+        foreach ($jtlProduct->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
-                if ($i18n->getName() === ProductAttr::TAGS) {
-                    $id        = Utils::getInstance()->getLanguageIdByIso($i18n->getLanguageISO());
-                    $tags[$id] = \explode(',', $i18n->getValue());
-                }
-
                 $name = \array_search($i18n->getName(), $specialAttributes);
                 if ($name === false) {
                     $name = $i18n->getName();
@@ -946,9 +1025,9 @@ class ProductController extends AbstractController implements PullInterface, Pus
         foreach ($foundSpecialAttributes as $key => $value) {
             switch ($key) {
                 case 'main_category_id':
-                    foreach ($data->getCategories() as $product2Category) {
+                    foreach ($jtlProduct->getCategories() as $product2Category) {
                         if (
-                            $product2Category->getCategoryId()->getHost() === $value
+                            $product2Category->getCategoryId()->getHost() === (int)$value
                             && $product2Category->getCategoryId()->getEndpoint() !== ''
                         ) {
                             $value = (int)$product2Category->getCategoryId()->getEndpoint();
@@ -956,62 +1035,51 @@ class ProductController extends AbstractController implements PullInterface, Pus
                     }
                     break;
                 case 'carriers':
-                    $carriers = \explode(',', $value);
-                    if (!\in_array($carriers, ['', '0'], true)) {
-                        $product->setCarriers($carriers);
+                    $carrierIds = \array_map('intval', \explode(',', $value));
+                    if (!\in_array($carrierIds, ['', '0'])) {
+                        $prestaProduct->setCarriers($carrierIds);
                     }
                     break;
             }
 
 
-            $product->{$specialAttributes[$key]} = $value;
+            $prestaProduct->{$specialAttributes[$key]} = $value;
         }
 
-        \Tag::deleteTagsForProduct($product->id_product);
-        foreach ($tags as $languageId => $tagList) {
-            \Tag::addTags($languageId, $product->id_product, $tagList);
+        $prices               = $jtlProduct->getPrices();
+        $prestaProduct->price = \round(\end($prices)->getItems()[0]->getNetPrice(), 6);
+
+        $rrp = $jtlProduct->getRecommendedRetailPrice();
+        if ($rrp > $prestaProduct->price) {
+            $this->saveRecommendedRetailPriceAsFeature($prestaProduct, $rrp);
         }
-
-        $prices         = $data->getPrices();
-        $product->price = \round(\end($prices)->getItems()[0]->getNetPrice(), 6);
-
-        $rrp = $data->getRecommendedRetailPrice();
-        if ($rrp > $product->price) {
-            $this->saveRecommendedRetailPriceAsFeature($product, $rrp);
-        }
-
-        $product->save();
     }
 
-    /**
-     * @param \Product $prestaProduct
-     * @param float    $rrp
-     *
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
-     */
-    protected function saveRecommendedRetailPriceAsFeature(\Product $prestaProduct, float $rrp)
-    {
-        $defaultLanguageId = Context::getContext()->language->id;
 
+    /**
+     * @param PrestaProduct $prestaProduct
+     * @param float $rrp
+     * @return PrestaProduct
+     */
+    protected function saveRecommendedRetailPriceAsFeature(PrestaProduct $prestaProduct, float $rrp): PrestaProduct
+    {
         $translations = [];
-        foreach (Utils::getInstance()->getLanguages() as $language) {
+        foreach (\Language::getLanguages() as $language) {
             $translations[$language['id_lang']] = [
-                'name'  => ProductAttr::RECOMMENDED_RETAIL_PRICE,
+                'name'  => 'recommended_retail_price',
                 'value' => $rrp
             ];
         }
 
-        $this->productAttrMapper->saveCustomAttribute($prestaProduct, $defaultLanguageId, $translations, true);
+        return $prestaProduct;
     }
 
+
     /**
-     * @param \jtl\Connector\Model\Product $data
-     *
-     * @return mixed
-     * @throws PrestaShopException
-     * @throws PrestaShopDatabaseException
-     * @throws Exception
+     * @param AbstractModel $model
+     * @return AbstractModel
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function delete(AbstractModel $model): AbstractModel
     {
@@ -1031,6 +1099,9 @@ class ProductController extends AbstractController implements PullInterface, Pus
         return $model;
     }
 
+    /**
+     * @return Statistic
+     */
     public function statistic(): Statistic
     {
         $queryBuilder = new QueryBuilder();
