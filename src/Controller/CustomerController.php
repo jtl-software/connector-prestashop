@@ -19,8 +19,6 @@ use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
 
 class CustomerController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
 {
-    // TODO: Kundengruppen importieren.
-
     /**
      * @param QueryFilter $queryFilter
      * @return array|AbstractModel[]

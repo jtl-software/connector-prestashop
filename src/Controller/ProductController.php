@@ -33,7 +33,7 @@ use Jtl\Connector\Core\Model\TranslatableAttributeI18n as JtlTranslatableAttribu
 use jtl\Connector\Presta\Utils\QueryBuilder;
 use Product as PrestaProduct;
 
-class ProductController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
+class ProductController extends ProductPriceController implements PullInterface, PushInterface, DeleteInterface
 {
     public const
         JTL_ATTRIBUTE_ACTIVE           = 'active',
