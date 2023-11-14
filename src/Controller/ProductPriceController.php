@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\PushInterface;
@@ -121,9 +123,9 @@ class ProductPriceController extends AbstractController implements PushInterface
      * @throws \PrestaShopException
      */
     protected function handlePrices(
-        int $productId,
-        int $combiId,
-        int $groupId,
+        int                 $productId,
+        int                 $combiId,
+        int                 $groupId,
         JtlProductPriceItem ...$priceItems
     ): void {
         foreach ($priceItems as $jtlPriceItem) {

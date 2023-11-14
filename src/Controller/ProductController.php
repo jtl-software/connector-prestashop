@@ -73,7 +73,7 @@ class ProductController extends ProductPriceController implements PullInterface,
                 $prestaProduct = new PrestaProduct($product->getId()->getEndpoint());
                 $jtlProducts[] = $this->createJtlProductsFromVariation(
                     $product,
-                    (int) $prestaProductId['id_product_attribute'],
+                    (int)$prestaProductId['id_product_attribute'],
                     $prestaProduct
                 );
             } else {
@@ -100,22 +100,31 @@ class ProductController extends ProductPriceController implements PullInterface,
         string      $columns,
         ?string     $fromDate = null
     ): array {
-        $foo = parent::getNotLinkedEntities($queryFilter, $linkingTable, $prestaTable, $columns, $fromDate);
+        $products = parent::getNotLinkedEntities($queryFilter, $linkingTable, $prestaTable, $columns, $fromDate);
 
-        if (\count($foo) < $queryFilter->getLimit()) {
-            $sql = 'SELECT p.id_product as id_product, p.id_product_attribute as id_product_attribute FROM ps_product_attribute p
-                LEFT JOIN ps_product pr ON pr.id_product = p.id_product
-                LEFT JOIN jtl_connector_link_product l 
-                ON CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id
-                WHERE l.host_id IS NULL AND p.id_product > 0
-                LIMIT 100';
+        if (\count($products) < $queryFilter->getLimit()) {
+            $sql = new QueryBuilder();
+            $sql->setUsePrefix(false);
 
-            $bar = $this->db->executeS($sql);
+            $sql
+                ->select('p.id_product as id_product, p.id_product_attribute as id_product_attribute')
+                ->from(\_DB_PREFIX_ . 'product_attribute', 'p')
+                ->leftJoin(\_DB_PREFIX_ . 'product', 'pr', 'pr.id_product = p.id_product')
+                ->leftJoin(
+                    self::PRODUCT_LINKING_TABLE,
+                    'l',
+                    'CONCAT(p.id_product, "_", p.id_product_attribute) = l.endpoint_id'
+                )
+                ->where('l.host_id IS NULL AND p.id_product > 0')
+                ->limit($queryFilter->getLimit());
 
-            $foo = \array_merge($foo, $bar);
+
+            $combis = $this->db->executeS($sql);
+
+            $products = \array_merge($products, $combis);
         }
 
-        return $foo;
+        return $products;
     }
 
     /**
@@ -192,7 +201,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $attributes = $presta->getAttributesGroups(Context::getContext()->language->id, $variationId);
 
         return (new JtlProduct())
-            ->setId(new Identity($product->getId()->getEndpoint() . '_' . (string) $variationId))
+            ->setId(new Identity($product->getId()->getEndpoint() . '_' . (string)$variationId))
             ->setManufacturerId($product->getManufacturerId())
             ->setCreationDate($product->getCreationDate())
             ->setEan($comb->ean13)
@@ -541,7 +550,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         foreach ($languages as $language) {
             $langId = $language['id_lang'];
             foreach ($prestaVariations as $prestaVariation) {
-                if ((int) $prestaVariation['id_attribute_group'] === $variationId) {
+                if ((int)$prestaVariation['id_attribute_group'] === $variationId) {
                     $comb                                                                      = new \ProductAttribute(
                         $prestaVariation['id_attribute'],
                         $langId
@@ -634,7 +643,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
 
-        $jtlProduct->getId()->setEndpoint((string) $prestaProduct->id);
+        $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
 
         $this->mapper->save(
             IdentityType::PRODUCT,
@@ -787,9 +796,9 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $name = $jtlVariation->getI18ns()[0]->getName();
         $sql  = (new QueryBuilder())
-                ->select('id_attribute_group')
-                ->from('attribute_group_lang')
-                ->where("name = '$name'");
+            ->select('id_attribute_group')
+            ->from('attribute_group_lang')
+            ->where("name = '$name'");
 
         $groupId   = $this->db->getValue($sql);
         $groupType = \in_array(
@@ -890,7 +899,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     protected function createPrestaCombination(
         array $prestaAttributeIds,
-        int $prestaProductId
+        int   $prestaProductId
     ): string {
         $ids      = \implode(',', $prestaAttributeIds);
         $countIds = \count($prestaAttributeIds);
@@ -1066,7 +1075,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $translations = [];
         foreach (\Language::getLanguages() as $language) {
             $translations[$language['id_lang']] = [
-                'name'  => 'recommended_retail_price',
+                'name' => 'recommended_retail_price',
                 'value' => $rrp
             ];
         }
