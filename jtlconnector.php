@@ -19,6 +19,7 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
 }
 
 use jtl\Connector\Presta\Utils\Config;
+use PrestaShopBundle\Entity\Repository\TabRepository;
 use Symfony\Component\Yaml\Yaml;
 
 //phpcs:ignore PSR1.Classes.ClassDeclaration.MissingNamespace
@@ -99,6 +100,14 @@ class JTLConnector extends Module
             Shop::setContext(Shop::CONTEXT_ALL);
         }
 
+        // remove old meta if exists
+        $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
+
+        if (isset($meta['id_meta'])) {
+            $delMeta = new \Meta($meta['id_meta']);
+            $delMeta->delete();
+        }
+
         $meta = new \Meta();
 
         $meta->page         = 'module-jtlconnector-api';
@@ -110,6 +119,14 @@ class JTLConnector extends Module
 
         $this->createLinkingTables();
         $this->convertLinkingTables();
+
+
+        // remove old tab if exists
+        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
+        if ($id_tab) {
+            $tab = new Tab($id_tab);
+            $tab->delete();
+        }
 
         $tab            = new \Tab();
         $name           = "JTL-Connector";
@@ -130,132 +147,103 @@ class JTLConnector extends Module
     {
         $db = Db::getInstance();
 
-        $link = $db->getLink();
+        $types = [
+            1    => 'category',
+            2    => 'customer',
+            4    => 'customer_order',
+            8    => 'delivery_note',
+            16   => 'image',
+            32   => 'manufacturer',
+            64   => 'product',
+            128  => 'specific',
+            256  => 'specific_value',
+            512  => 'payment',
+            1024 => 'crossselling',
+            2048 => 'crossselling_group',
+            70   => 'tax_class'
+        ];
 
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
+        $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
+            endpoint_id INT(10) NOT NULL,
+            host_id INT(10) NOT NULL,
+            PRIMARY KEY (endpoint_id),
+            INDEX (host_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+
+        $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
+            endpoint_id varchar(255) NOT NULL,
+            host_id INT(10) NOT NULL,
+            PRIMARY KEY (endpoint_id),
+            INDEX (host_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+
+        foreach ($types as $id => $name) {
+            if ($id == 16 || $id == 64) {
+                $db->query(
+                    sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
+                )->execute();
+            } else {
+                $db->query(
+                    sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
+                )->execute();
+            }
         }
 
-        try {
-            $types = [
-                1    => 'category',
-                2    => 'customer',
-                4    => 'customer_order',
-                8    => 'delivery_note',
-                16   => 'image',
-                32   => 'manufacturer',
-                64   => 'product',
-                128  => 'specific',
-                256  => 'specific_value',
-                512  => 'payment',
-                1024 => 'crossselling',
-                2048 => 'crossselling_group',
-                70   => 'tax_class'
-            ];
+        $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
 
-            $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
-                endpoint_id INT(10) NOT NULL,
-                host_id INT(10) NOT NULL,
-                PRIMARY KEY (endpoint_id),
-                INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+        if (!empty($check)) {
+            $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
 
-            $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
-                endpoint_id varchar(255) NOT NULL,
-                host_id INT(10) NOT NULL,
-                PRIMARY KEY (endpoint_id),
-                INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
-
-            foreach ($types as $id => $name) {
-                if ($id == 16 || $id == 64) {
-                    $db->query(
-                        sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
-                    )->execute();
-                } else {
-                    $db->query(
-                        sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
-                    )->execute();
-                }
+            foreach ($existingTypes as $existingType) {
+                $typeId    = (int)$existingType['type'];
+                $tableName = 'jtl_connector_link_' . $types[$typeId];
+                $db->query(
+                    "INSERT INTO {$tableName} (host_id, endpoint_id)
+                    SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
+                    "
+                )->execute();
             }
 
-            $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
-
-            if (!empty($check)) {
-                $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
-
-                foreach ($existingTypes as $existingType) {
-                    $typeId    = (int)$existingType['type'];
-                    $tableName = 'jtl_connector_link_' . $types[$typeId];
-                    $db->query(
-                        "INSERT INTO {$tableName} (host_id, endpoint_id)
-                        SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
-                        "
-                    )->execute();
-                }
-
-                if (count($existingTypes) > 0) {
-                    $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
-                }
+            if (count($existingTypes) > 0) {
+                $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
             }
-
-            \Db::getInstance()->getLink()->commit();
-
-            return true;
-        } catch (\Exception $e) {
-            $link->rollback();
-            throw $e;
         }
+
+        return true;
     }
 
     private function convertLinkingTables()
     {
         $db = Db::getInstance();
 
-        $link = $db->getLink();
+        $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
 
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
-        }
+        $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
 
-        try {
-            $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
-
-            $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
-
-            if (!empty($newLinkingTables)) {
-                foreach ($newLinkingTables as $newLinkingTable) {
-                    if (!empty($newLinkingTable)) {
-                        $newLinkingTable = reset($newLinkingTable);
-                        if ($newLinkingTable !== 'jtl_connector_link_backup') {
-                            $db->query(sprintf($query, $newLinkingTable))->execute();
-                        }
+        if (!empty($newLinkingTables)) {
+            foreach ($newLinkingTables as $newLinkingTable) {
+                if (!empty($newLinkingTable)) {
+                    $newLinkingTable = reset($newLinkingTable);
+                    if ($newLinkingTable !== 'jtl_connector_link_backup') {
+                        $db->query(sprintf($query, $newLinkingTable))->execute();
                     }
                 }
             }
-
-            \Db::getInstance()->getLink()->commit();
-
-            return true;
-        } catch (\Exception $e) {
-            $link->rollback();
-            throw $e;
         }
+
+        return true;
     }
 
     public function uninstall()
     {
-        $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
 
         $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
         if ($id_tab) {
             $tab = new Tab($id_tab);
             $tab->delete();
         }
+
+        $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
 
         if (isset($meta['id_meta'])) {
             $delMeta = new \Meta($meta['id_meta']);
