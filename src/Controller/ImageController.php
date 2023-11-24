@@ -7,6 +7,7 @@ namespace jtl\Connector\Presta\Controller;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\AbstractImage;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\CategoryImage;
@@ -229,17 +230,27 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
             $generate_hight_dpi_images = (bool)\Configuration::get('PS_HIGHT_DPI');
 
+            $identityType = null;
+
             switch ($jtlImage->getRelationType()) {
                 case 'category':
                     $this->createPrestaCategoryImage($jtlImage, $generate_hight_dpi_images, $id);
+                    $identityType = IdentityType::CATEGORY_IMAGE;
                     break;
                 case 'manufacturer':
                     $this->createPrestaManufacturerImage($jtlImage, $generate_hight_dpi_images, $id);
+                    $identityType = IdentityType::MANUFACTURER_IMAGE;
                     break;
                 case 'product':
                     $this->createPrestaProductImage($jtlImage, $id);
+                    $identityType = IdentityType::PRODUCT_IMAGE;
                     break;
             }
+
+            if (!\is_null($identityType)) {
+                $this->mapper->save($identityType, $jtlImage->getId()->getEndpoint(), $jtlImage->getId()->getHost());
+            }
+
         }
 
         return $jtlImage;

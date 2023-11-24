@@ -7,6 +7,7 @@ namespace jtl\Connector\Presta\Controller;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -107,6 +108,11 @@ class ManufacturerController extends AbstractController implements PushInterface
         if (!$prestaManufacturer->add()) {
             throw new \RuntimeException('Error uploading manufacturer' . $jtlManufacturer->getName());
         }
+        $this->mapper->save(
+            IdentityType::MANUFACTURER,
+            $jtlManufacturer->getId()->getEndpoint(),
+            $prestaManufacturer->id
+        );
 
         return $jtlManufacturer;
     }
