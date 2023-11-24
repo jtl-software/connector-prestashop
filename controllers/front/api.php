@@ -3,6 +3,8 @@
 //phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
 
 use Jtl\Connector\Core\Application\Application;
+use Jtl\Connector\Core\Config\ConfigSchema;
+use Jtl\Connector\Core\Config\FileConfig;
 use jtl\Connector\Presta\Connector;
 
 require_once CONNECTOR_DIR . '/lib/autoload.php';
@@ -29,7 +31,10 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
         }
 
         $connector = new Connector();
-        $application = new Application(CONNECTOR_DIR);
+        $configSchema = $configSchema ?? new ConfigSchema();
+        $config       = new FileConfig(\sprintf('%s/config/config.json', CONNECTOR_DIR), $configSchema);
+        $config->set(ConfigSchema::SERIALIZER_ENABLE_CACHE, false);
+        $application = new Application(CONNECTOR_DIR, $config);
         $application->run($connector);
 
         exit();

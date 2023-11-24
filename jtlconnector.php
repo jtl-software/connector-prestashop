@@ -18,6 +18,7 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
     define("JTL_CONNECTOR_DATABASE_COLLATION", "utf8_general_ci");
 }
 
+use Jtl\Connector\Core\Config\ConfigSchema;
 use jtl\Connector\Presta\Utils\Config;
 use PrestaShopBundle\Entity\Repository\TabRepository;
 use Symfony\Component\Yaml\Yaml;
@@ -309,7 +310,7 @@ class JTLConnector extends Module
                         Tools::getValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES)
                     );
                     Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
-                    Config::set('developer_logging', Tools::getValue('jtlconnector_developer_logging'));
+                    Config::set(ConfigSchema::DEBUG, Tools::getValue('jtlconnector_developer_logging'));
 
                     $output .= $this->displayConfirmation($this->l('Settings saved.'));
                 }
@@ -575,7 +576,7 @@ class JTLConnector extends Module
         );
         $helper->fields_value['jtlconnector_from_date']               = Configuration::get('jtlconnector_from_date');
         $helper->fields_value['jtlconnector_remove_inconsistency']    = false;
-        $helper->fields_value['jtlconnector_developer_logging']       = Config::get('developer_logging');
+        $helper->fields_value['jtlconnector_developer_logging']       = Config::get(ConfigSchema::DEBUG);
 
         return $helper->generateForm($fields_form);
     }
