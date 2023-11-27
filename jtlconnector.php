@@ -80,6 +80,11 @@ class JTLConnector extends Module
             $this->_errors[] = sprintf($this->l('The file "%s" must be writable.'), $dbFile);
         }
 
+        $featuresFile = CONNECTOR_DIR . 'config' . DIRECTORY_SEPARATOR . 'features.json';
+        if (!file_exists($featuresFile)) {
+            copy(CONNECTOR_DIR . 'config' . DIRECTORY_SEPARATOR . 'features.example.json', $featuresFile);
+        }
+
         $logDir = CONNECTOR_DIR . 'logs';
         chmod($logDir, 0777);
         if (!is_writable($logDir)) {

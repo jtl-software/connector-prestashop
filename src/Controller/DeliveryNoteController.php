@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta\Controller;
 
+use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\DeliveryNote;
 
-class DeliveryNoteController extends AbstractController
+class DeliveryNoteController extends AbstractController implements PushInterface
 {
     /**
     * @param AbstractModel $deliveryNote
