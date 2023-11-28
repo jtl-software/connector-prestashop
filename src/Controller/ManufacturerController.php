@@ -131,7 +131,7 @@ class ManufacturerController extends AbstractController implements PushInterface
         $prestaManufacturer->active = 1;
 
         foreach ($translations as $key => $translation) {
-            $prestaManufacturer->name            = $jtlManufacturer->getName();
+            $prestaManufacturer->name                   = $jtlManufacturer->getName();
             $prestaManufacturer->description[$key]      = $translation['description'];
             $prestaManufacturer->meta_title[$key]       = $translation['meta_title'];
             $prestaManufacturer->meta_keywords[$key]    = $translation['meta_keywords'];
@@ -171,9 +171,7 @@ class ManufacturerController extends AbstractController implements PushInterface
     {
         $manufacturer = new \Manufacturer($model->getId()->getEndpoint());
 
-        if (!$manufacturer->delete()) {
-            throw new \RuntimeException('Error deleting manufacturer with id: ' . $model->getId()->getEndpoint());
-        }
+        $manufacturer->delete();
 
         return $model;
     }

@@ -423,7 +423,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
             );
         }
 
-        $jtlImage->getId()->setEndpoint($img->id);
+        $jtlImage->getId()->setEndpoint((string)$img->id);
 
         return $jtlImage;
     }

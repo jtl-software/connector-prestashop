@@ -202,9 +202,8 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     {
         $customer = new PrestaCustomer($model->getId()->getEndpoint());
 
-        if (!$customer->delete()) {
-            throw new \Exception('Error deleting customer with id: ' . $model->getId()->getEndpoint());
-        }
+        $customer->delete();
+
         return $model;
     }
 

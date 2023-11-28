@@ -168,11 +168,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
                 : $jtlCategory->getParentCategoryId()->getEndpoint();
 
         foreach ($translations as $key => $translation) {
-            $prestaCategory->name[$key]             = $translation['name'];
+            $prestaCategory->name[$key]             = \preg_replace('/[^a-zA-Z0-9-_]/', '_', $translation['name']);
             $prestaCategory->description[$key]      = $translation['description'];
             $prestaCategory->meta_description[$key] = $translation['metaDescription'];
             $prestaCategory->meta_keywords[$key]    = $translation['metaKeywords'];
-            $prestaCategory->link_rewrite[$key]     = \str_replace(' ', '_', $translation['url']);
+            $prestaCategory->link_rewrite[$key]     = \preg_replace('/[^a-zA-Z0-9-_]/', '_', $translation['url']);
         }
 
         return $prestaCategory;

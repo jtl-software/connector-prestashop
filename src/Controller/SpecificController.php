@@ -310,9 +310,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     {
         $specific = new PrestaSpecific($model->getId()->getEndpoint());
 
-        if (!$specific->delete()) {
-            throw new \RuntimeException('Error deleting specific with id: ' . $model->getId()->getEndpoint());
-        }
+        $specific->delete();
 
         return $model;
     }
