@@ -211,7 +211,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setMasterProductId($product->getId())
             ->setModified($product->getModified())
             ->setShippingWeight($product->getShippingWeight())
-            ->setSku($product->getSku())
+            ->setSku($product->getSku() . '_' . (string)$variationId)
             ->setUpc($comb->upc)
             ->setStockLevel(\StockAvailable::getQuantityAvailableByProduct($presta->id, $variationId))
             ->setVat($product->getVat())
@@ -459,10 +459,11 @@ class ProductController extends ProductPriceController implements PullInterface,
         $jtlProductCategories = [];
 
         foreach ($prestaProduct->getCategories() as $category) {
-            $host                   = $this->mapper->getHostId(IdentityType::CATEGORY, (string)$category);
-            $jtlProductCategories[] = (new JtlProductCategory())->setCategoryId(
-                new Identity((string)$category, $host ?? '')
-            );
+            $jtlProductCategory = (new JtlProductCategory())
+                ->setCategoryId(new Identity((string)$category))
+                ->setId(new Identity($prestaProduct->id . '_' . $category));
+
+            $jtlProductCategories[] = $jtlProductCategory;
         }
 
         return $jtlProductCategories;
