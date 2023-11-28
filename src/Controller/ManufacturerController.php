@@ -111,7 +111,7 @@ class ManufacturerController extends AbstractController implements PushInterface
         $this->mapper->save(
             IdentityType::MANUFACTURER,
             $jtlManufacturer->getId()->getEndpoint(),
-            $prestaManufacturer->id
+            (int)$prestaManufacturer->id
         );
 
         return $jtlManufacturer;
@@ -131,7 +131,7 @@ class ManufacturerController extends AbstractController implements PushInterface
         $prestaManufacturer->active = 1;
 
         foreach ($translations as $key => $translation) {
-            $prestaManufacturer->name[$key]             = $jtlManufacturer->getName();
+            $prestaManufacturer->name            = $jtlManufacturer->getName();
             $prestaManufacturer->description[$key]      = $translation['description'];
             $prestaManufacturer->meta_title[$key]       = $translation['meta_title'];
             $prestaManufacturer->meta_keywords[$key]    = $translation['meta_keywords'];
