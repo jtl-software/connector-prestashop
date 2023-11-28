@@ -41,12 +41,17 @@ class ImageController extends AbstractController implements PushInterface, PullI
      */
     private function getProductImages(QueryFilter $queryFilter): array
     {
-        $images = $this->getNotLinkedEntities(
-            $queryFilter,
-            self::IMAGE_LINKING_TABLE,
-            'image',
-            'id_image'
-        );
+        $queryBuilder = new QueryBuilder();
+        $queryBuilder->setUsePrefix(false);
+
+        $sql = $queryBuilder
+            ->select('i.*')
+            ->from(_DB_PREFIX_ . 'image', 'i')
+            ->leftJoin(self::IMAGE_LINKING_TABLE, 'l', 'i.id_image = l.endpoint_id')
+            ->where('l.host_id IS NULL')
+            ->limit($this->db->escape($queryFilter->getLimit()));
+
+        $images = $this->db->executeS($sql);
 
         $prestaImages = [];
         $jtlImages    = [];
