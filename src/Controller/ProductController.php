@@ -969,11 +969,13 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         foreach ($jtlTaxes as $jtlTax) {
-            $conditions[] = \sprintf(
-                'id_country = %s AND id_tax = %s',
-                $this->getPrestaCountryIdFromIso($jtlTax->getCountryIso()),
-                $prestaTaxes[\number_format($jtlTax->getRate(), 3)]
-            );
+            if (!empty($jtlTax->getRate())) {
+                $conditions[] = \sprintf(
+                    'id_country = %s AND id_tax = %s',
+                    $this->getPrestaCountryIdFromIso($jtlTax->getCountryIso()),
+                    $prestaTaxes[\number_format($jtlTax->getRate(), 3)]
+                );
+            }
         }
 
         $sql = (new QueryBuilder())
