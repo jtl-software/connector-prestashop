@@ -819,7 +819,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $group->save();
 
-        return $group->id;
+        return (int)$group->id;
     }
 
     /**
@@ -871,7 +871,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $attribute->save();
 
 
-        return $attribute->id;
+        return (int)$attribute->id;
     }
 
     /**
@@ -935,8 +935,8 @@ class ProductController extends ProductPriceController implements PullInterface,
             $langId = $this->getPrestaLanguageIdFromIso($jtlProductI18n->getLanguageIso());
 
             $translations[$langId]['name']              = $jtlProductI18n->getName();
-            $translations[$langId]['description']       = $jtlProductI18n->getDescription();
-            $translations[$langId]['description_short'] = $jtlProductI18n->getShortDescription();
+            $translations[$langId]['description']       = \strip_tags($jtlProductI18n->getDescription());
+            $translations[$langId]['description_short'] = \strip_tags($jtlProductI18n->getShortDescription());
             $translations[$langId]['link_rewrite']      = $jtlProductI18n->getUrlPath();
             $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
             $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
