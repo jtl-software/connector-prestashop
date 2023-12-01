@@ -638,8 +638,23 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct());
 
-        if (!$prestaProduct->add()) {
-            throw new \RuntimeException('Error creating product ' . $jtlProduct->getI18ns()[0]->getName());
+        try {
+            if (!$prestaProduct->add()) {
+                throw new \RuntimeException(
+                    \sprintf(
+                        'Error creating product %s',
+                        $jtlProduct->getI18ns()[0]->getName()
+                    )
+                );
+            }
+        } catch (\PrestaShopException $e) {
+            throw new \RuntimeException(
+                \sprintf(
+                    'Error saving product %s | Message from PrestaShop: %s',
+                    $jtlProduct->getI18ns()[0]->getName(),
+                    $e->getMessage()
+                )
+            );
         }
 
         $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
@@ -652,7 +667,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             $jtlProduct->getId()->getHost()
         );
 
-        return new JtlProduct();
+        return new $jtlProduct;
     }
 
     /**
@@ -701,7 +716,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             $prestaProduct->description[$key]       = $translation['description'];
             $prestaProduct->description_short[$key] = $translation['description_short'];
             $prestaProduct->link_rewrite[$key]      = $translation['link_rewrite'];
-            $prestaProduct->meta_description[$key]  = $translation['meta_description'];
+            $prestaProduct->meta_description[$key]  = \str_split($translation['meta_description'], 512) [0];
             $prestaProduct->meta_keywords[$key]     = $translation['meta_keywords'];
             $prestaProduct->meta_title[$key]        = $translation['meta_title'];
         }
