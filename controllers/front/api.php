@@ -6,6 +6,8 @@ use Jtl\Connector\Core\Application\Application;
 use Jtl\Connector\Core\Config\ConfigSchema;
 use Jtl\Connector\Core\Config\FileConfig;
 use jtl\Connector\Presta\Connector;
+use jtl\Connector\Presta\Utils\Config;
+use Psr\Log\LogLevel;
 
 require_once CONNECTOR_DIR . '/lib/autoload.php';
 
@@ -31,9 +33,14 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
         }
 
         $connector = new Connector();
-        $configSchema = $configSchema ?? new ConfigSchema();
+        $configSchema = new ConfigSchema();
         $config       = new FileConfig(\sprintf('%s/config/config.json', CONNECTOR_DIR), $configSchema);
         $config->set(ConfigSchema::SERIALIZER_ENABLE_CACHE, false);
+        $config->set(ConfigSchema::LOG_DIR, \sprintf('%s/logs', CONNECTOR_DIR));
+        if (Config::get(ConfigSchema::DEBUG) === true) {
+            $config->set(ConfigSchema::DEBUG, true);
+            $config->set(ConfigSchema::LOG_LEVEL, LogLevel::DEBUG);
+        }
         $application = new Application(CONNECTOR_DIR, $config);
         $application->run($connector);
 

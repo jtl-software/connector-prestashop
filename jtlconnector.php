@@ -315,7 +315,7 @@ class JTLConnector extends Module
                         Tools::getValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES)
                     );
                     Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
-                    Config::set(ConfigSchema::DEBUG, Tools::getValue('jtlconnector_developer_logging'));
+                    Config::set(ConfigSchema::DEBUG, (bool)Tools::getValue('jtlconnector_developer_logging', false));
 
                     $output .= $this->displayConfirmation($this->l('Settings saved.'));
                 }
