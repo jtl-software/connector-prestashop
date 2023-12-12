@@ -393,8 +393,8 @@ class ProductController extends ProductPriceController implements PullInterface,
     protected function createJtlProductTranslation(array $prestaProductI18n): JtlProductI18n
     {
         return (new JtlProductI18n())
-            ->setName($prestaProductI18n['name'])
-            ->setTitleTag($prestaProductI18n['meta_title'])
+            ->setName((string)$prestaProductI18n['name'])
+            ->setTitleTag((string)$prestaProductI18n['meta_title'])
             ->setDescription((string)$prestaProductI18n['description'])
             ->setShortDescription((string)$prestaProductI18n['description_short'])
             ->setMetaDescription((string)$prestaProductI18n['meta_description'])
