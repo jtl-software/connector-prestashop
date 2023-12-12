@@ -88,8 +88,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         return (new JtlCategoryI18n())
             ->setName($prestaCategoryI18n['name'])
             ->setTitleTag($prestaCategoryI18n['meta_title'])
-            ->setDescription($prestaCategoryI18n['description'])
-            ->setMetaDescription($prestaCategoryI18n['meta_description'])
+            ->setDescription((string)$prestaCategoryI18n['description'])
+            ->setMetaDescription((string)$prestaCategoryI18n['meta_description'])
             ->setMetaKeywords($prestaCategoryI18n['meta_keywords'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCategoryI18n['id_lang']));
     }

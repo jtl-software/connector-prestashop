@@ -31,7 +31,7 @@ class ProductPriceController extends AbstractController implements PushInterface
             foreach ($model->getPrices() as $price) {
                 if (!empty($productId) && !\is_null($combiId)) {
                     $customerGroupId = (int)$price->getCustomerGroupId()->getEndpoint();
-                    $this->handlePrices($productId, $combiId, $customerGroupId, ...$price->getItems());
+                    $this->handlePrices((int)$productId, $combiId, $customerGroupId, ...$price->getItems());
                 }
             }
         }

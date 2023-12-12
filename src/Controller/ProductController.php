@@ -395,9 +395,9 @@ class ProductController extends ProductPriceController implements PullInterface,
         return (new JtlProductI18n())
             ->setName($prestaProductI18n['name'])
             ->setTitleTag($prestaProductI18n['meta_title'])
-            ->setDescription($prestaProductI18n['description'])
-            ->setShortDescription($prestaProductI18n['description_short'])
-            ->setMetaDescription($prestaProductI18n['meta_description'])
+            ->setDescription((string)$prestaProductI18n['description'])
+            ->setShortDescription((string)$prestaProductI18n['description_short'])
+            ->setMetaDescription((string)$prestaProductI18n['meta_description'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId((int)$prestaProductI18n['id_lang']));
     }
 
