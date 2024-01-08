@@ -32,7 +32,8 @@
     "psr/log": "^2",
     "symfony/http-foundation": "^4.4",
     "jms/serializer": ">=3.3 <=3.24",
-    "doctrine/lexer": "^1"
+    "doctrine/lexer": "^1",
+    "symfony/service-contracts": "^2.5"
   },
   "autoload": {
     "psr-4": {
