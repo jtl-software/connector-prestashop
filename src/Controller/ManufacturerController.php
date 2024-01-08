@@ -73,10 +73,10 @@ class ManufacturerController extends AbstractController implements PushInterface
 
             $jtlI18n = (new JtlManufacturerI18n())
                 ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($langId))
-                ->setDescription($manufacturer->description[$langId])
-                ->setMetaDescription($manufacturer->meta_description[$langId])
-                ->setMetaKeywords($manufacturer->meta_keywords[$langId])
-                ->setTitleTag($manufacturer->meta_title[$langId]);
+                ->setDescription((string)$manufacturer->description[$langId])
+                ->setMetaDescription((string)$manufacturer->meta_description[$langId])
+                ->setMetaKeywords((string)$manufacturer->meta_keywords[$langId])
+                ->setTitleTag((string)$manufacturer->meta_title[$langId]);
 
             $jtlI18ns[] = $jtlI18n;
         }
