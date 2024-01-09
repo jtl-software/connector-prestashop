@@ -198,12 +198,16 @@ abstract class AbstractController implements LoggerAwareInterface
     }
 
     /**
-     * @param string $date
+     * @param string|null $date
      * @return \DateTimeInterface|null
      * @throws \Exception
      */
-    protected function createDateTime(string $date): ?\DateTimeInterface
+    protected function createDateTime(?string $date): ?\DateTimeInterface
     {
+        if ($date === null) {
+            return null;
+        }
+
         if ($date === '0000-00-00') {
             return null;
         }
