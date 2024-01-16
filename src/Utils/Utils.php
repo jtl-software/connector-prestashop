@@ -22,9 +22,9 @@ class Utils
      * @param $module
      * @return string
      */
-    public static function mapPaymentModuleCode($module)
+    public static function mapPaymentModuleCode($module): string
     {
-        $mappedPaymentModuleCode = null;
+        $mappedPaymentModuleCode = '';
 
         switch ($module) {
             case 'ps_wirepayment':
