@@ -82,7 +82,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setSalutation($this->determineSalutation(new PrestaCustomer($prestaCustomer['id_gender'])))
             ->setStreet($prestaCustomer['address1'])
             ->setVatNumber($prestaCustomer['vat_number'])
-            ->setWebsiteUrl($prestaCustomer['website'])
+            ->setWebsiteUrl($prestaCustomer['website'] ?? '')
             ->setZipCode($prestaCustomer['postcode']);
 
         return $jtlCustomer;
