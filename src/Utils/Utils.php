@@ -43,4 +43,13 @@ class Utils
 
         return $mappedPaymentModuleCode;
     }
+
+    public static function stringToFloat(string $input): float
+    {
+        if (\is_float((float)$input)) {
+            return (float)$input;
+        }
+
+        return (float)\str_replace(',', '.', $input);
+    }
 }

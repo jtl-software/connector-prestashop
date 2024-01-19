@@ -56,7 +56,7 @@ class PaymentController extends AbstractController implements PullInterface
             ->setCustomerOrderId(new Identity((string)$prestaPayment['id_order']))
             ->setCreationDate(new \DateTime($prestaPayment['date_add']))
             ->setPaymentModuleCode(Utils::mapPaymentModuleCode($prestaPayment['payment_method']))
-            ->setTotalSum($prestaPayment['amount'])
+            ->setTotalSum(Utils::stringToFloat($prestaPayment['amount']))
             ->setTransactionId(!empty($prestaPayment['transaction_id'])
                 ? $prestaPayment['transaction_id']
                 : $prestaPayment['order_reference']);
