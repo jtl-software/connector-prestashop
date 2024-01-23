@@ -2,7 +2,6 @@
 
 namespace jtl\Connector\Presta\Controller;
 
-use Attribute;
 use AttributeGroup;
 use Combination;
 use Context;
@@ -384,7 +383,7 @@ class Product extends BaseController
                             }
                         }
 
-                        $val                     = new Attribute($valId);
+                        $val                     = new \ProductAttribute($valId);
                         $val->name               = $valNames;
                         $val->id_attribute_group = $attrGrpId;
                         $val->position           = $value->getSort();
