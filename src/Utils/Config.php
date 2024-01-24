@@ -81,7 +81,7 @@ class Config
     {
         self::getInstance();
 
-        return self::$data->$name;
+        return self::$data->$name ?? null;
     }
 
     /**
