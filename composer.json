@@ -23,7 +23,7 @@
   },
   "require": {
     "php": ">= 8.0",
-    "jtl/connector": "^5.2.9",
+    "jtl/connector": "^5.2.10",
     "symfony/yaml": "^3.4",
     "ext-json": "*",
     "phing/phing": "^2.16",
