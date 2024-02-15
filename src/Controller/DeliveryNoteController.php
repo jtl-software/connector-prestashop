@@ -27,6 +27,8 @@ class DeliveryNoteController extends AbstractController implements PushInterface
             $trackingCodes = \array_merge($trackingCodes, $trackingList->getCodes());
         }
 
+        $this->logger->info("Delivery note push: tracking codes set");
+
         if (!empty($trackingCodes)) {
             if (!empty($prestaCarrier->tracking_number)) {
                 $trackingCodes = \array_merge(
@@ -39,9 +41,16 @@ class DeliveryNoteController extends AbstractController implements PushInterface
 
             $prestaCarrier->tracking_number = $codes;
 
+            $this->logger->info("Delivery note push: carrier codes set");
+
             if (!$prestaCarrier->update()) {
+                $this->logger->info("Delivery note push: carrier update failed");
+                $this->logger->info(\print_r($prestaCarrier, true));
                 throw new \Exception("Couldn't update delivery note for order $prestaOrder->id");
+            } else {
+                $this->logger->info("Delivery note push: carrier update success");
             }
+
         }
 
         return $deliveryNote;
