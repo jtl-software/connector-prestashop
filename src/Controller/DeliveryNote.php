@@ -11,7 +11,12 @@ class DeliveryNote extends BaseController
         if (!empty($orderId)) {
             $trackingCodes = [];
             foreach ($data->getTrackingLists() as $trackingList) {
-                $trackingCodes = \array_merge($trackingCodes, $trackingList->getCodes());
+                foreach ($trackingList->getCodes() as $code) {
+                    foreach ($trackingList->getTrackingURLs() as $trackingUrl) {
+                        #if tracking url is sent, use url, otherwise use tracking code
+                        $trackingCodes = str_contains($trackingUrl, $code) ? $trackingUrl : $code;
+                    }
+                }
             }
 
             if (\count($trackingCodes) > 0) {

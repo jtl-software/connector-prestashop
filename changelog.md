@@ -1,6 +1,7 @@
 ## Unreleased
 
 ## unreleased
+- CO-2508 - Use wawi tracking lists
 
 ## 1.13.4 _2023-08-08_
 - CO-2373 - Fix database exception when rrp > net price
