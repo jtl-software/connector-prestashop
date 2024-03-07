@@ -14,7 +14,7 @@ class DeliveryNote extends BaseController
                 foreach ($trackingList->getCodes() as $code) {
                     foreach ($trackingList->getTrackingURLs() as $trackingUrl) {
                         #if tracking url is sent, use url, otherwise use tracking code
-                        $trackingCodes = str_contains($trackingUrl, $code) ? $trackingUrl : $code;
+                        $trackingCodes[] = str_contains($trackingUrl, $code) ? $trackingUrl : $code;
                     }
                 }
             }
