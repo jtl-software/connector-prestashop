@@ -1,6 +1,8 @@
 ## Unreleased
 
 ## unreleased
+
+## 1.13.4 _2023-08-08_
 - CO-2373 - Fix database exception when rrp > net price
 
 ## 1.13.3 _2023-04-11_
