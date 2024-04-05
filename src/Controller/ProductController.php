@@ -616,6 +616,9 @@ class ProductController extends ProductPriceController implements PullInterface,
         $endpoint        = $jtlProduct->getId()->getEndpoint();
         $masterProductId = $jtlProduct->getMasterProductId()->getEndpoint();
 
+        $stockLevelController = new ProductStockLevelController($this->mapper);
+        $stockLevelController->setLogger($this->logger);
+
         $isNew = empty($endpoint);
 
         if (!$isNew || !empty($masterProductId)) {
@@ -632,6 +635,11 @@ class ProductController extends ProductPriceController implements PullInterface,
             if (!$prestaProduct->update()) {
                 throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
             }
+
+            // price
+            parent::push($jtlProduct);
+            // stock
+            $stockLevelController->push($jtlProduct);
 
             return $jtlProduct;
         }
@@ -666,6 +674,11 @@ class ProductController extends ProductPriceController implements PullInterface,
             $jtlProduct->getId()->getEndpoint(),
             $jtlProduct->getId()->getHost()
         );
+
+        // price
+        parent::push($jtlProduct);
+        // stock
+        $stockLevelController->push($jtlProduct);
 
         return new $jtlProduct;
     }

@@ -71,6 +71,26 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             throw new \RuntimeException("Presta Order id can't be null");
         }
 
+        if (!\is_int($prestaCustomer->id)) {
+            throw new \RuntimeException(
+                \sprintf(
+                    'Can\'t load Customer from Order %s, probably deleted Customer.',
+                    $prestaOrder->id
+                )
+            );
+        }
+
+        if ($prestaCustomer->id !== $prestaOrder->id_customer) {
+            throw new \RuntimeException(
+                \sprintf(
+                    'Customer ID %s from Order %s does not match Customer ID from Customer %s',
+                    $prestaOrder->id_customer,
+                    $prestaOrder->id,
+                    $prestaCustomer->id
+                )
+            );
+        }
+
         $jtlOrder = (new JtlCustomerOrder())
 
             ->setId(new Identity((string)$prestaOrder->id))
@@ -167,20 +187,30 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         PrestaAddress $prestaAddress,
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderBillingAddress {
-        return (new JtlCustomerOrderBillingAddress())
-            ->setCity($prestaAddress->city)
-            ->setCompany($prestaAddress->company)
-            ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
-            ->setEMail($prestaCustomer->email)
-            ->setExtraAddressLine($prestaAddress->address2)
-            ->setFirstName($prestaAddress->firstname)
-            ->setLastName($prestaAddress->lastname)
-            ->setMobile($prestaAddress->phone_mobile)
-            ->setPhone($prestaAddress->phone)
-            ->setSalutation($this->determineSalutation($prestaCustomer))
-            ->setVatNumber($prestaAddress->vat_number)
-            ->setStreet($prestaAddress->address1)
-            ->setZipCode($prestaAddress->postcode);
+        try {
+            return (new JtlCustomerOrderBillingAddress())
+                ->setCity($prestaAddress->city)
+                ->setCompany($prestaAddress->company)
+                ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
+                ->setEMail($prestaCustomer->email)
+                ->setExtraAddressLine($prestaAddress->address2)
+                ->setFirstName($prestaAddress->firstname)
+                ->setLastName($prestaAddress->lastname)
+                ->setMobile($prestaAddress->phone_mobile)
+                ->setPhone($prestaAddress->phone)
+                ->setSalutation($this->determineSalutation($prestaCustomer))
+                ->setVatNumber($prestaAddress->vat_number)
+                ->setStreet($prestaAddress->address1)
+                ->setZipCode($prestaAddress->postcode);
+        } catch (\TypeError $e) {
+            $message = \sprintf(
+                'Error while creating Billing Address for Customer %s | Error: %s',
+                $prestaCustomer->id,
+                $e->getMessage()
+            );
+            $this->logger->info($message, ['customer' => $prestaCustomer, 'exception' => $e]);
+            throw new \RuntimeException($message);
+        }
     }
 
     /**
@@ -193,19 +223,29 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         PrestaAddress $prestaAddress,
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderShippingAddress {
-        return (new JtlCustomerOrderShippingAddress())
-            ->setCity($prestaAddress->city)
-            ->setCompany($prestaAddress->company)
-            ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
-            ->setEMail($prestaCustomer->email)
-            ->setExtraAddressLine($prestaAddress->address2)
-            ->setFirstName($prestaAddress->firstname)
-            ->setLastName($prestaAddress->lastname)
-            ->setMobile($prestaAddress->phone_mobile)
-            ->setPhone($prestaAddress->phone)
-            ->setSalutation($this->determineSalutation($prestaCustomer))
-            ->setStreet($prestaAddress->address1)
-            ->setZipCode($prestaAddress->postcode);
+        try {
+            return (new JtlCustomerOrderShippingAddress())
+                ->setCity($prestaAddress->city)
+                ->setCompany($prestaAddress->company)
+                ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
+                ->setEMail($prestaCustomer->email)
+                ->setExtraAddressLine($prestaAddress->address2)
+                ->setFirstName($prestaAddress->firstname)
+                ->setLastName($prestaAddress->lastname)
+                ->setMobile($prestaAddress->phone_mobile)
+                ->setPhone($prestaAddress->phone)
+                ->setSalutation($this->determineSalutation($prestaCustomer))
+                ->setStreet($prestaAddress->address1)
+                ->setZipCode($prestaAddress->postcode);
+        } catch (\TypeError $e) {
+            $message = \sprintf(
+                'Error while creating Shipping Address for Customer %s | Error: %s',
+                $prestaCustomer->id,
+                $e->getMessage()
+            );
+            $this->logger->info($message, ['customer' => $prestaCustomer, 'exception' => $e]);
+            throw new \RuntimeException($message);
+        }
     }
 
     /**
@@ -215,10 +255,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      */
     private function setStates(PrestaCustomerOrder $prestaOrder, JtlCustomerOrder $jtlOrder): void
     {
-        $jtlOrder->setPaymentStatus(
-            $prestaOrder->hasBeenPaid(
-            ) == 1 ? JtlCustomerOrder::PAYMENT_STATUS_COMPLETED : JtlCustomerOrder::PAYMENT_STATUS_UNPAID
-        );
+        // CustomerOrders are always unpaid on first import, payment gets set via Payment pull
+        $jtlOrder->setPaymentStatus(JtlCustomerOrder::PAYMENT_STATUS_UNPAID);
         if ($prestaOrder->hasBeenDelivered() == 1 || $prestaOrder->hasBeenShipped() == 1) {
             $jtlOrder->setStatus(JtlCustomerOrder::STATUS_SHIPPED);
         }
@@ -244,6 +282,13 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->from(\_DB_PREFIX_ . 'orders', 'o')
             ->leftJoin(self::CUSTOMER_ORDER_LINKING_TABLE, 'l', 'o.id_order = l.endpoint_id')
             ->where('l.host_id IS NULL ' . $fromDate);
+
+
+        $sql2 = \sprintf("SHOW COLUMNS FROM `%sorders` LIKE 'deleted';", \_DB_PREFIX_);
+        $result = $this->db->executeS($sql2);
+        if (\count($result) !== 0) {
+            $sql->where('o.deleted = 0');
+        }
 
         $result = $this->db->getValue($sql);
 

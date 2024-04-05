@@ -6,13 +6,13 @@
     "jtl",
     "Connector"
   ],
-  "homepage": "http://www.jtl-software.de",
+  "homepage": "https://www.jtl-software.de",
   "license": "LGPL-3.0-or-later",
   "authors": [
     {
       "name": "JTL Software GmbH",
       "email": "info@jtl-software.de",
-      "homepage": "http://www.jtl-software.de",
+      "homepage": "https://www.jtl-software.de",
       "role": "Founder"
     }
   ],
@@ -28,8 +28,8 @@
     "ext-json": "*",
     "phing/phing": "^2.16",
     "psr/cache": "^2",
-    "monolog/monolog": "^2",
-    "psr/log": "^2",
+    "monolog/monolog": "1.*",
+    "psr/log": "^1",
     "symfony/http-foundation": "^4.4",
     "jms/serializer": ">=3.3 <=3.24",
     "doctrine/lexer": "^1",

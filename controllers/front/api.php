@@ -36,12 +36,11 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
         $configSchema = new ConfigSchema();
         $config       = new FileConfig(\sprintf('%s/config/config.json', CONNECTOR_DIR), $configSchema);
         $config->set(ConfigSchema::SERIALIZER_ENABLE_CACHE, false);
-        $config->set(ConfigSchema::LOG_DIR, \sprintf('%s/logs', CONNECTOR_DIR));
         if (Config::get(ConfigSchema::DEBUG) === true) {
             $config->set(ConfigSchema::DEBUG, true);
             $config->set(ConfigSchema::LOG_LEVEL, LogLevel::DEBUG);
         }
-        $application = new Application(CONNECTOR_DIR, $config);
+        $application = new Application(CONNECTOR_DIR, $config, $configSchema);
         $application->run($connector);
 
         exit();

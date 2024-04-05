@@ -31,6 +31,7 @@ class PaymentController extends AbstractController implements PullInterface
             ->leftJoin(self::PAYMENT_LINKING_TABLE, 'l', 'p.id_order_payment = l.endpoint_id')
             ->leftJoin(self::CUSTOMER_ORDER_LINKING_TABLE, 'co', 'co.endpoint_id = o.id_order')
             ->where('l.host_id IS NULL AND co.endpoint_id IS NOT NULL')
+            ->where('p.transaction_id != ""')
             ->limit($this->db->escape($queryFilter->getLimit()));
 
         $prestaPayments = $this->db->executeS($sql);

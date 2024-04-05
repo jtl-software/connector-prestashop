@@ -18,6 +18,7 @@ use jtl\Connector\Presta\Checksum\ChecksumLoader;
 use Noodlehaus\ConfigInterface;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Yaml\Yaml;
 
 class Connector implements ConnectorInterface
 {
@@ -81,7 +82,7 @@ class Connector implements ConnectorInterface
 
     public function getEndpointVersion(): string
     {
-        return InstalledVersions::getPrettyVersion('jtl/connector-prestashop');
+        return Yaml::parseFile(__DIR__ . '/../build-config.yaml')['version'] ?? 'dev-master';
     }
 
     public function getPlatformVersion(): string

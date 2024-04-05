@@ -20,7 +20,6 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
 
 use Jtl\Connector\Core\Config\ConfigSchema;
 use jtl\Connector\Presta\Utils\Config;
-use PrestaShopBundle\Entity\Repository\TabRepository;
 use Symfony\Component\Yaml\Yaml;
 
 //phpcs:ignore PSR1.Classes.ClassDeclaration.MissingNamespace
@@ -49,7 +48,7 @@ class JTLConnector extends Module
 
         $this->displayName            = 'JTL-Connector';
         $this->description            = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
-        $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
@@ -60,7 +59,7 @@ class JTLConnector extends Module
 
     public function install()
     {
-        $minimumPhpversion = '7.1.3';
+        $minimumPhpversion = '8.0';
         if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
             $this->_errors[] =
                 sprintf(
@@ -85,10 +84,37 @@ class JTLConnector extends Module
             copy(CONNECTOR_DIR . 'config' . DIRECTORY_SEPARATOR . 'features.example.json', $featuresFile);
         }
 
-        $logDir = CONNECTOR_DIR . 'logs';
+        $varDir = CONNECTOR_DIR . '/var';
+        if (!is_dir($varDir)) {
+            mkdir($varDir, 0777);
+        }
+        chmod($varDir, 0777);
+        if (!is_writable($varDir)) {
+            $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $varDir);
+        }
+
+        $logDir = CONNECTOR_DIR . '/var/log';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0777, true);
+        }
         chmod($logDir, 0777);
         if (!is_writable($logDir)) {
             $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $logDir);
+        }
+
+        $oldLogDir = CONNECTOR_DIR . 'logs';
+        if (is_dir($oldLogDir)) {
+            // should not have sub dirs
+            foreach (glob($oldLogDir . '/*') as $file) {
+                if (is_file($file)) {
+                    // move files to new log dir
+                    copy($file, $logDir . '/' . basename($file));
+                    // remove old files
+                    unlink($file);
+                }
+            }
+            // remove old log dir
+            rmdir($oldLogDir);
         }
 
         if (count($this->_errors) != 0) {
@@ -327,12 +353,7 @@ class JTLConnector extends Module
 
     private function clearLogs()
     {
-        $logDir   = CONNECTOR_DIR . 'logs';
-        $zip_file = CONNECTOR_DIR . 'tmp/connector_logs.zip';
-
-        if (file_exists($zip_file)) {
-            unlink($zip_file);
-        }
+        $logDir   = CONNECTOR_DIR . '/var/log';
 
         $files = glob($logDir . '/*.log');
 
@@ -347,8 +368,8 @@ class JTLConnector extends Module
 
     private function downloadJTLLogs()
     {
-        $logDir   = CONNECTOR_DIR . 'logs';
-        $zip_file = CONNECTOR_DIR . '/tmp/connector_logs.zip';
+        $logDir   = CONNECTOR_DIR . '/var/log';
+        $zip_file = tempnam(sys_get_temp_dir(), 'logs') . '.zip';
 
         $zip = new ZipArchive();
         $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
@@ -371,6 +392,8 @@ class JTLConnector extends Module
             header('Content-type: application/zip');
             header('Content-Disposition: attachment; filename="logs.zip"');
             readfile($zip_file);
+            // cleanup
+            unlink($zip_file);
             exit();
         } else {
             header('Content-Type: application/json; charset=UTF-8');
