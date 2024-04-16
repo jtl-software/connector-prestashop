@@ -161,7 +161,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      */
     protected function getCustomerOrderItems(PrestaCart $prestaCart): array
     {
-        $prestaProducts = $prestaCart->getProducts();
+        $prestaProducts = $prestaCart->getProducts(keepOrderPrices: true);
         $jtlOrderItems  = [];
 
         foreach ($prestaProducts as $prestaProduct) {
@@ -173,7 +173,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
     /**
      * @param array{
-     *     id_product:int,
+     *     id_product: int,
+     *     id_product_attribute: int,
      *     name: string,
      *     price_with_reduction_without_tax: float,
      *     price_with_reduction: float,
@@ -186,8 +187,19 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      */
     protected function createJtlCustomerOrderItem(array $prestaProduct): JtlCustomerOrderItem
     {
+        $id = new Identity((string)$prestaProduct['id_product']);
+        if (!empty($prestaProduct['id_product_attribute']) && $prestaProduct['id_product_attribute'] > 0) {
+            // is variant
+            $id = new Identity(
+                \sprintf(
+                    '%s_%s',
+                    $prestaProduct['id_product'],
+                    $prestaProduct['id_product_attribute']
+                )
+            );
+        }
         return (new JtlCustomerOrderItem())
-            ->setProductId(new Identity((string)$prestaProduct['id_product']))
+            ->setProductId($id)
             ->setName($prestaProduct['name'])
             ->setPrice($prestaProduct['price_with_reduction_without_tax'])
             ->setPriceGross($prestaProduct['price_with_reduction'])
