@@ -40,6 +40,8 @@ class SpecificController extends AbstractController implements PushInterface, Pu
             ->groupBy('v.id_feature')
             ->limit($this->db->escape($queryFilter->getLimit()));
 
+        $this->logger->debug('SpecificController pull query: ' . $sql);
+
         $prestaSpecificsIds = $this->db->executeS($sql);
 
         $jtlSpecifics = [];

@@ -7,27 +7,58 @@ namespace jtl\Connector\Presta\Controller;
 use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\DeliveryNote;
+use jtl\Connector\Presta\Utils\QueryBuilder;
 
 class DeliveryNoteController extends AbstractController implements PushInterface
 {
     /**
-    * @param AbstractModel $deliveryNote
-    * @return AbstractModel
-    * @throws \PrestaShopDatabaseException
-    * @throws \PrestaShopException
+     * @param AbstractModel $deliveryNote
+     *
+     * @return AbstractModel
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function push(AbstractModel $deliveryNote): AbstractModel
     {
         /** @var DeliveryNote $deliveryNote */
-        $prestaOrder   = new \Order($deliveryNote->getCustomerOrderId()->getEndpoint());
-        $prestaCarrier = new \OrderCarrier($prestaOrder->id);
+        $prestaOrder = new \Order($deliveryNote->getCustomerOrderId()->getEndpoint());
+
+        if (!$prestaOrder->id) {
+            $this->logger->error(
+                \sprintf(
+                    "Order with id %s not found",
+                    $deliveryNote->getCustomerOrderId()->getEndpoint()
+                )
+            );
+            throw new \Exception(
+                \sprintf("Order with id %s not found", $deliveryNote->getCustomerOrderId()->getEndpoint())
+            );
+        }
+
+        $qb                 = new QueryBuilder();
+        $sql                = $qb->select('id_order_carrier')
+                                ->from('order_carrier')
+                                ->where('id_order = ' . (int)$prestaOrder->id);
+        $prestaOrderCarrier = $this->db->getValue($sql);
+
+        if (!$prestaOrderCarrier) {
+            $this->logger->error(
+                \sprintf(
+                    "Order carrier for order %s not found",
+                    $prestaOrder->id
+                )
+            );
+            throw new \Exception(
+                \sprintf("Order carrier for order %s not found", $prestaOrder->id)
+            );
+        }
+
+        $prestaCarrier      = new \OrderCarrier((int)$prestaOrderCarrier);
 
         $trackingCodes = [];
         foreach ($deliveryNote->getTrackingLists() as $trackingList) {
             $trackingCodes = \array_merge($trackingCodes, $trackingList->getCodes());
         }
-
-        $this->logger->info("Delivery note push: tracking codes set");
 
         if (!empty($trackingCodes)) {
             if (!empty($prestaCarrier->tracking_number)) {
@@ -41,16 +72,46 @@ class DeliveryNoteController extends AbstractController implements PushInterface
 
             $prestaCarrier->tracking_number = $codes;
 
-            $this->logger->info("Delivery note push: carrier codes set");
 
-            if (!$prestaCarrier->update()) {
-                $this->logger->info("Delivery note push: carrier update failed");
-                $this->logger->info(\print_r($prestaCarrier, true));
-                throw new \Exception("Couldn't update delivery note for order $prestaOrder->id");
-            } else {
-                $this->logger->info("Delivery note push: carrier update success");
+            try {
+                if (!$prestaCarrier->update()) {
+                    $this->logger->error(
+                        \sprintf(
+                            "Couldn't update delivery note for order %s",
+                            $prestaOrder->id
+                        ),
+                        [
+                            "order" => $prestaOrder
+                        ]
+                    );
+                    throw new \Exception(\sprintf("Couldn't update delivery note for order %s", $prestaOrder->id));
+                }
+            } catch (\Exception $e) {
+                if (\str_contains($e->getMessage(), 'tracking_number')) {
+                    $this->logger->error(
+                        \sprintf(
+                            "Prestashop does not like the tracking number \"%s\", verify that it is correct",
+                            $codes
+                        ),
+                        [
+                            "exception" => $e,
+                            "order"     => $prestaOrder
+                        ]
+                    );
+
+                    throw new \Exception(
+                        \sprintf(
+                            "Prestashop does not like the "
+                            . "tracking number \"%s\" for order %s, verify that it is correct"
+                            . " | Presta Error: %s",
+                            $codes,
+                            $prestaOrder->id,
+                            $e->getMessage()
+                        )
+                    );
+                }
+                throw $e;
             }
-
         }
 
         return $deliveryNote;

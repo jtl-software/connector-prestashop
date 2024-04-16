@@ -24,24 +24,18 @@ class Utils
      */
     public static function mapPaymentModuleCode($module): string
     {
-        $mappedPaymentModuleCode = '';
-
-        switch ($module) {
-            case 'ps_wirepayment':
-                $mappedPaymentModuleCode = PaymentType::BANK_TRANSFER;
-                break;
-            case 'ps_cashondelivery':
-                $mappedPaymentModuleCode = PaymentType::CASH_ON_DELIVERY;
-                break;
-            case 'paypal':
-                $mappedPaymentModuleCode = PaymentType::PAYPAL;
-                break;
-            case 'klarnapaymentsofficial':
-                $mappedPaymentModuleCode = PaymentType::KLARNA;
-                break;
+        // for payments where we don't know the actual module name
+        if (\str_contains($module, 'mollie')) {
+            return PaymentType::MOLLIE;
         }
-
-        return $mappedPaymentModuleCode;
+        // for payments where we know the actual module name
+        return match ($module) {
+            'ps_wirepayment' => PaymentType::BANK_TRANSFER,
+            'ps_cashonedlivery' => PaymentType::CASH_ON_DELIVERY,
+            'klarnapaymentsofficial' => PaymentType::KLARNA,
+            'paypal' => PaymentType::PAYPAL,
+            default => $module,
+        };
     }
 
     public static function stringToFloat(string $input): float

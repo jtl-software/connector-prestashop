@@ -4,28 +4,31 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta\Controller;
 
+use Address as PrestaAddress;
+use Carrier as PrestaCarrier;
+use Cart as PrestaCart;
+use Currency as PrestaCurrency;
+use Customer as PrestaCustomer;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Definition\PaymentType;
 use Jtl\Connector\Core\Model\AbstractModel;
-use Jtl\Connector\Core\Model\CustomerOrderBillingAddress as JtlCustomerOrderBillingAddress;
-use Jtl\Connector\Core\Model\CustomerOrderShippingAddress as JtlCustomerOrderShippingAddress;
 use Jtl\Connector\Core\Model\CustomerOrder as JtlCustomerOrder;
+use Jtl\Connector\Core\Model\CustomerOrderBillingAddress as JtlCustomerOrderBillingAddress;
+use Jtl\Connector\Core\Model\CustomerOrderItem as JtlCustomerOrderItem;
+use Jtl\Connector\Core\Model\CustomerOrderShippingAddress as JtlCustomerOrderShippingAddress;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
-use Jtl\Connector\Core\Model\CustomerOrderItem as JtlCustomerOrderItem;
-use Cart as PrestaCart;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
+use jtl\Connector\Presta\Utils\Utils;
 use Order as PrestaCustomerOrder;
-use Currency as PrestaCurrency;
-use Address as PrestaAddress;
-use Carrier as PrestaCarrier;
-use Customer as PrestaCustomer;
+use OrderCarrier as PrestaOrderCarrier;
 
 class CustomerOrderController extends AbstractController implements PullInterface
 {
     /**
      * @param QueryFilter $queryFilter
+     *
      * @return array|AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
@@ -55,6 +58,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
     /**
      * @param PrestaCustomerOrder $prestaOrder
+     *
      * @return JtlCustomerOrder
      * @throws \PrestaShopDatabaseException
      */
@@ -92,23 +96,26 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         }
 
         $jtlOrder = (new JtlCustomerOrder())
-
             ->setId(new Identity((string)$prestaOrder->id))
             ->setCustomerId(new Identity((string)$prestaOrder->id_customer))
-            ->setBillingAddress($this->createJtlCustomerOrderBillingAddress(
-                $prestaInvoiceAddress,
-                $prestaCustomer
-            ))
+            ->setBillingAddress(
+                $this->createJtlCustomerOrderBillingAddress(
+                    $prestaInvoiceAddress,
+                    $prestaCustomer
+                )
+            )
             ->setCreationDate($this->createDateTime($prestaOrder->date_add))
             ->setCurrencyIso($prestaCurrency->iso_code)
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaOrder->id_lang))
             ->setOrderNumber((string)$prestaOrder->id)
             ->setPaymentDate($this->createDateTime($prestaOrder->invoice_date))
-            ->setPaymentModuleCode($this->mapPaymentModule($prestaOrder->module))
-            ->setShippingAddress($this->createJtlCustomerOrderShippingAddress(
-                $prestaDeliveryAddress,
-                $prestaCustomer
-            ))
+            ->setPaymentModuleCode(Utils::mapPaymentModuleCode($prestaOrder->module))
+            ->setShippingAddress(
+                $this->createJtlCustomerOrderShippingAddress(
+                    $prestaDeliveryAddress,
+                    $prestaCustomer
+                )
+            )
             ->setShippingDate($this->createDateTime($prestaOrder->delivery_date))
             ->setShippingInfo($prestaOrder->getShippingNumber())
             ->setShippingMethodName($prestaCarrier->name)
@@ -116,13 +123,40 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setTotalSumGross((float)$prestaOrder->total_paid_tax_incl)
             ->setItems(...$this->getCustomerOrderItems($prestaCart));
 
+        $jtlOrder->addItem($this->getShippingLineItem($prestaOrder, $prestaCarrier));
+
         $this->setStates($prestaOrder, $jtlOrder);
 
         return $jtlOrder;
     }
 
     /**
+    * @param PrestaCustomerOrder $prestaOrder
+    * @param PrestaCarrier $carrier
+    * @return JtlCustomerOrderItem
+    * @throws \PrestaShopDatabaseException
+    * @throws \PrestaShopException
+     */
+
+    protected function getShippingLineItem(
+        PrestaCustomerOrder  $prestaOrder,
+        PrestaCarrier        $carrier
+    ): JtlCustomerOrderItem {
+        $orderCarrierId = $prestaOrder->getIdOrderCarrier();
+        $orderCarrier   = new PrestaOrderCarrier($orderCarrierId);
+
+        return (new JtlCustomerOrderItem())
+            ->setName($carrier->name)
+            ->setPrice((float)$orderCarrier->shipping_cost_tax_excl)
+            ->setPriceGross((float)$orderCarrier->shipping_cost_tax_incl)
+            ->setQuantity(1)
+            ->setType(JtlCustomerOrderItem::TYPE_SHIPPING)
+            ->setVat((float)$prestaOrder->carrier_tax_rate);
+    }
+
+    /**
      * @param PrestaCart $prestaCart
+     *
      * @return array
      */
     protected function getCustomerOrderItems(PrestaCart $prestaCart): array
@@ -147,6 +181,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *     reference: string,
      *     rate: float
      *     } $prestaProduct
+     *
      * @return JtlCustomerOrderItem
      */
     protected function createJtlCustomerOrderItem(array $prestaProduct): JtlCustomerOrderItem
@@ -163,28 +198,14 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     }
 
     /**
-     * @param string $module
-     * @return string
-     */
-    protected function mapPaymentModule(string $module): string
-    {
-        return match ($module) {
-            'ps_wirepayment' => PaymentType::BANK_TRANSFER,
-            'ps_cashonedlivery' => PaymentType::CASH_ON_DELIVERY,
-            'paypal' => PaymentType::PAYPAL,
-            'klarnapaymentsofficial' => PaymentType::KLARNA,
-            default => '',
-        };
-    }
-
-    /**
-     * @param PrestaAddress $prestaAddress
+     * @param PrestaAddress  $prestaAddress
      * @param PrestaCustomer $prestaCustomer
+     *
      * @return JtlCustomerOrderBillingAddress
      * @throws \PrestaShopDatabaseException
      */
     protected function createJtlCustomerOrderBillingAddress(
-        PrestaAddress $prestaAddress,
+        PrestaAddress  $prestaAddress,
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderBillingAddress {
         try {
@@ -214,13 +235,14 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     }
 
     /**
-     * @param PrestaAddress $prestaAddress
+     * @param PrestaAddress  $prestaAddress
      * @param PrestaCustomer $prestaCustomer
+     *
      * @return JtlCustomerOrderShippingAddress
      * @throws \PrestaShopDatabaseException
      */
     protected function createJtlCustomerOrderShippingAddress(
-        PrestaAddress $prestaAddress,
+        PrestaAddress  $prestaAddress,
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderShippingAddress {
         try {
@@ -250,7 +272,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
     /**
      * @param PrestaCustomerOrder $prestaOrder
-     * @param JtlCustomerOrder $jtlOrder
+     * @param JtlCustomerOrder    $jtlOrder
+     *
      * @return void
      */
     private function setStates(PrestaCustomerOrder $prestaOrder, JtlCustomerOrder $jtlOrder): void
@@ -284,7 +307,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->where('l.host_id IS NULL ' . $fromDate);
 
 
-        $sql2 = \sprintf("SHOW COLUMNS FROM `%sorders` LIKE 'deleted';", \_DB_PREFIX_);
+        $sql2   = \sprintf("SHOW COLUMNS FROM `%sorders` LIKE 'deleted';", \_DB_PREFIX_);
         $result = $this->db->executeS($sql2);
         if (\count($result) !== 0) {
             $sql->where('o.deleted = 0');
