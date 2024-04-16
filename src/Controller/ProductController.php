@@ -621,13 +621,22 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $isNew = empty($endpoint);
 
+        // existing product or var combination
         if (!$isNew || !empty($masterProductId)) {
+            // create or update var combination
             if (!empty($masterProductId)) {
                 $combiProductId = $this->createPrestaProductVariation($jtlProduct, new PrestaProduct($masterProductId));
                 $this->mapper->save(IdentityType::PRODUCT, $combiProductId, $jtlProduct->getId()->getHost());
 
+                // price
+                parent::push($jtlProduct);
+                // stock
+                $stockLevelController->push($jtlProduct);
+
                 return $jtlProduct;
             }
+
+            // existing product not var combination
 
             $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct($endpoint));
             $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
@@ -643,7 +652,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
             return $jtlProduct;
         }
-
+        // new product
         $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct());
 
         try {
@@ -807,7 +816,11 @@ class ProductController extends ProductPriceController implements PullInterface,
             $jtlProduct->getManufacturerNumber()
         );
 
-        return $jtlProduct->getMasterProductId()->getEndpoint() . '_' . $combiId;
+        $endpointId = $jtlProduct->getMasterProductId()->getEndpoint() . '_' . $combiId;
+
+        $jtlProduct->getId()->setEndpoint($endpointId);
+
+        return $endpointId;
     }
 
     /**
@@ -1129,7 +1142,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             if (!$isCombi) {
                 $obj = new \Product($endpoint);
             } else {
-                $combiId = \explode('_', $model->getId()->getEndpoint());
+                $combiId = \explode('_', $model->getId()->getEndpoint())[1];
                 $obj     = new Combination($combiId);
             }
 
