@@ -186,7 +186,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *     price_with_reduction: float,
      *     cart_quantity: int,
      *     reference: string,
-     *     rate: float
+     *     rate: float,
+     *     attributes_small: string
      *     } $prestaProduct
      *
      * @return JtlCustomerOrderItem
@@ -194,6 +195,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     protected function createJtlCustomerOrderItem(array $prestaProduct): JtlCustomerOrderItem
     {
         $id = new Identity((string)$prestaProduct['id_product']);
+        $name = $prestaProduct['name'];
         if (!empty($prestaProduct['id_product_attribute']) && $prestaProduct['id_product_attribute'] > 0) {
             // is variant
             $id = new Identity(
@@ -203,10 +205,11 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                     $prestaProduct['id_product_attribute']
                 )
             );
+            $name = \sprintf('%s | %s', $prestaProduct['name'], $prestaProduct['attributes_small']);
         }
         return (new JtlCustomerOrderItem())
             ->setProductId($id)
-            ->setName($prestaProduct['name'])
+            ->setName($name)
             ->setPrice($prestaProduct['price_with_reduction_without_tax'])
             ->setPriceGross($prestaProduct['price_with_reduction'])
             ->setQuantity($prestaProduct['cart_quantity'])
