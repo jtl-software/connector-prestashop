@@ -187,7 +187,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *     cart_quantity: int,
      *     reference: string,
      *     rate: float,
-     *     attributes_small: string
+     *     attributes: string
      *     } $prestaProduct
      *
      * @return JtlCustomerOrderItem
@@ -205,7 +205,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                     $prestaProduct['id_product_attribute']
                 )
             );
-            $name = \sprintf('%s | %s', $prestaProduct['name'], $prestaProduct['attributes_small']);
+            $name = \sprintf('%s | %s', $prestaProduct['name'], $prestaProduct['attributes']);
         }
         return (new JtlCustomerOrderItem())
             ->setProductId($id)
