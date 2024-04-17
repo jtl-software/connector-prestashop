@@ -161,6 +161,12 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      */
     protected function getCustomerOrderItems(PrestaCart $prestaCart): array
     {
+        $context = \Context::getContext();
+        $context->cart = $prestaCart;
+        $context->country = $prestaCart->getTaxCountry();
+        $context->shop = new \Shop($prestaCart->getShopId());
+        $context->currency = new \Currency($prestaCart->id_currency);
+
         $prestaProducts = $prestaCart->getProducts(keepOrderPrices: true);
         $jtlOrderItems  = [];
 
