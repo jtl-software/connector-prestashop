@@ -32,6 +32,10 @@ class StatusChangeController extends AbstractController implements PushInterface
 
             if (!\is_null($newStatus)) {
                 $order = new \Order($orderId);
+                if (!$order->id) {
+                    $this->logger->warning(\sprintf('Order with id %s not found', $orderId));
+                    return $model;
+                }
                 if ($order->getCurrentState() != $newStatus) {
                     $order->setCurrentState($newStatus);
                 }
