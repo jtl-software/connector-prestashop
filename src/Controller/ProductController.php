@@ -621,23 +621,23 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $isNew = empty($endpoint);
 
-        // existing product or var combination
-        if (!$isNew || !empty($masterProductId)) {
-            // create or update var combination
-            if (!empty($masterProductId)) {
-                $combiProductId = $this->createPrestaProductVariation($jtlProduct, new PrestaProduct($masterProductId));
-                $this->mapper->save(IdentityType::PRODUCT, $combiProductId, $jtlProduct->getId()->getHost());
+        // create or update var combination
+        if (!empty($masterProductId)) {
+            $combiProductId = $this->createPrestaProductVariation($jtlProduct, new PrestaProduct($masterProductId));
+            // if a product was recreated we might have dead links in the linking table
+            $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+            $this->mapper->save(IdentityType::PRODUCT, $combiProductId, $jtlProduct->getId()->getHost());
 
-                // price
-                parent::push($jtlProduct);
-                // stock
-                $stockLevelController->push($jtlProduct);
+            // price
+            parent::push($jtlProduct);
+            // stock
+            $stockLevelController->push($jtlProduct);
 
-                return $jtlProduct;
-            }
+            return $jtlProduct;
+        }
 
-            // existing product not var combination
-
+        // existing product
+        if (!$isNew) {
             $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct($endpoint));
             $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
 
@@ -678,6 +678,8 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
 
+        // if a product was recreated we might have dead links in the linking table
+        $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
         $this->mapper->save(
             IdentityType::PRODUCT,
             $jtlProduct->getId()->getEndpoint(),
@@ -795,8 +797,8 @@ class ProductController extends ProductPriceController implements PullInterface,
         );
         $prestaProduct->updateAttribute(
             $combiId,
-            $wholeSalePrice - $prestaProduct->wholesale_price,
-            $price - $prestaProduct->price,
+            max($wholeSalePrice - $prestaProduct->wholesale_price, 0.0),
+            max($price - $prestaProduct->price, 0.0),
             $jtlProduct->getShippingWeight(),
             null,
             null,

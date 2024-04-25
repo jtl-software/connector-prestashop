@@ -108,6 +108,11 @@ class ProductPriceController extends AbstractController implements PushInterface
         } else {
             $combiPriceDiff = $priceItem->getNetPrice() - \floatval($product->price);
             $combi          = new \Combination($combiId);
+            if (!$combi->id) {
+                throw new \RuntimeException(
+                    \sprintf('Combination with id %s not found. Full sync of article required.', $combiId)
+                );
+            }
             $combi->price   = \round($combiPriceDiff, 6);
             $combi->save();
         }
