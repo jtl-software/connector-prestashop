@@ -109,6 +109,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         $jtlOrder = (new JtlCustomerOrder())
             ->setId(new Identity((string)$prestaOrder->id))
             ->setCustomerId(new Identity((string)$prestaOrder->id_customer))
+            ->setNote($prestaOrder->getFirstMessage() ?: '')
             ->setBillingAddress(
                 $this->createJtlCustomerOrderBillingAddress(
                     $prestaInvoiceAddress,
