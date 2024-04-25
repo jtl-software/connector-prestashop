@@ -21,6 +21,7 @@ use Jtl\Connector\Core\Model\ProductPrice as JtlPrice;
 use Jtl\Connector\Core\Model\ProductPriceItem as JtlPriceItem;
 use Jtl\Connector\Core\Model\ProductSpecialPrice as JtlSpecialPrice;
 use Jtl\Connector\Core\Model\ProductSpecialPriceItem as JtlSpecialPriceItem;
+use Jtl\Connector\Core\Model\ProductVariation;
 use Jtl\Connector\Core\Model\ProductVariation as JtlProductVariation;
 use Jtl\Connector\Core\Model\ProductVariationI18n as JtlProductVariationI18n;
 use Jtl\Connector\Core\Model\ProductVariationValue as JtlProductVariationValue;
@@ -28,9 +29,11 @@ use Jtl\Connector\Core\Model\ProductVariationValueI18n as JtlProductVariationVal
 use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\Statistic;
 use Jtl\Connector\Core\Model\TaxRate;
+use Jtl\Connector\Core\Model\TranslatableAttribute;
 use Jtl\Connector\Core\Model\TranslatableAttribute as JtlTranslatableAttribute;
 use Jtl\Connector\Core\Model\TranslatableAttributeI18n as JtlTranslatableAttributeI18n;
 use jtl\Connector\Presta\Utils\QueryBuilder;
+use jtl\Connector\Presta\Utils\Utils;
 use Product as PrestaProduct;
 
 class ProductController extends ProductPriceController implements PullInterface, PushInterface, DeleteInterface
@@ -39,7 +42,8 @@ class ProductController extends ProductPriceController implements PullInterface,
         JTL_ATTRIBUTE_ACTIVE           = 'active',
         JTL_ATTRIBUTE_ONLINE_ONLY      = 'online_only',
         JTL_ATTRIBUTE_MAIN_CATEGORY_ID = 'main_category_id',
-        JTL_ATTRIBUTE_CARRIERS         = 'carriers';
+        JTL_ATTRIBUTE_CARRIERS         = 'carriers',
+        JTL_ATTRIBUTE_MAIN_VARIANT     = 'main_variant';
 
     protected array $jtlSpecialAttributes = [
         self::JTL_ATTRIBUTE_ACTIVE,
@@ -471,7 +475,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
     /**
      * @param array $variations
-     * @return array
+     * @return ProductVariation[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
@@ -621,6 +625,17 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $isNew = empty($endpoint);
 
+        if (!$isNew) {
+                list($checkEndpoint, $_) = Utils::explodeProductEndpoint($endpoint, 0);
+            // sanity check, does the product *really* exist?
+            $prestaProduct = new PrestaProduct($checkEndpoint);
+            if ($prestaProduct->id === null) {
+                // product does not exist, we need to recreate it
+                $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
+                $isNew = true;
+            }
+        }
+
         // create or update var combination
         if (!empty($masterProductId)) {
             $combiProductId = $this->createPrestaProductVariation($jtlProduct, new PrestaProduct($masterProductId));
@@ -652,11 +667,13 @@ class ProductController extends ProductPriceController implements PullInterface,
 
             return $jtlProduct;
         }
-        // new product
-        $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct());
 
         try {
+            // new product
+            $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct());
+
             if (!$prestaProduct->add()) {
+                $prestaProduct->delete();
                 throw new \RuntimeException(
                     \sprintf(
                         'Error creating product %s',
@@ -664,7 +681,33 @@ class ProductController extends ProductPriceController implements PullInterface,
                     )
                 );
             }
+
+            $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
+
+            $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
+
+            // if a product was recreated we might have dead links in the linking table
+            $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+            $this->mapper->save(
+                IdentityType::PRODUCT,
+                $jtlProduct->getId()->getEndpoint(),
+                $jtlProduct->getId()->getHost()
+            );
+
+            // price
+            parent::push($jtlProduct);
+            // stock
+            $stockLevelController->push($jtlProduct);
+
         } catch (\PrestaShopException $e) {
+            // delete possible partial product
+            if (isset($prestaProduct)) {
+                try {
+                    $prestaProduct->delete();
+                } catch (\PrestaShopException $e) {
+                    // ignore
+                }
+            }
             throw new \RuntimeException(
                 \sprintf(
                     'Error saving product %s | Message from PrestaShop: %s',
@@ -673,23 +716,6 @@ class ProductController extends ProductPriceController implements PullInterface,
                 )
             );
         }
-
-        $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
-
-        $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
-
-        // if a product was recreated we might have dead links in the linking table
-        $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-        $this->mapper->save(
-            IdentityType::PRODUCT,
-            $jtlProduct->getId()->getEndpoint(),
-            $jtlProduct->getId()->getHost()
-        );
-
-        // price
-        parent::push($jtlProduct);
-        // stock
-        $stockLevelController->push($jtlProduct);
 
         return new $jtlProduct;
     }
@@ -794,7 +820,22 @@ class ProductController extends ProductPriceController implements PullInterface,
         $wholeSalePrice = \round(
             $jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice() / 100 * (100 + $taxRate),
             6
-        );
+        ); // TODO seems wrong
+
+        $isDefault = false;
+
+        foreach ($jtlProduct->getAttributes() as $attribute) {
+            foreach ($attribute->getI18ns() as $i18n) {
+                if (
+                    $i18n->getName() === self::JTL_ATTRIBUTE_MAIN_VARIANT
+                    && $i18n->getValue(TranslatableAttribute::TYPE_BOOL)
+                ) {
+                    $isDefault = true;
+                    break 2;
+                }
+            }
+        }
+
         $prestaProduct->updateAttribute(
             $combiId,
             max($wholeSalePrice - $prestaProduct->wholesale_price, 0.0),
@@ -805,7 +846,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             null,
             $jtlProduct->getSku(),
             $jtlProduct->getEan(),
-            null,
+            $isDefault,
             null,
             $jtlProduct->getUpc(),
             $jtlProduct->getMinimumOrderQuantity() < 1 ? 1 : \ceil($jtlProduct->getMinimumOrderQuantity()),
