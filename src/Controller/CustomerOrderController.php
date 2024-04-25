@@ -10,7 +10,6 @@ use Cart as PrestaCart;
 use Currency as PrestaCurrency;
 use Customer as PrestaCustomer;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Definition\PaymentType;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\CustomerOrder as JtlCustomerOrder;
 use Jtl\Connector\Core\Model\CustomerOrderBillingAddress as JtlCustomerOrderBillingAddress;
@@ -97,13 +96,13 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
         $orderNumber = $prestaOrder->reference;
         // check if a reference exists multiple times
-        $qb = new QueryBuilder();
-        $sql = $qb->select('COUNT(*)')
+        $qb    = new QueryBuilder();
+        $sql   = $qb->select('COUNT(*)')
             ->from('orders')
             ->where("reference = '$orderNumber'");
         $count = $this->db->getValue($sql);
         if ($count > 1) {
-            $orderNumber = \sprintf("%s-%s",$orderNumber, $prestaOrder->id);
+            $orderNumber = \sprintf("%s-%s", $orderNumber, $prestaOrder->id);
         }
 
 
@@ -136,6 +135,9 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setItems(...$this->getCustomerOrderItems($prestaCart));
 
         $jtlOrder->addItem($this->getShippingLineItem($prestaOrder, $prestaCarrier));
+        if ($prestaOrder->getCartRules() > 0) {
+            $this->addDiscountItems($prestaOrder, $jtlOrder);
+        }
 
         $this->setStates($prestaOrder, $jtlOrder);
 
@@ -143,16 +145,59 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     }
 
     /**
-    * @param PrestaCustomerOrder $prestaOrder
-    * @param PrestaCarrier $carrier
-    * @return JtlCustomerOrderItem
-    * @throws \PrestaShopDatabaseException
-    * @throws \PrestaShopException
+     * @param PrestaCustomerOrder $prestaOrder
+     * @param JtlCustomerOrder    $jtlOrder
+     *
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    private function addDiscountItems(PrestaCustomerOrder $prestaOrder, JtlCustomerOrder $jtlOrder): void
+    {
+        $rules = $prestaOrder->getCartRules();
+        /** @var array{
+         *     id_order_cart_rule: int,
+         *     id_order: int,
+         *     id_cart_rule: int,
+         *     id_order_invoice: int,
+         *     name: string,
+         *     value: float,
+         *     value_tax_excl: float,
+         *     free_shipping: int,
+         *     deleted: int,
+         *     } $rule
+         */
+        foreach ($rules as $rule) {
+            $item = new JtlCustomerOrderItem();
+            $code = "";
+            if ($rule['id_cart_rule']) {
+                $cartRule = new \CartRule($rule['id_cart_rule']);
+                $code     = $cartRule->code;
+            }
+            $item->setType(JtlCustomerOrderItem::TYPE_COUPON)
+                ->setId(new Identity(\sprintf('rule_%s', $rule['id_order_cart_rule'])))
+                ->setName($rule['name'])
+                ->setPrice(((float)$rule['value_tax_excl']) * -1)
+                ->setPriceGross(((float)$rule['value']) * -1)
+                ->setVat(\round(($rule['value'] / $rule['value_tax_excl'] - 1) * 100, 2))
+                ->setQuantity(1)
+                ->setNote(\sprintf('Code: %s', $code));
+            $jtlOrder->addItem($item);
+        }
+    }
+
+    /**
+     * @param PrestaCustomerOrder $prestaOrder
+     * @param PrestaCarrier       $carrier
+     *
+     * @return JtlCustomerOrderItem
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
 
     protected function getShippingLineItem(
-        PrestaCustomerOrder  $prestaOrder,
-        PrestaCarrier        $carrier
+        PrestaCustomerOrder $prestaOrder,
+        PrestaCarrier       $carrier
     ): JtlCustomerOrderItem {
         $orderCarrierId = $prestaOrder->getIdOrderCarrier();
         $orderCarrier   = new PrestaOrderCarrier($orderCarrierId);
@@ -173,10 +218,10 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      */
     protected function getCustomerOrderItems(PrestaCart $prestaCart): array
     {
-        $context = \Context::getContext();
-        $context->cart = $prestaCart;
-        $context->country = $prestaCart->getTaxCountry();
-        $context->shop = new \Shop($prestaCart->getShopId());
+        $context           = \Context::getContext();
+        $context->cart     = $prestaCart;
+        $context->country  = $prestaCart->getTaxCountry();
+        $context->shop     = new \Shop($prestaCart->getShopId());
         $context->currency = new \Currency($prestaCart->id_currency);
 
         $prestaProducts = $prestaCart->getProducts(keepOrderPrices: true);
@@ -206,11 +251,11 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      */
     protected function createJtlCustomerOrderItem(array $prestaProduct): JtlCustomerOrderItem
     {
-        $id = new Identity((string)$prestaProduct['id_product']);
+        $id   = new Identity((string)$prestaProduct['id_product']);
         $name = $prestaProduct['name'];
         if (!empty($prestaProduct['id_product_attribute']) && $prestaProduct['id_product_attribute'] > 0) {
             // is variant
-            $id = new Identity(
+            $id   = new Identity(
                 \sprintf(
                     '%s_%s',
                     $prestaProduct['id_product'],
