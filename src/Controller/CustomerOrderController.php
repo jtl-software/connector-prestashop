@@ -95,6 +95,18 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             );
         }
 
+        $orderNumber = $prestaOrder->reference;
+        // check if a reference exists multiple times
+        $qb = new QueryBuilder();
+        $sql = $qb->select('COUNT(*)')
+            ->from('orders')
+            ->where("reference = '$orderNumber'");
+        $count = $this->db->getValue($sql);
+        if ($count > 1) {
+            $orderNumber = \sprintf("%s-%s",$orderNumber, $prestaOrder->id);
+        }
+
+
         $jtlOrder = (new JtlCustomerOrder())
             ->setId(new Identity((string)$prestaOrder->id))
             ->setCustomerId(new Identity((string)$prestaOrder->id_customer))
@@ -107,7 +119,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setCreationDate($this->createDateTime($prestaOrder->date_add))
             ->setCurrencyIso($prestaCurrency->iso_code)
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaOrder->id_lang))
-            ->setOrderNumber((string)$prestaOrder->id)
+            ->setOrderNumber($orderNumber)
             ->setPaymentDate($this->createDateTime($prestaOrder->invoice_date))
             ->setPaymentModuleCode(Utils::mapPaymentModuleCode($prestaOrder->module))
             ->setShippingAddress(
