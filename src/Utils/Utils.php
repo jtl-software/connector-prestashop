@@ -9,8 +9,9 @@ use Jtl\Connector\Core\Definition\PaymentType;
 class Utils
 {
     /**
-     * @param $id
+     * @param      $id
      * @param null $padValue
+     *
      * @return array
      */
     public static function explodeProductEndpoint($id, $padValue = null)
@@ -19,7 +20,19 @@ class Utils
     }
 
     /**
+     * @param $id
+     * @param $endpoint
+     *
+     * @return string
+     */
+    public static function joinProductEndpoint($id, $endpoint)
+    {
+        return \implode('_', [$id, $endpoint]);
+    }
+
+    /**
      * @param $module
+     *
      * @return string
      */
     public static function mapPaymentModuleCode($module): string

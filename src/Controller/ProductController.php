@@ -623,89 +623,130 @@ class ProductController extends ProductPriceController implements PullInterface,
         $stockLevelController = new ProductStockLevelController($this->mapper);
         $stockLevelController->setLogger($this->logger);
 
+        // 1. check if product exists
+        // 2. if not, create minimal product
+        //    if has variation, create minimal variants
+        // 3. update product
+        //    if has variation, update variants
+        // 4. update categories
+        // 5. update price => PriceController seems to only update special prices, change that
+        // 6. update stock
+
+
         $isNew = empty($endpoint);
 
         if (!$isNew) {
+            if (empty($masterProductId)) {
                 list($checkEndpoint, $_) = Utils::explodeProductEndpoint($endpoint, 0);
-            // sanity check, does the product *really* exist?
-            $prestaProduct = new PrestaProduct($checkEndpoint);
-            if ($prestaProduct->id === null) {
-                // product does not exist, we need to recreate it
-                $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
-                $isNew = true;
+                // sanity check, does the product *really* exist?
+                $prestaProduct = new PrestaProduct($checkEndpoint);
+                if ($prestaProduct->id === null) {
+                    // product does not exist, we need to recreate it
+                    $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
+                    $isNew = true;
+                }
+            } else {
+                list($checkEndpoint, $combiId) = Utils::explodeProductEndpoint($endpoint, 0);
+                // sanity check, does the variant *really* exist?
+                $combination  = new Combination($combiId);
+                if ($combination->id != $combiId) { // loose comparison on purpose
+                    // variant does not exist, we need to recreate it
+                    $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
+                    $isNew = true;
+                }
             }
         }
 
-        // create or update var combination
         if (!empty($masterProductId)) {
-            $combiProductId = $this->createPrestaProductVariation($jtlProduct, new PrestaProduct($masterProductId));
-            // if a product was recreated we might have dead links in the linking table
-            $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-            $this->mapper->save(IdentityType::PRODUCT, $combiProductId, $jtlProduct->getId()->getHost());
-
-            // price
-            parent::push($jtlProduct);
-            // stock
-            $stockLevelController->push($jtlProduct);
-
-            return $jtlProduct;
-        }
-
-        // existing product
-        if (!$isNew) {
-            $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct($endpoint));
-            $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
-
-            if (!$prestaProduct->update()) {
-                throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
-            }
-
-            // price
-            parent::push($jtlProduct);
-            // stock
-            $stockLevelController->push($jtlProduct);
-
-            return $jtlProduct;
-        }
-
-        try {
-            // new product
-            $prestaProduct = $this->createPrestaProduct($jtlProduct, new PrestaProduct());
-
-            if (!$prestaProduct->add()) {
-                $prestaProduct->delete();
+            // sanity check, does the master product exist?
+            $masterProduct = new PrestaProduct($masterProductId);
+            if ($masterProduct->id === null) {
+                // FATAL we can not create a new master from a variant
                 throw new \RuntimeException(
                     \sprintf(
-                        'Error creating product %s',
-                        $jtlProduct->getI18ns()[0]->getName()
+                        'Master product (Host: %s, Endpoint: %s) does not exist',
+                        $jtlProduct->getMasterProductId()->getHost(),
+                        $jtlProduct->getMasterProductId()->getEndpoint()
                     )
                 );
             }
+        }
 
+        try {
+            // create minimal product
+            if ($isNew) {
+                if (empty($masterProductId)) {
+                    // create empty normal product
+                    $prestaProduct = new PrestaProduct();
+                    $prestaProduct->save();
+
+                    $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
+                } else {
+                    $this->createMinPrestaVariant($jtlProduct, new PrestaProduct($masterProductId));
+                }
+
+                $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+                $this->mapper->save(
+                    IdentityType::PRODUCT,
+                    $jtlProduct->getId()->getEndpoint(),
+                    $jtlProduct->getId()->getHost()
+                );
+            }
+
+            // update product
+            if (empty($masterProductId)) {
+                // update normal product
+                $prestaProduct = $this->updatePrestaProduct($jtlProduct, new PrestaProduct($endpoint));
+                if (!$prestaProduct->update()) {
+                    throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
+                }
+            } else {
+                // update var combination
+                [$endpoint, $combiId] = Utils::explodeProductEndpoint($jtlProduct->getId()->getEndpoint(), 0);
+
+                $prestaProduct = new PrestaProduct($endpoint);
+                $prestaProduct = $this->updatePrestaVariant($jtlProduct, $prestaProduct, (int)$combiId);
+
+                if (!$prestaProduct->update()) {
+                    throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
+                }
+            }
+            // update categories
             $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
-
-            $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
-
-            // if a product was recreated we might have dead links in the linking table
-            $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-            $this->mapper->save(
-                IdentityType::PRODUCT,
-                $jtlProduct->getId()->getEndpoint(),
-                $jtlProduct->getId()->getHost()
-            );
-
-            // price
+            if (!$prestaProduct->update()) {
+                throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
+            }
+            // update price
             parent::push($jtlProduct);
-            // stock
+            // update stock
             $stockLevelController->push($jtlProduct);
 
-        } catch (\PrestaShopException $e) {
-            // delete possible partial product
-            if (isset($prestaProduct)) {
-                try {
-                    $prestaProduct->delete();
-                } catch (\PrestaShopException $e) {
-                    // ignore
+            return $jtlProduct;
+            // done
+
+        } catch (\Exception $e) {
+            if ($isNew) {
+                if (empty($masterProductId)) {
+                    // delete partial product
+                    try {
+                        $prestaProduct = new PrestaProduct($jtlProduct->getId()->getEndpoint());
+                        $prestaProduct->delete();
+                        $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+                    } catch (\PrestaShopException $e) {
+                        // ignore
+                    }
+                } else {
+                    [$endpoint, $combiId] = Utils::explodeProductEndpoint($jtlProduct->getId()->getEndpoint(), 0);
+                    if ($combiId !== null) {
+                        // delete partial var combination
+                        try {
+                            $prestaProduct = new PrestaProduct($endpoint);
+                            $prestaProduct->deleteAttributeCombination($combiId);
+                            $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+                        } catch (\PrestaShopException $e) {
+                            // ignore
+                        }
+                    }
                 }
             }
             throw new \RuntimeException(
@@ -716,8 +757,72 @@ class ProductController extends ProductPriceController implements PullInterface,
                 )
             );
         }
+    }
 
-        return new $jtlProduct;
+    protected function createMinPrestaVariant(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
+    {
+        // create attribute for combination
+        $combiId = $prestaProduct->addAttribute(
+            .0,
+            $jtlProduct->getShippingWeight(),
+            .0,
+            .0,
+            [],
+            $jtlProduct->getSku(),
+            $jtlProduct->getEan(),
+            false,
+            null,
+            $jtlProduct->getUpc()
+        );
+
+        $this->createPrestaCombination($jtlProduct, $prestaProduct, $combiId);
+
+        $jtlProduct->getId()->setEndpoint(Utils::joinProductEndpoint($prestaProduct->id, $combiId));
+
+        return $prestaProduct;
+    }
+
+    protected function updatePrestaVariant(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, int $combiId): PrestaProduct
+    {
+        $minOrder = \ceil($jtlProduct->getMinimumOrderQuantity());
+        $minOrder = max($minOrder, 1);
+
+        $isDefault = false;
+
+        foreach ($jtlProduct->getAttributes() as $attribute) {
+            foreach ($attribute->getI18ns() as $i18n) {
+                if (
+                    $i18n->getName() === self::JTL_ATTRIBUTE_MAIN_VARIANT
+                    && $i18n->getValue(TranslatableAttribute::TYPE_BOOL)
+                ) {
+//                    $isDefault = true;
+                    // TODO fix duplicated key error
+                    break 2;
+                }
+            }
+        }
+
+        $this->createPrestaCombination($jtlProduct, $prestaProduct, $combiId);
+
+        $prestaProduct->updateAttribute(
+            $combiId,
+            (float) ($prestaProduct->wholesale_price - $jtlProduct->getPurchasePrice()),
+            .0,  // price gets set in price controller
+            $jtlProduct->getShippingWeight(),
+            .0,
+            .0,
+            [],
+            $jtlProduct->getSku(),
+            $jtlProduct->getEan(),
+            $isDefault,
+            null,
+            $jtlProduct->getUpc(),
+            $minOrder
+        );
+
+        $prestaProduct->checkDefaultAttributes();
+
+        return $prestaProduct;
     }
 
     /**
@@ -727,7 +832,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    protected function createPrestaProduct(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
+    protected function updatePrestaProduct(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
     {
         $translations  = $this->createPrestaProductTranslations(...$jtlProduct->getI18ns());
         $categories    = $jtlProduct->getCategories();
@@ -756,10 +861,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
         $prestaProduct->minimal_quantity    = $jtlProduct->getMinimumOrderQuantity();
         $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
-        $prestaProduct->price               =
-            \round($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
-        $prestaProduct->wholesale_price     =
-            $prestaProduct->price / 100 * (100 + (new \Tax($prestaProduct->id_tax_rules_group))->rate);
+        $prestaProduct->wholesale_price     = $jtlProduct->getPurchasePrice();
 
         foreach ($translations as $key => $translation) {
             $prestaProduct->name[$key]              = $translation['name'];
@@ -792,79 +894,6 @@ class ProductController extends ProductPriceController implements PullInterface,
         return $prestaProduct->updateCategories($categoryIds);
     }
 
-    /**
-     * @param JtlProduct $jtlProduct
-     * @param PrestaProduct $prestaProduct
-     * @return string
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    protected function createPrestaProductVariation(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): string
-    {
-        $valueIds = [];
-        foreach ($jtlProduct->getVariations() as $jtlVariation) {
-            $groupId = $this->createPrestaAttributeGroup($jtlVariation);
-            foreach ($jtlVariation->getValues() as $jtlVariationValue) {
-                $valueIds[] = $this->createPrestaAttribute($jtlVariationValue, $groupId);
-            }
-        }
-
-        $combiId = $this->createPrestaCombination(
-            $valueIds,
-            (int)$jtlProduct->getMasterProductId()->getEndpoint()
-        );
-
-
-        $taxRate        = (new \Tax($this->findTaxClassId(...$jtlProduct->getTaxRates())))->rate;
-        $price          = \round($jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice(), 6);
-        $wholeSalePrice = \round(
-            $jtlProduct->getPrices()[0]->getItems()[0]->getNetPrice() / 100 * (100 + $taxRate),
-            6
-        ); // TODO seems wrong
-
-        $isDefault = false;
-
-        foreach ($jtlProduct->getAttributes() as $attribute) {
-            foreach ($attribute->getI18ns() as $i18n) {
-                if (
-                    $i18n->getName() === self::JTL_ATTRIBUTE_MAIN_VARIANT
-                    && $i18n->getValue(TranslatableAttribute::TYPE_BOOL)
-                ) {
-                    $isDefault = true;
-                    break 2;
-                }
-            }
-        }
-
-        $prestaProduct->updateAttribute(
-            $combiId,
-            max($wholeSalePrice - $prestaProduct->wholesale_price, 0.0),
-            max($price - $prestaProduct->price, 0.0),
-            $jtlProduct->getShippingWeight(),
-            null,
-            null,
-            null,
-            $jtlProduct->getSku(),
-            $jtlProduct->getEan(),
-            $isDefault,
-            null,
-            $jtlProduct->getUpc(),
-            $jtlProduct->getMinimumOrderQuantity() < 1 ? 1 : \ceil($jtlProduct->getMinimumOrderQuantity()),
-            null,
-            true,
-            [],
-            $jtlProduct->getIsbn(),
-            null,
-            null,
-            $jtlProduct->getManufacturerNumber()
-        );
-
-        $endpointId = $jtlProduct->getMasterProductId()->getEndpoint() . '_' . $combiId;
-
-        $jtlProduct->getId()->setEndpoint($endpointId);
-
-        return $endpointId;
-    }
 
     /**
      * @param JtlProductVariation $jtlVariation
@@ -879,19 +908,21 @@ class ProductController extends ProductPriceController implements PullInterface,
             JtlProductVariation::TYPE_RADIO
         ];
 
-        $name = $jtlVariation->getI18ns()[0]->getName();
+
+        $groupType = \in_array(
+            $jtlVariation->getType(),
+            $allowedTypes
+        ) ? $jtlVariation->getType() : JtlProductVariation::TYPE_SELECT;
+
+        $groupTranslations = $this->createPrestaAttributeGroupTranslations($jtlVariation, \ucfirst($groupType));
+
+        $name = \array_values($groupTranslations)[0]['name']; // we don't need a specific language here, any will do
         $sql  = (new QueryBuilder())
             ->select('id_attribute_group')
             ->from('attribute_group_lang')
             ->where("name = '$name'");
 
         $groupId   = $this->db->getValue($sql);
-        $groupType = \in_array(
-            $jtlVariation->getType(),
-            $allowedTypes
-        ) ? $jtlVariation->getType() : JtlProductVariation::TYPE_SELECT;
-
-        $groupTranslations = $this->createPrestaAttributeGroupTranslations($jtlVariation);
 
         $group             = new AttributeGroup($groupId > 0 ? $groupId : null);
         $group->group_type = $groupType;
@@ -911,13 +942,13 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @return array
      * @throws \PrestaShopDatabaseException
      */
-    protected function createPrestaAttributeGroupTranslations(JtlProductVariation $jtlVariation): array
+    protected function createPrestaAttributeGroupTranslations(JtlProductVariation $jtlVariation, string $groupType): array
     {
         $translations = [];
 
         foreach ($jtlVariation->getI18ns() as $i18n) {
             $langId                               = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
-            $translations[$langId]['name']        = $i18n->getName();
+            $translations[$langId]['name']        = \sprintf('%s (%s)', $i18n->getName(), \ucfirst($groupType));
             $translations[$langId]['public_name'] = $i18n->getName();
         }
 
@@ -976,37 +1007,6 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param array $prestaAttributeIds
-     * @param int $prestaProductId
-     * @return string
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    protected function createPrestaCombination(
-        array $prestaAttributeIds,
-        int   $prestaProductId
-    ): string {
-        $ids      = \implode(',', $prestaAttributeIds);
-        $countIds = \count($prestaAttributeIds);
-        $sql      = (new QueryBuilder())
-            ->select('id_product_attribute')
-            ->from('product_attribute_combination')
-            ->where("id_attribute IN ($ids)")
-            ->groupBy('id_product_attribute')
-            ->having("COUNT(DISTINCT id_attribute) = $countIds");
-
-        $combiId = $this->db->getValue($sql);
-
-        $combi             = new Combination($combiId > 0 ? $combiId : null);
-        $combi->price      = 0;
-        $combi->id_product = $prestaProductId;
-        $combi->save();
-        $combi->setAttributes($prestaAttributeIds);
-
-        return (string)$combi->id;
-    }
-
-    /**
      * @param JtlProductI18n ...$jtlProductI18ns
      * @return array
      * @throws \PrestaShopDatabaseException
@@ -1049,13 +1049,13 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         foreach (\Tax::getTaxes() as $tax) {
-            $prestaTaxes[$tax['rate']] = $tax['id_tax'];
+            $prestaTaxes[\number_format((float)$tax['rate'], 3)] = $tax['id_tax'];
         }
 
         foreach ($jtlTaxes as $jtlTax) {
             if (!empty($jtlTax->getRate())) {
                 $conditions[] = \sprintf(
-                    'id_country = %s AND id_tax = %s',
+                    'tr.id_country = %s AND tr.id_tax = %s',
                     $this->getPrestaCountryIdFromIso($jtlTax->getCountryIso()),
                     $prestaTaxes[\number_format($jtlTax->getRate(), 3)]
                 );
@@ -1063,10 +1063,12 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         $sql = (new QueryBuilder())
-            ->select('id_tax_rules_group, COUNT(id_tax_rules_group) AS hits')
-            ->from('tax_rule')
+            ->select('tr.id_tax_rules_group, COUNT(tr.id_tax_rules_group) AS hits')
+            ->from('tax_rule', 'tr')
             ->where(\join(' OR ', $conditions))
-            ->groupBy('id_tax_rules_group')
+            ->leftJoin('tax_rules_group', 'trg', 'trg.id_tax_rules_group = tr.id_tax_rules_group')
+            ->where('trg.active = 1 AND trg.deleted = 0')
+            ->groupBy('tr.id_tax_rules_group')
             ->orderBy('hits DESC');
 
         return $this->db->executeS($sql)[0]['id_tax_rules_group'] ?? null;
@@ -1189,6 +1191,8 @@ class ProductController extends ProductPriceController implements PullInterface,
                 $obj     = new Combination($combiId);
             }
 
+            // TODO check var delete
+
             $obj->delete();
         }
 
@@ -1229,5 +1233,31 @@ class ProductController extends ProductPriceController implements PullInterface,
         return (new Statistic())
             ->setAvailable((int)$count + $countVars)
             ->setControllerName($this->controllerName);
+    }
+
+    /**
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @param int           $combiId
+     *
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    protected function createPrestaCombination(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, int $combiId): void
+    {
+        $valueIds = [];
+        foreach ($jtlProduct->getVariations() as $jtlVariation) {
+            $groupId = $this->createPrestaAttributeGroup($jtlVariation);
+            foreach ($jtlVariation->getValues() as $jtlVariationValue) {
+                $valueIds[] = $this->createPrestaAttribute($jtlVariationValue, $groupId);
+            }
+        }
+
+        $combi             = new Combination($combiId);
+        $combi->price      = 0;
+        $combi->id_product = $prestaProduct->id;
+        $combi->setAttributes($valueIds);
+        $combi->save();
     }
 }
