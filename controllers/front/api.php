@@ -41,8 +41,11 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
             $config->set(ConfigSchema::LOG_LEVEL, LogLevel::DEBUG);
         }
         $application = new Application(CONNECTOR_DIR, $config, $configSchema);
-        $application->run($connector);
-
+        try {
+            $application->run($connector);
+        } catch (\Exception $e) {
+            die();
+        }
         exit();
     }
 }
