@@ -144,6 +144,13 @@ class CategoryController extends AbstractController implements PullInterface, Pu
 
         $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
         if (!$prestaCategory->add()) {
+            if ($prestaCategory->id) {
+                try {
+                    // explicitly delete category to prevent broken category
+                    $prestaCategory->delete();
+                } catch (\Exception) {
+                }
+            }
             throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
         }
 
@@ -168,14 +175,26 @@ class CategoryController extends AbstractController implements PullInterface, Pu
                 : $jtlCategory->getParentCategoryId()->getEndpoint();
 
         foreach ($translations as $key => $translation) {
-            $prestaCategory->name[$key]             = \preg_replace('/[^a-zA-Z0-9-_]/', '_', $translation['name']);
+            $prestaCategory->name[$key]             = \preg_replace('/[<>;=#{}]/', '_', $translation['name']);
             $prestaCategory->description[$key]      = $translation['description'];
             $prestaCategory->meta_description[$key] = $translation['metaDescription'];
             $prestaCategory->meta_keywords[$key]    = $translation['metaKeywords'];
-            $prestaCategory->link_rewrite[$key]     = \preg_replace('/[^a-zA-Z0-9-_]/', '_', $translation['url']);
+            $prestaCategory->link_rewrite[$key]     = $this->replaceUmlauts($translation['url']);
         }
 
         return $prestaCategory;
+    }
+
+    private function replaceUmlauts(string $string): string
+    {
+        $string = \str_replace('ä', 'ae', $string);
+        $string = \str_replace('ö', 'oe', $string);
+        $string = \str_replace('ü', 'ue', $string);
+        $string = \str_replace('ß', 'ss', $string);
+        $string = \str_replace(' ', '-', $string);
+        $string = \str_replace('Ä', 'Ae', $string);
+        $string = \str_replace('Ö', 'Oe', $string);
+        return \str_replace('Ü', 'Ue', $string);
     }
 
     /**
