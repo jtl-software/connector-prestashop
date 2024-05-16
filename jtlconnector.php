@@ -440,13 +440,14 @@ class JTLConnector extends Module
                 ],
                 [
                     'type'    => 'switch',
-                    'label'   => $this->l('Truncate short description'),
+                    'label'   => $this->l('Truncate Description'),
                     'name'    => 'jtlconnector_truncate_desc',
                     'is_bool' => true,
                     'desc'    => sprintf(
                         $this->l(
-                            'Enable this option to truncate too long short descriptions. Your current setting is %s 
-                            chars. You can change this in your product preferences.'
+                            'Enable this option to truncate too long descriptions. Your current setting is %s 
+                            chars for short descriptions. You can change this in your product preferences.
+                            For long descriptions the limit is always 21844 chars.'
                         ),
                         $limit
                     ),
