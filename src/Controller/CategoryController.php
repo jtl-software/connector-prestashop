@@ -162,8 +162,10 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     /**
      * @param JtlCategory $jtlCategory
      * @param PrestaCategory $prestaCategory
+     *
      * @return PrestaCategory
-     */
+     * @throws PrestaShopDatabaseException
+*/
     protected function createPrestaCategory(JtlCategory $jtlCategory, PrestaCategory $prestaCategory): PrestaCategory
     {
         $translations              = $this->createPrestaCategoryTranslations(...$jtlCategory->getI18ns());
@@ -175,26 +177,14 @@ class CategoryController extends AbstractController implements PullInterface, Pu
                 : $jtlCategory->getParentCategoryId()->getEndpoint();
 
         foreach ($translations as $key => $translation) {
-            $prestaCategory->name[$key]             = \preg_replace('/[<>;=#{}]/', '_', $translation['name']);
+            $prestaCategory->name[$key]             = $translation['name'];
             $prestaCategory->description[$key]      = $translation['description'];
             $prestaCategory->meta_description[$key] = $translation['metaDescription'];
             $prestaCategory->meta_keywords[$key]    = $translation['metaKeywords'];
-            $prestaCategory->link_rewrite[$key]     = $this->replaceUmlauts($translation['url']);
+            $prestaCategory->link_rewrite[$key]     = $translation['url'];
         }
 
         return $prestaCategory;
-    }
-
-    private function replaceUmlauts(string $string): string
-    {
-        $string = \str_replace('ä', 'ae', $string);
-        $string = \str_replace('ö', 'oe', $string);
-        $string = \str_replace('ü', 'ue', $string);
-        $string = \str_replace('ß', 'ss', $string);
-        $string = \str_replace(' ', '-', $string);
-        $string = \str_replace('Ä', 'Ae', $string);
-        $string = \str_replace('Ö', 'Oe', $string);
-        return \str_replace('Ü', 'Ue', $string);
     }
 
     /**
@@ -210,13 +200,22 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             $languageIso = $this->getPrestaLanguageIdFromIso($jtlCategoryI18n->getLanguageIso());
 
             $langId                                   = $languageIso;
-            $translations[$langId]['name']            = $jtlCategoryI18n->getName();
+            $translations[$langId]['name']            = \preg_replace('/[<>;=#{}]/', '_', $jtlCategoryI18n->getName());
             $translations[$langId]['description']     = $jtlCategoryI18n->getDescription();
             $translations[$langId]['metaDescription'] = $jtlCategoryI18n->getMetaDescription();
             $translations[$langId]['metaKeywords']    = $jtlCategoryI18n->getMetaKeywords();
-            $translations[$langId]['url']             = empty($jtlCategoryI18n->getUrlPath())
+            $translations[$langId]['url']             = \Tools::str2url(
+                empty($jtlCategoryI18n->getUrlPath())
                 ? $jtlCategoryI18n->getName()
-                : $jtlCategoryI18n->getUrlPath();
+                : $jtlCategoryI18n->getUrlPath()
+            );
+
+            if (\Configuration::get('jtlconnector_truncate_desc')) {
+                $translations[$langId]['description']      =
+                    \Tools::substr($translations[$langId]['description'], 0, 21844);
+                $translations[$langId]['metaDescription'] =
+                    \Tools::substr($translations[$langId]['metaDescription'], 0, 512);
+            }
         }
 
         return $translations;

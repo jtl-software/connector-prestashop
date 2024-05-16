@@ -1025,16 +1025,29 @@ class ProductController extends ProductPriceController implements PullInterface,
             $langId = $this->getPrestaLanguageIdFromIso($jtlProductI18n->getLanguageIso());
 
             $translations[$langId]['name']              = $jtlProductI18n->getName();
-            $translations[$langId]['description']       = \str_split($jtlProductI18n->getDescription(), 21844) [0];
-            $translations[$langId]['description_short'] = \str_split($jtlProductI18n->getShortDescription(), 800) [0];
-            if (empty($jtlProductI18n->getUrlPath())) {
-                $translations[$langId]['link_rewrite'] = \Tools::str2url($jtlProductI18n->getName());
-            } else {
-                $translations[$langId]['link_rewrite'] = $jtlProductI18n->getUrlPath();
-            }
-            $translations[$langId]['meta_description']  = \str_split($jtlProductI18n->getMetaDescription(), 512) [0];
+            $translations[$langId]['description']       = $jtlProductI18n->getDescription();
+            $translations[$langId]['description_short'] = $jtlProductI18n->getShortDescription();
+            $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
             $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
             $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
+            $translations[$langId]['link_rewrite']      = \Tools::str2url(
+                empty($jtlProductI18n->getUrlPath())
+                ? $jtlProductI18n->getName()
+                : $jtlProductI18n->getUrlPath()
+            );
+
+            if (\Configuration::get('jtlconnector_truncate_desc')) {
+                $limit = (int)\Configuration::get('PS_PRODUCT_SHORT_DESC_LIMIT');
+                if ($limit <= 0) {
+                    $limit = 800;
+                }
+                $translations[$langId]['description']       =
+                    \Tools::substr($translations[$langId]['description'], 0, 21844);
+                $translations[$langId]['description_short'] =
+                    \Tools::substr($translations[$langId]['description_short'], 0, $limit);
+                $translations[$langId]['meta_description']  =
+                    \Tools::substr($translations[$langId]['meta_description'], 0, 512);
+            }
         }
 
         return $translations;
