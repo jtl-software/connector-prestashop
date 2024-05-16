@@ -812,7 +812,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             $jtlProduct->getShippingWeight(),
             .0,
             .0,
-            [],
+            null, // keeps assigned image, only works if not array
             $jtlProduct->getSku(),
             $jtlProduct->getEan(),
             $isDefault,
@@ -909,7 +909,6 @@ class ProductController extends ProductPriceController implements PullInterface,
             JtlProductVariation::TYPE_RADIO
         ];
 
-
         $groupType = \in_array(
             $jtlVariation->getType(),
             $allowedTypes
@@ -926,7 +925,11 @@ class ProductController extends ProductPriceController implements PullInterface,
         $groupId   = $this->db->getValue($sql);
 
         $group             = new AttributeGroup($groupId > 0 ? $groupId : null);
-        $group->group_type = $groupType;
+        // loose check because presta does the same
+        if ($group->group_type != 'color') {
+            $group->group_type = $groupType;
+        }
+
 
         foreach ($groupTranslations as $key => $translation) {
             $group->name[$key]        = $translation['name'];
@@ -1024,7 +1027,11 @@ class ProductController extends ProductPriceController implements PullInterface,
             $translations[$langId]['name']              = $jtlProductI18n->getName();
             $translations[$langId]['description']       = \str_split($jtlProductI18n->getDescription(), 21844) [0];
             $translations[$langId]['description_short'] = \str_split($jtlProductI18n->getShortDescription(), 800) [0];
-            $translations[$langId]['link_rewrite']      = $jtlProductI18n->getUrlPath();
+            if (empty($jtlProductI18n->getUrlPath())) {
+                $translations[$langId]['link_rewrite'] = \Tools::str2url($jtlProductI18n->getName());
+            } else {
+                $translations[$langId]['link_rewrite'] = $jtlProductI18n->getUrlPath();
+            }
             $translations[$langId]['meta_description']  = \str_split($jtlProductI18n->getMetaDescription(), 512) [0];
             $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
             $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
