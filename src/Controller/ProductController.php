@@ -723,7 +723,6 @@ class ProductController extends ProductPriceController implements PullInterface,
 
             return $jtlProduct;
             // done
-
         } catch (\Exception $e) {
             if ($isNew) {
                 if (empty($masterProductId)) {
@@ -782,8 +781,11 @@ class ProductController extends ProductPriceController implements PullInterface,
         return $prestaProduct;
     }
 
-    protected function updatePrestaVariant(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, int $combiId): PrestaProduct
-    {
+    protected function updatePrestaVariant(
+        JtlProduct $jtlProduct,
+        PrestaProduct $prestaProduct,
+        int $combiId
+    ): PrestaProduct {
         $minOrder = \ceil($jtlProduct->getMinimumOrderQuantity());
         $minOrder = max($minOrder, 1);
 
@@ -791,8 +793,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         foreach ($jtlProduct->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
-                if (
-                    $i18n->getName() === self::JTL_ATTRIBUTE_MAIN_VARIANT
+                if ($i18n->getName() === self::JTL_ATTRIBUTE_MAIN_VARIANT
                     && $i18n->getValue(TranslatableAttribute::TYPE_BOOL)
                 ) {
 //                    $isDefault = true;
@@ -868,7 +869,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             $prestaProduct->description[$key]       = $translation['description'];
             $prestaProduct->description_short[$key] = $translation['description_short'];
             $prestaProduct->link_rewrite[$key]      = $translation['link_rewrite'];
-            $prestaProduct->meta_description[$key]  = \str_split($translation['meta_description'], 512) [0];
+            $prestaProduct->meta_description[$key]  = $translation['meta_description'];
             $prestaProduct->meta_keywords[$key]     = $translation['meta_keywords'];
             $prestaProduct->meta_title[$key]        = $translation['meta_title'];
         }
@@ -942,8 +943,10 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @return array
      * @throws \PrestaShopDatabaseException
      */
-    protected function createPrestaAttributeGroupTranslations(JtlProductVariation $jtlVariation, string $groupType): array
-    {
+    protected function createPrestaAttributeGroupTranslations(
+        JtlProductVariation $jtlVariation,
+        string $groupType
+    ): array {
         $translations = [];
 
         foreach ($jtlVariation->getI18ns() as $i18n) {
@@ -1019,10 +1022,10 @@ class ProductController extends ProductPriceController implements PullInterface,
             $langId = $this->getPrestaLanguageIdFromIso($jtlProductI18n->getLanguageIso());
 
             $translations[$langId]['name']              = $jtlProductI18n->getName();
-            $translations[$langId]['description']       = \strip_tags($jtlProductI18n->getDescription());
-            $translations[$langId]['description_short'] = \strip_tags($jtlProductI18n->getShortDescription());
+            $translations[$langId]['description']       = \str_split($jtlProductI18n->getDescription(), 21844) [0];
+            $translations[$langId]['description_short'] = \str_split($jtlProductI18n->getShortDescription(), 800) [0];
             $translations[$langId]['link_rewrite']      = $jtlProductI18n->getUrlPath();
-            $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
+            $translations[$langId]['meta_description']  = \str_split($jtlProductI18n->getMetaDescription(), 512) [0];
             $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
             $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
         }
@@ -1124,8 +1127,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             switch ($key) {
                 case 'main_category_id':
                     foreach ($jtlProduct->getCategories() as $product2Category) {
-                        if (
-                            $product2Category->getCategoryId()->getHost() === (int)$value
+                        if ($product2Category->getCategoryId()->getHost() === (int)$value
                             && $product2Category->getCategoryId()->getEndpoint() !== ''
                         ) {
                             $value = (int)$product2Category->getCategoryId()->getEndpoint();
