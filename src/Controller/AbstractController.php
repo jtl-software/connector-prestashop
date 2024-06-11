@@ -186,7 +186,7 @@ abstract class AbstractController implements LoggerAwareInterface
 
         // if order table, check if order has deleted column
         if ($linkingTable === self::CUSTOMER_ORDER_LINKING_TABLE) {
-            $sql2 = \sprintf("SHOW COLUMNS FROM `%s%s` LIKE 'deleted';", \_DB_PREFIX_, $prestaTable);
+            $sql2   = \sprintf("SHOW COLUMNS FROM `%s%s` LIKE 'deleted';", \_DB_PREFIX_, $prestaTable);
             $result = $this->db->executeS($sql2);
             if (\count($result) !== 0) {
                 $sql->where('pt.deleted = 0');

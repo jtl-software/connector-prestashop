@@ -198,7 +198,6 @@ class QueryBuilder
             return $this->join('NATURAL JOIN `'
                 . \_DB_PREFIX_ . \bqSQL($table)
                 . '`' . ($alias ? ' `' . \pSQL($alias) . '`' : ''));
-
         }
         return $this->join('NATURAL JOIN `'
             . \bqSQL($table)

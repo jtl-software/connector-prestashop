@@ -46,7 +46,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
         $sql = $queryBuilder
             ->select('i.*')
-            ->from(_DB_PREFIX_ . 'image', 'i')
+            ->from(\_DB_PREFIX_ . 'image', 'i')
             ->leftJoin(self::IMAGE_LINKING_TABLE, 'l', 'i.id_image = l.endpoint_id')
             ->where('l.host_id IS NULL')
             ->limit($this->db->escape($queryFilter->getLimit()));
@@ -255,7 +255,6 @@ class ImageController extends AbstractController implements PushInterface, PullI
             if (!\is_null($identityType)) {
                 $this->mapper->save($identityType, $jtlImage->getId()->getEndpoint(), $jtlImage->getId()->getHost());
             }
-
         }
 
         return $jtlImage;

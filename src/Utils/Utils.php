@@ -12,9 +12,9 @@ class Utils
      * @param      $id
      * @param null $padValue
      *
-     * @return array
+     * @return array{0: string, 1: string|null}
      */
-    public static function explodeProductEndpoint($id, $padValue = null)
+    public static function explodeProductEndpoint($id, $padValue = null): array
     {
         return \array_pad(\explode('_', $id, 2), 2, $padValue);
     }
@@ -53,7 +53,7 @@ class Utils
 
     public static function stringToFloat(string $input): float
     {
-        if (\is_float((float)$input)) {
+        if (\is_numeric($input)) {
             return (float)$input;
         }
 

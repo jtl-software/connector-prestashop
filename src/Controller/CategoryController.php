@@ -211,7 +211,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             );
 
             if (\Configuration::get('jtlconnector_truncate_desc')) {
-                $translations[$langId]['description']      =
+                $translations[$langId]['description']     =
                     \Tools::substr($translations[$langId]['description'], 0, 21844);
                 $translations[$langId]['metaDescription'] =
                     \Tools::substr($translations[$langId]['metaDescription'], 0, 512);

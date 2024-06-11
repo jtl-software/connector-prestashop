@@ -53,7 +53,7 @@ class DeliveryNoteController extends AbstractController implements PushInterface
             );
         }
 
-        $prestaCarrier      = new \OrderCarrier((int)$prestaOrderCarrier);
+        $prestaCarrier = new \OrderCarrier((int)$prestaOrderCarrier);
 
         $trackingCodes = [];
         foreach ($deliveryNote->getTrackingLists() as $trackingList) {

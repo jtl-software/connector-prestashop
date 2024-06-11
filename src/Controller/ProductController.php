@@ -793,7 +793,8 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         foreach ($jtlProduct->getAttributes() as $attribute) {
             foreach ($attribute->getI18ns() as $i18n) {
-                if ($i18n->getName() === self::JTL_ATTRIBUTE_MAIN_VARIANT
+                if (
+                    $i18n->getName() === self::JTL_ATTRIBUTE_MAIN_VARIANT
                     && $i18n->getValue(TranslatableAttribute::TYPE_BOOL)
                 ) {
 //                    $isDefault = true;
@@ -1147,7 +1148,8 @@ class ProductController extends ProductPriceController implements PullInterface,
             switch ($key) {
                 case 'main_category_id':
                     foreach ($jtlProduct->getCategories() as $product2Category) {
-                        if ($product2Category->getCategoryId()->getHost() === (int)$value
+                        if (
+                            $product2Category->getCategoryId()->getHost() === (int)$value
                             && $product2Category->getCategoryId()->getEndpoint() !== ''
                         ) {
                             $value = (int)$product2Category->getCategoryId()->getEndpoint();

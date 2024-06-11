@@ -353,7 +353,7 @@ class JTLConnector extends Module
 
     private function clearLogs()
     {
-        $logDir   = CONNECTOR_DIR . '/var/log';
+        $logDir = CONNECTOR_DIR . '/var/log';
 
         $files = glob($logDir . '/*.log');
 
