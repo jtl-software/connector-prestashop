@@ -629,7 +629,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         // 3. update product
         //    if has variation, update variants
         // 4. update categories
-        // 5. update price => PriceController seems to only update special prices, change that
+        // 5. update price
         // 6. update stock
 
 
@@ -648,7 +648,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             } else {
                 list($checkEndpoint, $combiId) = Utils::explodeProductEndpoint($endpoint, 0);
                 // sanity check, does the variant *really* exist?
-                $combination  = new Combination($combiId);
+                $combination = new Combination($combiId);
                 if ($combination->id != $combiId) { // loose comparison on purpose
                     // variant does not exist, we need to recreate it
                     $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
@@ -787,7 +787,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         int $combiId
     ): PrestaProduct {
         $minOrder = \ceil($jtlProduct->getMinimumOrderQuantity());
-        $minOrder = max($minOrder, 1);
+        $minOrder = \max($minOrder, 1);
 
         $isDefault = false;
 
@@ -807,7 +807,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $prestaProduct->updateAttribute(
             $combiId,
-            (float) ($prestaProduct->wholesale_price - $jtlProduct->getPurchasePrice()),
+            \max(\round($jtlProduct->getPurchasePrice(), 4), .0),
             .0,  // price gets set in price controller
             $jtlProduct->getShippingWeight(),
             .0,
@@ -862,7 +862,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
         $prestaProduct->minimal_quantity    = $jtlProduct->getMinimumOrderQuantity();
         $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
-        $prestaProduct->wholesale_price     = $jtlProduct->getPurchasePrice();
+        $prestaProduct->wholesale_price     = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
 
         foreach ($translations as $key => $translation) {
             $prestaProduct->name[$key]              = $translation['name'];
@@ -922,9 +922,9 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->from('attribute_group_lang')
             ->where("name = '$name'");
 
-        $groupId   = $this->db->getValue($sql);
+        $groupId = $this->db->getValue($sql);
 
-        $group             = new AttributeGroup($groupId > 0 ? $groupId : null);
+        $group = new AttributeGroup($groupId > 0 ? $groupId : null);
         // loose check because presta does the same
         if ($group->group_type != 'color') {
             $group->group_type = $groupType;
@@ -1205,15 +1205,12 @@ class ProductController extends ProductPriceController implements PullInterface,
     {
         $endpoint = $model->getId()->getEndpoint();
         if ($endpoint !== '') {
-            $isCombi = \str_contains($model->getId()->getEndpoint(), '_');
-            if (!$isCombi) {
-                $obj = new \Product($endpoint);
+            [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
+            if (!empty($combiId)) {
+                $obj = new \Product($art);
             } else {
-                $combiId = \explode('_', $model->getId()->getEndpoint())[1];
-                $obj     = new Combination($combiId);
+                $obj = new Combination($combiId);
             }
-
-            // TODO check var delete
 
             $obj->delete();
         }

@@ -103,7 +103,8 @@ class ProductPriceController extends AbstractController implements PushInterface
     {
         $product = new PrestaProduct($productId);
         if (empty($combiId)) {
-            $product->price = \round($priceItem->getNetprice(), 6);
+            $product->price           = \round($priceItem->getNetPrice(), 6);
+            $product->wholesale_price = \max($product->wholesale_price, .0);
             $product->save();
         } else {
             $combiPriceDiff = $priceItem->getNetPrice() - \floatval($product->price);
@@ -113,7 +114,8 @@ class ProductPriceController extends AbstractController implements PushInterface
                     \sprintf('Combination with id %s not found. Full sync of article required.', $combiId)
                 );
             }
-            $combi->price   = \round($combiPriceDiff, 6);
+            $combi->price           = \round($combiPriceDiff, 6);
+            $combi->wholesale_price = \max($combi->wholesale_price, .0);
             $combi->save();
         }
     }
