@@ -1,6 +1,6 @@
 ## Unreleased
-
-## unreleased
+- CO-2404 Update to Connector Core 5.2
+  This update is no longer compatible with old Connector Plugins
 
 ## 1.13.4 _2023-08-08_
 - CO-2373 - Fix database exception when rrp > net price

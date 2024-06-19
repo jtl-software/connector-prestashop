@@ -26,8 +26,8 @@
             "delete": false
         },
         "CategoryInvisibility": {
-            "pull": true,
-            "push": true,
+            "pull": false,
+            "push": false,
             "delete": false
         },
         "ConfigGroup": {
@@ -83,7 +83,7 @@
         "Customer": {
             "pull": true,
             "push": true,
-            "delete": false
+            "delete": true
         },
         "CustomerAttr": {
             "pull": false,

@@ -2,8 +2,12 @@
 
 //phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
 
-use jtl\Connector\Application\Application;
-use jtl\Connector\Presta\Presta;
+use Jtl\Connector\Core\Application\Application;
+use Jtl\Connector\Core\Config\ConfigSchema;
+use Jtl\Connector\Core\Config\FileConfig;
+use jtl\Connector\Presta\Connector;
+use jtl\Connector\Presta\Utils\Config;
+use Psr\Log\LogLevel;
 
 require_once CONNECTOR_DIR . '/lib/autoload.php';
 
@@ -20,7 +24,6 @@ require_once CONNECTOR_DIR . '/lib/autoload.php';
  *
  * JTL Connector Module
  */
-
 class JtlconnectorApiModuleFrontController extends ModuleFrontController
 {
     public function initContent()
@@ -29,13 +32,20 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
             session_destroy();
         }
 
-        $connector = Presta::getInstance();
-        /** @var Application $application */
-        $application = Application::getInstance();
-        $application->createFeaturesFileIfNecessary(sprintf('%s/config/features.example.json', CONNECTOR_DIR));
-        $application->register($connector);
-        $application->run();
-
+        $connector = new Connector();
+        $configSchema = new ConfigSchema();
+        $config       = new FileConfig(\sprintf('%s/config/config.json', CONNECTOR_DIR), $configSchema);
+        $config->set(ConfigSchema::SERIALIZER_ENABLE_CACHE, false);
+        if (Config::get(ConfigSchema::DEBUG) === true) {
+            $config->set(ConfigSchema::DEBUG, true);
+            $config->set(ConfigSchema::LOG_LEVEL, LogLevel::DEBUG);
+        }
+        $application = new Application(CONNECTOR_DIR, $config, $configSchema);
+        try {
+            $application->run($connector);
+        } catch (\Exception $e) {
+            die();
+        }
         exit();
     }
 }
