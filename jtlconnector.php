@@ -18,6 +18,7 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
     define("JTL_CONNECTOR_DATABASE_COLLATION", "utf8_general_ci");
 }
 
+use Jtl\Connector\Core\Config\ConfigSchema;
 use jtl\Connector\Presta\Utils\Config;
 use Symfony\Component\Yaml\Yaml;
 
@@ -47,7 +48,7 @@ class JTLConnector extends Module
 
         $this->displayName            = 'JTL-Connector';
         $this->description            = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
-        $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
@@ -58,7 +59,7 @@ class JTLConnector extends Module
 
     public function install()
     {
-        $minimumPhpversion = '7.1.3';
+        $minimumPhpversion = '8.0';
         if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
             $this->_errors[] =
                 sprintf(
@@ -78,10 +79,42 @@ class JTLConnector extends Module
             $this->_errors[] = sprintf($this->l('The file "%s" must be writable.'), $dbFile);
         }
 
-        $logDir = CONNECTOR_DIR . 'logs';
+        $featuresFile = CONNECTOR_DIR . 'config' . DIRECTORY_SEPARATOR . 'features.json';
+        if (!file_exists($featuresFile)) {
+            copy(CONNECTOR_DIR . 'config' . DIRECTORY_SEPARATOR . 'features.example.json', $featuresFile);
+        }
+
+        $varDir = CONNECTOR_DIR . '/var';
+        if (!is_dir($varDir)) {
+            mkdir($varDir, 0777);
+        }
+        chmod($varDir, 0777);
+        if (!is_writable($varDir)) {
+            $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $varDir);
+        }
+
+        $logDir = CONNECTOR_DIR . '/var/log';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0777, true);
+        }
         chmod($logDir, 0777);
         if (!is_writable($logDir)) {
             $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $logDir);
+        }
+
+        $oldLogDir = CONNECTOR_DIR . 'logs';
+        if (is_dir($oldLogDir)) {
+            // should not have sub dirs
+            foreach (glob($oldLogDir . '/*') as $file) {
+                if (is_file($file)) {
+                    // move files to new log dir
+                    copy($file, $logDir . '/' . basename($file));
+                    // remove old files
+                    unlink($file);
+                }
+            }
+            // remove old log dir
+            rmdir($oldLogDir);
         }
 
         if (count($this->_errors) != 0) {
@@ -99,6 +132,14 @@ class JTLConnector extends Module
             Shop::setContext(Shop::CONTEXT_ALL);
         }
 
+        // remove old meta if exists
+        $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
+
+        if (isset($meta['id_meta'])) {
+            $delMeta = new \Meta($meta['id_meta']);
+            $delMeta->delete();
+        }
+
         $meta = new \Meta();
 
         $meta->page         = 'module-jtlconnector-api';
@@ -110,6 +151,14 @@ class JTLConnector extends Module
 
         $this->createLinkingTables();
         $this->convertLinkingTables();
+
+
+        // remove old tab if exists
+        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
+        if ($id_tab) {
+            $tab = new Tab($id_tab);
+            $tab->delete();
+        }
 
         $tab            = new \Tab();
         $name           = "JTL-Connector";
@@ -130,132 +179,103 @@ class JTLConnector extends Module
     {
         $db = Db::getInstance();
 
-        $link = $db->getLink();
+        $types = [
+            1    => 'category',
+            2    => 'customer',
+            4    => 'customer_order',
+            8    => 'delivery_note',
+            16   => 'image',
+            32   => 'manufacturer',
+            64   => 'product',
+            128  => 'specific',
+            256  => 'specific_value',
+            512  => 'payment',
+            1024 => 'crossselling',
+            2048 => 'crossselling_group',
+            70   => 'tax_class'
+        ];
 
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
+        $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
+            endpoint_id INT(10) NOT NULL,
+            host_id INT(10) NOT NULL,
+            PRIMARY KEY (endpoint_id),
+            INDEX (host_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+
+        $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
+            endpoint_id varchar(255) NOT NULL,
+            host_id INT(10) NOT NULL,
+            PRIMARY KEY (endpoint_id),
+            INDEX (host_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+
+        foreach ($types as $id => $name) {
+            if ($id == 16 || $id == 64) {
+                $db->query(
+                    sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
+                )->execute();
+            } else {
+                $db->query(
+                    sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
+                )->execute();
+            }
         }
 
-        try {
-            $types = [
-                1    => 'category',
-                2    => 'customer',
-                4    => 'customer_order',
-                8    => 'delivery_note',
-                16   => 'image',
-                32   => 'manufacturer',
-                64   => 'product',
-                128  => 'specific',
-                256  => 'specific_value',
-                512  => 'payment',
-                1024 => 'crossselling',
-                2048 => 'crossselling_group',
-                70   => 'tax_class'
-            ];
+        $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
 
-            $queryInt = 'CREATE TABLE IF NOT EXISTS %s (
-                endpoint_id INT(10) NOT NULL,
-                host_id INT(10) NOT NULL,
-                PRIMARY KEY (endpoint_id),
-                INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
+        if (!empty($check)) {
+            $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
 
-            $queryChar = 'CREATE TABLE IF NOT EXISTS %s (
-                endpoint_id varchar(255) NOT NULL,
-                host_id INT(10) NOT NULL,
-                PRIMARY KEY (endpoint_id),
-                INDEX (host_id)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=%s';
-
-            foreach ($types as $id => $name) {
-                if ($id == 16 || $id == 64) {
-                    $db->query(
-                        sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
-                    )->execute();
-                } else {
-                    $db->query(
-                        sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
-                    )->execute();
-                }
+            foreach ($existingTypes as $existingType) {
+                $typeId    = (int)$existingType['type'];
+                $tableName = 'jtl_connector_link_' . $types[$typeId];
+                $db->query(
+                    "INSERT INTO {$tableName} (host_id, endpoint_id)
+                    SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
+                    "
+                )->execute();
             }
 
-            $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
-
-            if (!empty($check)) {
-                $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
-
-                foreach ($existingTypes as $existingType) {
-                    $typeId    = (int)$existingType['type'];
-                    $tableName = 'jtl_connector_link_' . $types[$typeId];
-                    $db->query(
-                        "INSERT INTO {$tableName} (host_id, endpoint_id)
-                        SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
-                        "
-                    )->execute();
-                }
-
-                if (count($existingTypes) > 0) {
-                    $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
-                }
+            if (count($existingTypes) > 0) {
+                $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
             }
-
-            \Db::getInstance()->getLink()->commit();
-
-            return true;
-        } catch (\Exception $e) {
-            $link->rollback();
-            throw $e;
         }
+
+        return true;
     }
 
     private function convertLinkingTables()
     {
         $db = Db::getInstance();
 
-        $link = $db->getLink();
+        $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
 
-        if ($link instanceof \PDO) {
-            $link->beginTransaction();
-        } elseif ($link instanceof \mysqli) {
-            $link->begin_transaction();
-        }
+        $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
 
-        try {
-            $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
-
-            $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
-
-            if (!empty($newLinkingTables)) {
-                foreach ($newLinkingTables as $newLinkingTable) {
-                    if (!empty($newLinkingTable)) {
-                        $newLinkingTable = reset($newLinkingTable);
-                        if ($newLinkingTable !== 'jtl_connector_link_backup') {
-                            $db->query(sprintf($query, $newLinkingTable))->execute();
-                        }
+        if (!empty($newLinkingTables)) {
+            foreach ($newLinkingTables as $newLinkingTable) {
+                if (!empty($newLinkingTable)) {
+                    $newLinkingTable = reset($newLinkingTable);
+                    if ($newLinkingTable !== 'jtl_connector_link_backup') {
+                        $db->query(sprintf($query, $newLinkingTable))->execute();
                     }
                 }
             }
-
-            \Db::getInstance()->getLink()->commit();
-
-            return true;
-        } catch (\Exception $e) {
-            $link->rollback();
-            throw $e;
         }
+
+        return true;
     }
 
     public function uninstall()
     {
-        $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
 
         $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
         if ($id_tab) {
             $tab = new Tab($id_tab);
             $tab->delete();
         }
+
+        $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
 
         if (isset($meta['id_meta'])) {
             $delMeta = new \Meta($meta['id_meta']);
@@ -321,7 +341,7 @@ class JTLConnector extends Module
                         Tools::getValue(self::CONFIG_DELETE_UNKNOWN_ATTRIBUTES)
                     );
                     Configuration::updateValue('jtlconnector_from_date', Tools::getValue('jtlconnector_from_date'));
-                    Config::set('developer_logging', Tools::getValue('jtlconnector_developer_logging'));
+                    Config::set(ConfigSchema::DEBUG, (bool)Tools::getValue('jtlconnector_developer_logging', false));
 
                     $output .= $this->displayConfirmation($this->l('Settings saved.'));
                 }
@@ -333,12 +353,7 @@ class JTLConnector extends Module
 
     private function clearLogs()
     {
-        $logDir   = CONNECTOR_DIR . 'logs';
-        $zip_file = CONNECTOR_DIR . 'tmp/connector_logs.zip';
-
-        if (file_exists($zip_file)) {
-            unlink($zip_file);
-        }
+        $logDir = CONNECTOR_DIR . '/var/log';
 
         $files = glob($logDir . '/*.log');
 
@@ -353,8 +368,8 @@ class JTLConnector extends Module
 
     private function downloadJTLLogs()
     {
-        $logDir   = CONNECTOR_DIR . 'logs';
-        $zip_file = CONNECTOR_DIR . '/tmp/connector_logs.zip';
+        $logDir   = CONNECTOR_DIR . '/var/log';
+        $zip_file = tempnam(sys_get_temp_dir(), 'logs') . '.zip';
 
         $zip = new ZipArchive();
         $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
@@ -377,6 +392,8 @@ class JTLConnector extends Module
             header('Content-type: application/zip');
             header('Content-Disposition: attachment; filename="logs.zip"');
             readfile($zip_file);
+            // cleanup
+            unlink($zip_file);
             exit();
         } else {
             header('Content-Type: application/json; charset=UTF-8');
@@ -423,13 +440,14 @@ class JTLConnector extends Module
                 ],
                 [
                     'type'    => 'switch',
-                    'label'   => $this->l('Truncate short description'),
+                    'label'   => $this->l('Truncate Description'),
                     'name'    => 'jtlconnector_truncate_desc',
                     'is_bool' => true,
                     'desc'    => sprintf(
                         $this->l(
-                            'Enable this option to truncate too long short descriptions. Your current setting is %s 
-                            chars. You can change this in your product preferences.'
+                            'Enable this option to truncate too long descriptions. Your current setting is %s 
+                            chars for short descriptions. You can change this in your product preferences.
+                            For long descriptions the limit is always 21844 chars.'
                         ),
                         $limit
                     ),
@@ -587,7 +605,7 @@ class JTLConnector extends Module
         );
         $helper->fields_value['jtlconnector_from_date']               = Configuration::get('jtlconnector_from_date');
         $helper->fields_value['jtlconnector_remove_inconsistency']    = false;
-        $helper->fields_value['jtlconnector_developer_logging']       = Config::get('developer_logging');
+        $helper->fields_value['jtlconnector_developer_logging']       = Config::get(ConfigSchema::DEBUG);
 
         return $helper->generateForm($fields_form);
     }

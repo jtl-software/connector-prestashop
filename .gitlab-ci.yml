@@ -3,7 +3,7 @@ variables:
   COMPOSER_CACHE_DIR: ${CI_PROJECT_DIR}/.composer-cache
 
 default:
-  image: gitlab.jtl-software.com:4567/connector/connector-utils/ci-docker/php/cli:8.1
+  image: gitlab.jtl-software.com:4567/connector/connector-utils/ci-docker/php/cli:8.0
   tags:
     - docker
   before_script:
@@ -13,7 +13,6 @@ default:
     paths:
       - vendor
       - .composer-cache
-      - composer.lock
 
 include:
   - project: 'connector/connector-utils/CI-Templates'
@@ -35,7 +34,7 @@ code_quality:
 .test:integration:
   parallel:
     matrix:
-      - VERSION: [ '7.3','7.4','8.0','8.1' ]
+      - VERSION: [ '8.0','8.1' ]
   image: gitlab.jtl-software.com:4567/connector/connector-utils/ci-docker/php/cli:${VERSION}
   stage: test
   script:
