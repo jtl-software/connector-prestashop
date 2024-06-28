@@ -34,11 +34,11 @@ build:
         - composer.lock
         - composer.json
     paths:
-      - vendor/
+      - lib/
       - .composer-cache
   artifacts:
     paths:
-      - vendor/
+      - lib/
 
 random_files:
   image: alpine:latest
@@ -46,7 +46,7 @@ random_files:
   needs: []
   script:
     - >-
-      if [ `find . \( -name .idea -o -name .code -o -name .DS_Store \) -not -path "./vendor/*"` ] ; then
+      if [ `find . \( -name .idea -o -name .code -o -name .DS_Store \) -not -path "./lib/*"` ] ; then
         echo "Found .idea, .code or .DS_Store. Please remove them from your project.";
         exit 1
       fi
