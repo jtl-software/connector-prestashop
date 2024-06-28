@@ -105,7 +105,7 @@ build-zip:
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
         when: never
       - when: on_success
-    dependencies:
+    needs:
       - build
     script:
       - php ./lib/bin/phing release -Dversion=${VERSION}
