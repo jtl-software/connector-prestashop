@@ -10,6 +10,7 @@ use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
+use Jtl\Connector\Core\Model\Specific;
 use Jtl\Connector\Core\Model\SpecificI18n as JtlSpecificI18n;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
@@ -23,7 +24,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 {
     /**
      * @param QueryFilter $queryFilter
-     * @return array|AbstractModel[]
+     * @return array<int, AbstractModel>
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
@@ -38,14 +39,15 @@ class SpecificController extends AbstractController implements PushInterface, Pu
             ->leftJoin(self::SPECIFIC_LINKING_TABLE, 'l', 'v.id_feature = l.endpoint_id')
             ->where('l.host_id IS NULL AND v.custom = 0')
             ->groupBy('v.id_feature')
-            ->limit($this->db->escape($queryFilter->getLimit()));
+            ->limit($queryFilter->getLimit());
 
-        $prestaSpecificsIds = $this->db->executeS($sql);
+        /** @var array<string, array<string, string>> $prestaSpecificsIds */
+        $prestaSpecificsIds = $this->db->executeS($sql->build());
 
         $jtlSpecifics = [];
 
         foreach ($prestaSpecificsIds as $prestaSpecificsId) {
-            $prestaSpecific = new PrestaSpecific($prestaSpecificsId['id_feature']);
+            $prestaSpecific = new PrestaSpecific((int)$prestaSpecificsId['id_feature']);
             if (empty($prestaSpecific->id)) {
                 $this->logger->debug(
                     \sprintf(
@@ -63,29 +65,33 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
     /**
      * @param PrestaSpecific $prestaSpecific
+     *
      * @return JtlSpecific
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     protected function createJtlSpecific(PrestaSpecific $prestaSpecific): JtlSpecific
     {
-        $jtlSpecific = (new JtlSpecific())
+        return (new JtlSpecific())
             ->setIsGlobal(true)
             ->setId(new Identity((string)$prestaSpecific->id))
             ->setType('string')
             ->setI18ns(...$this->createJtlSpecificI18ns($prestaSpecific))
             ->setValues(...$this->createJtlSpecificValues($this->getPrestaSpecificValues($prestaSpecific)));
-
-        return $jtlSpecific;
     }
 
     /**
-     * @param array $prestaSpecificValues
-     * @return array
+     * @param array<int, array<string, string>> $prestaSpecificValues
+     *
+     * @return array<int, JtlSpecificValue>
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     protected function createJtlSpecificValues(array $prestaSpecificValues): array
     {
         $jtlSpecificValues = [];
         foreach ($prestaSpecificValues as $prestaSpecificValue) {
-            $id                  = $prestaSpecificValue['id_feature_value'];
+            $id                  = (int) $prestaSpecificValue['id_feature_value'];
             $jtlSpecificValues[] = (new JtlSpecificValue())
                 ->setId(new Identity())
                 ->setI18ns(...$this->createJtlSpecificValuesI18ns($this->getPrestaSpecificValueI18ns($id)));
@@ -95,8 +101,9 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param array $prestaSpecificValueI18ns
-     * @return array
+     * @param array<int,array<string,string>> $prestaSpecificValueI18ns
+     * @return array<int, JtlSpecificValueI18n>
+     *
      * @throws \PrestaShopDatabaseException
      */
     protected function createJtlSpecificValuesI18ns(array $prestaSpecificValueI18ns): array
@@ -105,8 +112,8 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
         foreach ($prestaSpecificValueI18ns as $prestaSpecificValueI18n) {
             $jtlSpecificValueI18ns[] = (new JtlSpecificValueI18n())
-                ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaSpecificValueI18n['id_lang']))
-                ->setValue($prestaSpecificValueI18n['value']);
+                ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId((int)$prestaSpecificValueI18n['id_lang']))
+                ->setValue((string)$prestaSpecificValueI18n['value']);
         }
 
         return $jtlSpecificValueI18ns;
@@ -114,7 +121,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
     /**
      * @param PrestaSpecific $prestaSpecific
-     * @return array
+     * @return array<int, JtlSpecificI18n>
      * @throws \PrestaShopDatabaseException
      */
     protected function createJtlSpecificI18ns(PrestaSpecific $prestaSpecific): array
@@ -125,7 +132,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
         foreach ($prestaI18ns as $prestaI18n) {
             $jtlI18ns[] = (new JtlSpecificI18n())
                 ->setName($prestaI18n['name'])
-                ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaI18n['id_lang']));
+                ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId((int)$prestaI18n['id_lang']));
         }
 
         return $jtlI18ns;
@@ -133,7 +140,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
     /**
      * @param PrestaSpecific $prestaSpecific
-     * @return array
+     * @return array<int,array<string,string>>
      * @throws \PrestaShopDatabaseException
      */
     protected function getPrestaSpecificI18ns(PrestaSpecific $prestaSpecific): array
@@ -145,12 +152,14 @@ class SpecificController extends AbstractController implements PushInterface, Pu
             ->from('feature_lang')
             ->where('id_feature = ' . $prestaSpecific->id);
 
-        return $this->db->executeS($sql);
+        /** @var array<int,array<string,string>> $result */
+        $result = $this->db->executeS($sql->build());
+        return $result;
     }
 
     /**
      * @param PrestaSpecific $prestaSpecific
-     * @return array
+     * @return array<int,array<string,string>>
      * @throws \PrestaShopDatabaseException
      */
     protected function getPrestaSpecificValues(PrestaSpecific $prestaSpecific): array
@@ -162,13 +171,16 @@ class SpecificController extends AbstractController implements PushInterface, Pu
             ->from('feature_value')
             ->where('custom = 0 AND id_feature = ' . $prestaSpecific->id);
 
-        return $this->db->executeS($sql);
+        /** @var array<int,array<string,string>> $result */
+        $result = $this->db->executeS($sql->build());
+        return $result;
     }
 
     /**
      * @param int $id
-     * @return array
-     * @throws \PrestaShopDatabaseException
+     *
+     * @return array<int,array<string,string>>
+     * @throws \PrestaShopDatabaseException|\PrestaShopException
      */
     protected function getPrestaSpecificValueI18ns(int $id): array
     {
@@ -179,12 +191,14 @@ class SpecificController extends AbstractController implements PushInterface, Pu
             ->from('feature_value_lang')
             ->where('id_feature_value = ' . $id);
 
-        return $this->db->executeS($sql);
+        /** @var array<int,array<string,string>> $result */
+        $result = $this->db->executeS($sql->build());
+        return $result;
     }
 
     /**
-     * @param AbstractModel $jtlSpecific
-     * @return AbstractModel
+     * @param Specific $jtlSpecific
+     * @return Specific
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
@@ -195,7 +209,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
-            $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific($endpoint));
+            $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific((int)$endpoint));
             if (!$prestaSpecific->update()) {
                 throw new \RuntimeException('Error updating specific: ' . $jtlSpecific->getI18ns()[0]->getName());
             }
@@ -237,7 +251,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
     /**
      * @param JtlSpecificI18n ...$jtlSpecificI18ns
-     * @return array
+     * @return array<int, array{name: string}>
      * @throws \PrestaShopDatabaseException
      */
     protected function createPrestaSpecificI18ns(JtlSpecificI18n ...$jtlSpecificI18ns): array
@@ -267,8 +281,8 @@ class SpecificController extends AbstractController implements PushInterface, Pu
         string $prestaSpecificId
     ): PrestaSpecificValue {
         $isNew                           = $jtlSpecificValue->getId()->getEndpoint() === '';
-        $prestaSpecificValue->custom     = 0;
-        $prestaSpecificValue->id_feature = $prestaSpecificId;
+        $prestaSpecificValue->custom     = false;
+        $prestaSpecificValue->id_feature = (int) $prestaSpecificId;
 
         foreach ($jtlSpecificValue->getI18ns() as $jtlSpecificValueI18n) {
             $this->createPrestaSpecificValueI18ns($jtlSpecificValueI18n, $prestaSpecificValue);
@@ -311,14 +325,14 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param Specific $model
+     * @return Specific
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function delete(AbstractModel $model): AbstractModel
     {
-        $specific = new PrestaSpecific($model->getId()->getEndpoint());
+        $specific = new PrestaSpecific((int)$model->getId()->getEndpoint());
 
         $specific->delete();
 
@@ -327,6 +341,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
     /**
      * @return Statistic
+     * @throws \PrestaShopException
      */
     public function statistic(): Statistic
     {
@@ -339,7 +354,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
             ->leftJoin(self::SPECIFIC_LINKING_TABLE, 'l', 'v.id_feature = l.endpoint_id')
             ->where('l.host_id IS NULL');
 
-        $result = $this->db->getValue($sql);
+        $result = $this->db->getValue($sql->build());
 
         return (new Statistic())
             ->setAvailable((int)$result)

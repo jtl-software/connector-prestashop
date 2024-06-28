@@ -1,15 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Utils;
+
+use DbQuery;
 
 class QueryBuilder
 {
     /**
      * List of data to build the query.
      *
-     * @var array
+     * @var array{
+     *      type: string,
+     *      select: array<int,string>,
+     *      from: array<int,string>,
+     *      join: array<int,string>,
+     *      where: array<int,string>,
+     *      group: array<int,string>,
+     *      having: array<int,string>,
+     *      order: array<int,string>,
+     *      limit: array{
+     *       offset: int<0, max>,
+     *       limit: int
+     *   }
+     *  }
      */
-    protected $query = [
+    protected array $query = [
         'type' => 'SELECT',
         'select' => [],
         'from' => [],
@@ -21,7 +38,7 @@ class QueryBuilder
         'limit' => ['offset' => 0, 'limit' => 0],
     ];
 
-    protected $usePrefix = true;
+    protected bool $usePrefix = true;
 
     /**
      * Sets type of the query.
@@ -30,7 +47,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function type($type)
+    public function type(string $type): self
     {
         $types = ['SELECT', 'DELETE'];
 
@@ -48,7 +65,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function select($fields)
+    public function select(string $fields): self
     {
         if (!empty($fields)) {
             $this->query['select'][] = $fields;
@@ -61,11 +78,12 @@ class QueryBuilder
      * Sets table for FROM clause.
      *
      * @param string|DbQuery $table Table name
-     * @param string|null $alias Table alias
+     * @param string|null    $alias Table alias
      *
      * @return $this
+     * @throws \PrestaShopException
      */
-    public function from($table, $alias = null)
+    public function from(DbQuery|string $table, ?string $alias = null): self
     {
         if ($this->usePrefix) {
             if (!empty($table)) {
@@ -102,7 +120,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function join($join)
+    public function join(string $join): self
     {
         if (!empty($join)) {
             $this->query['join'][] = $join;
@@ -114,13 +132,13 @@ class QueryBuilder
     /**
      * Adds a LEFT JOIN clause.
      *
-     * @param string $table Table name (without prefix)
+     * @param string      $table Table name (without prefix)
      * @param string|null $alias Table alias
-     * @param string|null $on ON clause
+     * @param string|null $on    ON clause
      *
      * @return $this
      */
-    public function leftJoin($table, $alias = null, $on = null)
+    public function leftJoin(string $table, string|null $alias = null, string|null $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('LEFT JOIN `'
@@ -139,13 +157,13 @@ class QueryBuilder
      * Adds an INNER JOIN clause
      * E.g. $this->innerJoin('product p ON ...').
      *
-     * @param string $table Table name (without prefix)
+     * @param string      $table Table name (without prefix)
      * @param string|null $alias Table alias
-     * @param string|null $on ON clause
+     * @param string|null $on    ON clause
      *
      * @return $this
      */
-    public function innerJoin($table, $alias = null, $on = null)
+    public function innerJoin(string $table, string|null $alias = null, string|null $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('INNER JOIN `'
@@ -163,13 +181,13 @@ class QueryBuilder
     /**
      * Adds a LEFT OUTER JOIN clause.
      *
-     * @param string $table Table name (without prefix)
+     * @param string      $table Table name (without prefix)
      * @param string|null $alias Table alias
-     * @param string|null $on ON clause
+     * @param string|null $on    ON clause
      *
      * @return $this
      */
-    public function leftOuterJoin($table, $alias = null, $on = null)
+    public function leftOuterJoin(string $table, string|null $alias = null, string|null $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('LEFT OUTER JOIN `'
@@ -187,12 +205,12 @@ class QueryBuilder
     /**
      * Adds a NATURAL JOIN clause.
      *
-     * @param string $table Table name (without prefix)
+     * @param string      $table Table name (without prefix)
      * @param string|null $alias Table alias
      *
      * @return $this
      */
-    public function naturalJoin($table, $alias = null)
+    public function naturalJoin(string $table, string|null $alias = null): self
     {
         if ($this->usePrefix) {
             return $this->join('NATURAL JOIN `'
@@ -207,13 +225,13 @@ class QueryBuilder
     /**
      * Adds a RIGHT JOIN clause.
      *
-     * @param string $table Table name (without prefix)
+     * @param string      $table Table name (without prefix)
      * @param string|null $alias Table alias
-     * @param string|null $on ON clause
+     * @param string|null $on    ON clause
      *
      * @return $this
      */
-    public function rightJoin($table, $alias = null, $on = null)
+    public function rightJoin(string $table, string|null $alias = null, string|null $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('RIGHT JOIN `'
@@ -234,7 +252,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function where($restriction)
+    public function where(string $restriction): self
     {
         if (!empty($restriction)) {
             $this->query['where'][] = $restriction;
@@ -250,7 +268,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function having($restriction)
+    public function having(string $restriction): self
     {
         if (!empty($restriction)) {
             $this->query['having'][] = $restriction;
@@ -262,14 +280,18 @@ class QueryBuilder
     /**
      * Adds an ORDER BY restriction.
      *
-     * @param string $fields List of fields to sort. E.g. $this->order('myField, b.mySecondField DESC')
+     * @param string|array<int, string> $fields List of fields to sort. E.g. $this->order('myField, b.mySecondField DESC')
      *
      * @return $this
      */
-    public function orderBy($fields)
+    public function orderBy(string|array $fields): self
     {
         if (!empty($fields)) {
-            $this->query['order'][] = $fields;
+            if (\is_string($fields)) {
+                $this->query['order'][] = $fields;
+            } else {
+                $this->query['order'] = \array_merge($this->query['order'], $fields);
+            }
         }
 
         return $this;
@@ -278,14 +300,18 @@ class QueryBuilder
     /**
      * Adds a GROUP BY restriction.
      *
-     * @param string $fields List of fields to group. E.g. $this->group('myField1, myField2')
+     * @param string|array<int, string> $fields List of fields to group. E.g. $this->group('myField1, myField2')
      *
      * @return $this
      */
-    public function groupBy($fields)
+    public function groupBy(string|array $fields): self
     {
         if (!empty($fields)) {
-            $this->query['group'][] = $fields;
+            if (\is_string($fields)) {
+                $this->query['group'][] = $fields;
+            } else {
+                $this->query['group'] = \array_merge($this->query['group'], $fields);
+            }
         }
 
         return $this;
@@ -299,16 +325,11 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function limit($limit, $offset = 0)
+    public function limit(int $limit, int $offset = 0): self
     {
-        $offset = (int) $offset;
-        if ($offset < 0) {
-            $offset = 0;
-        }
-
         $this->query['limit'] = [
-            'offset' => $offset,
-            'limit' => (int) $limit,
+            'offset' => \max($offset, 0),
+            'limit' => $limit,
         ];
 
         return $this;
@@ -319,9 +340,9 @@ class QueryBuilder
      *
      * @return string
      *
-     * @throws PrestaShopException
+     * @throws \PrestaShopException
      */
-    public function build()
+    public function build(): string
     {
         if ($this->query['type'] == 'SELECT') {
             $sql = 'SELECT ' . ((($this->query['select'])) ? \implode(",\n", $this->query['select']) : '*') . "\n";
@@ -330,7 +351,7 @@ class QueryBuilder
         }
 
         if (!$this->query['from']) {
-            throw new PrestaShopException('Table name not set in DbQuery object. Cannot build a valid SQL query.');
+            throw new \PrestaShopException('Table name not set in DbQuery object. Cannot build a valid SQL query.');
         }
 
         $sql .= 'FROM ' . \implode(', ', $this->query['from']) . "\n";
@@ -367,8 +388,9 @@ class QueryBuilder
      * Converts object to string.
      *
      * @return string
+     * @throws \PrestaShopException
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->build();
     }
@@ -376,7 +398,20 @@ class QueryBuilder
     /**
      * Get query.
      *
-     * @return array
+     * @return array{
+     *      type: string,
+     *      select: array<int,string>,
+     *      from: array<int,string>,
+     *      join: array<int,string>,
+     *      where: array<int,string>,
+     *      group: array<int,string>,
+     *      having: array<int,string>,
+     *      order: array<int,string>,
+     *      limit: array{
+     *       offset: int<0, max>,
+     *       limit: int
+     *   }
+     *  }
      */
     public function getQuery(): array
     {

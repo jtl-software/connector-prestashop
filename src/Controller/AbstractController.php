@@ -8,6 +8,8 @@ use DI\Container;
 use Jtl\Connector\Core\Model\QueryFilter;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\QueryBuilder;
+use mysqli_result;
+use PDOStatement;
 use PrestaShopDatabaseException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -27,9 +29,9 @@ abstract class AbstractController implements LoggerAwareInterface
     protected Container $container;
 
     /**
-     * @var string|null
+     * @var string
      */
-    protected ?string $controllerName;
+    protected string $controllerName;
 
     /**
      * @var LoggerInterface
@@ -85,7 +87,9 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from('lang')
             ->where("id_lang = $langId");
 
-        $result = $this->db->executeS($sql);
+        /** @var array{0: array{language_code: string}} $result */
+        $result = $this->db->executeS($sql->build());
+
         $code   = $result[0]['language_code'];
         $code   = \explode('-', $code)[0];
 
@@ -110,13 +114,14 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from('lang')
             ->where("iso_code = '$languageIso'");
 
-        $result = $this->db->executeS($sql)[0]['id_lang'];
+        /** @var array{0: array{id_lang: string|null}} $result */
+        $result = $this->db->executeS($sql->build());
 
-        if (\is_null($result)) {
+        if (\is_null($result[0]['id_lang'])) {
             throw new \RuntimeException("Language '$languageIso' is missing in Prestashop");
         }
 
-        return $this->db->executeS($sql)[0]['id_lang'];
+        return (int)$result[0]['id_lang'];
     }
 
     /**
@@ -131,11 +136,12 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from('country')
             ->where("iso_code = '$languageIso'");
 
-        $result = $this->db->executeS($sql);
+        /** @var array{0: array{id_country: string|null}}|array{} $result */
+        $result = $this->db->executeS($sql->build());
         if (\count($result) === 0 || !isset($result[0]['id_country'])) {
             return null;
         }
-        return $result[0]['id_country'];
+        return (int)$result[0]['id_country'];
     }
 
     /**
@@ -150,7 +156,9 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from('country')
             ->where("id_country = $languageId");
 
-        return $this->db->executeS($sql)[0]['iso_code'];
+        /** @var array{0: array{iso_code: string}} $result */
+        $result = $this->db->executeS($sql->build());
+        return $result[0]['iso_code'];
     }
 
 
@@ -161,8 +169,9 @@ abstract class AbstractController implements LoggerAwareInterface
      * @param string $prestaTable
      * @param string $columns
      * @param string|null $fromDate
-     * @return array
-     * @throws PrestaShopDatabaseException
+     *
+     * @return array<int, array<string, string>>
+     * @throws PrestaShopDatabaseException|\PrestaShopException
      */
     protected function getNotLinkedEntities(
         QueryFilter $queryFilter,
@@ -182,18 +191,21 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from(\_DB_PREFIX_ . $prestaTable, 'pt')
             ->leftJoin($linkingTable, 'lt', "pt.$columns = lt.endpoint_id")
             ->where('lt.host_id IS NULL' . $where)
-            ->limit($this->db->escape($queryFilter->getLimit()));
+            ->limit($queryFilter->getLimit());
 
         // if order table, check if order has deleted column
         if ($linkingTable === self::CUSTOMER_ORDER_LINKING_TABLE) {
             $sql2   = \sprintf("SHOW COLUMNS FROM `%s%s` LIKE 'deleted';", \_DB_PREFIX_, $prestaTable);
+            /** @var array<int, array<string, string>> $result */
             $result = $this->db->executeS($sql2);
             if (\count($result) !== 0) {
                 $sql->where('pt.deleted = 0');
             }
         }
 
-        return $this->db->executeS($sql);
+        /** @var array<int, array<string, string>> $return */
+        $return = $this->db->executeS($sql->build());
+        return $return;
     }
 
     /**

@@ -773,10 +773,13 @@ class ProductController extends ProductPriceController implements PullInterface,
             null,
             $jtlProduct->getUpc()
         );
+        if (!$combiId) {
+            throw new \RuntimeException('Error creating product combination');
+        }
 
         $this->createPrestaCombination($jtlProduct, $prestaProduct, $combiId);
 
-        $jtlProduct->getId()->setEndpoint(Utils::joinProductEndpoint($prestaProduct->id, $combiId));
+        $jtlProduct->getId()->setEndpoint(Utils::joinProductEndpoint((string)$prestaProduct->id, (string)$combiId));
 
         return $prestaProduct;
     }

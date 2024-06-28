@@ -1,6 +1,5 @@
 tests/test-config.json
 lib/**
-composer.lock
 config/config.json
 config/features.json
 build/**

@@ -9,23 +9,26 @@ use Jtl\Connector\Core\Definition\PaymentType;
 class Utils
 {
     /**
-     * @param      $id
-     * @param null $padValue
+     * @template T of scalar|null
+     * @param string $id
+     * @param T      $padValue
      *
-     * @return array{0: string, 1: string|null}
+     * @return array{0: string, 1: string|T}
      */
-    public static function explodeProductEndpoint($id, $padValue = null): array
+    public static function explodeProductEndpoint(string $id, mixed $padValue = null): array
     {
-        return \array_pad(\explode('_', $id, 2), 2, $padValue);
+        /** @var array{0: string, 1: T} $result */
+        $result = \array_pad(\explode('_', $id, 2), 2, $padValue);
+        return $result;
     }
 
     /**
-     * @param $id
-     * @param $endpoint
+     * @param string $id
+     * @param string $endpoint
      *
      * @return string
      */
-    public static function joinProductEndpoint($id, $endpoint)
+    public static function joinProductEndpoint(string $id, string $endpoint): string
     {
         return \implode('_', [$id, $endpoint]);
     }
@@ -35,7 +38,7 @@ class Utils
      *
      * @return string
      */
-    public static function mapPaymentModuleCode($module): string
+    public static function mapPaymentModuleCode(string $module): string
     {
         // for payments where we don't know the actual module name
         if (\str_contains($module, 'mollie')) {

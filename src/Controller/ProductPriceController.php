@@ -15,18 +15,17 @@ use Jtl\Connector\Core\Model\ProductPriceItem as JtlProductPriceItem;
 class ProductPriceController extends AbstractController implements PushInterface
 {
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param JtlProduct $model
+     * @return JtlProduct
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function push(AbstractModel $model): AbstractModel
     {
-        /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();
 
         if (!empty($endpoint)) {
-            list($productId, $combiId) = Utils::explodeProductEndpoint($endpoint, 0);
+            [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint, null);
 
             foreach ($model->getPrices() as $price) {
                 if (!empty($productId) && !\is_null($combiId)) {
@@ -53,9 +52,12 @@ class ProductPriceController extends AbstractController implements PushInterface
             ->from('specific_price')
             ->where("id_product = $productId AND id_product_attribute = $combiId AND id_group = $groupId");
 
-        $id = $this->db->getValue($sql);
+        $id = $this->db->getValue($sql->build());
+        if (\is_numeric($id) & (int)$id > 0) {
+            return new \SpecificPrice((int)$id);
+        }
 
-        return new \SpecificPrice($id > 0 ? $id : null);
+        return new \SpecificPrice(null);
     }
 
     /**

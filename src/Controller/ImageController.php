@@ -262,8 +262,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param AbstractImage $jtlImage
-     * @param bool $hightDpi
-     * @param string $id
+     * @param bool          $hightDpi
+     * @param string        $id
      * @return AbstractImage
      * @throws \PrestaShopDatabaseException
      */
@@ -299,8 +299,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param AbstractImage $jtlImage
-     * @param bool $hightDpi
-     * @param string $id
+     * @param bool          $hightDpi
+     * @param string        $id
      * @return AbstractImage
      * @throws \PrestaShopDatabaseException
      */
@@ -342,7 +342,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param AbstractImage $jtlImage
-     * @param string $id
+     * @param string        $id
      * @return AbstractImage
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException

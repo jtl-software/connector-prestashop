@@ -21,9 +21,12 @@ class ProductStockLevelController extends AbstractController implements PushInte
         $endpoint = $model->getId()->getEndpoint();
 
         if (!empty($endpoint)) {
-            list($productId, $combiId) = Utils::explodeProductEndpoint($endpoint, null);
+            [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint);
+            if (empty($combiId)) {
+                $combiId = 0;
+            }
             if (!empty($productId)) {
-                \StockAvailable::setQuantity($productId, $combiId, $model->getStockLevel());
+                \StockAvailable::setQuantity((int) $productId, (int) $combiId, (int) $model->getStockLevel());
             }
         }
 

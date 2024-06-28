@@ -7,18 +7,22 @@ namespace jtl\Connector\Presta\Controller;
 use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\CustomerOrder;
+use Jtl\Connector\Core\Model\StatusChange;
 
 class StatusChangeController extends AbstractController implements PushInterface
 {
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param StatusChange $model
+     * @return StatusChange
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function push(AbstractModel $model): AbstractModel
     {
-        $orderId = $model->getCustomerOrderId()->getEndpoint();
+        $orderId = $model->getCustomerOrderId()?->getEndpoint();
+        if ($orderId === null) {
+            throw new \RuntimeException('Order id is missing');
+        }
 
         if (!empty($orderId)) {
             $newStatus = match (true) {
@@ -31,7 +35,7 @@ class StatusChangeController extends AbstractController implements PushInterface
             };
 
             if (!\is_null($newStatus)) {
-                $order = new \Order($orderId);
+                $order = new \Order((int)$orderId);
                 if (!$order->id) {
                     $this->logger->warning(\sprintf('Order with id %s not found', $orderId));
                     return $model;

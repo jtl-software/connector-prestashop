@@ -10,11 +10,11 @@ use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
+use Jtl\Connector\Core\Model\Manufacturer as JtlManufacturer;
 use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 use Manufacturer as PrestaManufacturer;
-use Jtl\Connector\Core\Model\Manufacturer as JtlManufacturer;
 use Jtl\Connector\Core\Model\ManufacturerI18n as JtlManufacturerI18n;
 
 class ManufacturerController extends AbstractController implements PushInterface, PullInterface, DeleteInterface
@@ -38,7 +38,7 @@ class ManufacturerController extends AbstractController implements PushInterface
 
         foreach ($prestaManufacturers as $prestaManufacturer) {
             $jtlManufacturers[] = $this->createJtlManufacturers(
-                new PrestaManufacturer($prestaManufacturer['id_manufacturer'])
+                new PrestaManufacturer((int)$prestaManufacturer['id_manufacturer'])
             );
         }
 
@@ -61,42 +61,45 @@ class ManufacturerController extends AbstractController implements PushInterface
 
     /**
      * @param PrestaManufacturer $manufacturer
-     * @return array
+     * @return array<int, JtlManufacturerI18n>
      * @throws \PrestaShopDatabaseException
      */
     protected function createJtlManufacturerI18ns(PrestaManufacturer $manufacturer): array
     {
         $jtlI18ns = [];
 
-        foreach (\Language::getLanguages() as $language) {
+        /** @var array<int, array{id_lang: int}> $languages */
+        $languages = \Language::getLanguages();
+
+        foreach ($languages as $language) {
             $langId = $language['id_lang'];
 
-            $jtlI18n = (new JtlManufacturerI18n())
+            $jtlI18ns[] = (new JtlManufacturerI18n())
                 ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($langId))
                 ->setDescription((string)$manufacturer->description[$langId])
                 ->setMetaDescription((string)$manufacturer->meta_description[$langId])
                 ->setMetaKeywords((string)$manufacturer->meta_keywords[$langId])
                 ->setTitleTag((string)$manufacturer->meta_title[$langId]);
-
-            $jtlI18ns[] = $jtlI18n;
         }
         return $jtlI18ns;
     }
 
     /**
-     * @param AbstractModel $jtlManufacturer
-     * @return AbstractModel
+     * @param JtlManufacturer $jtlManufacturer
+     * @return JtlManufacturer
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function push(AbstractModel $jtlManufacturer): AbstractModel
     {
-        /** @var JtlManufacturer $jtlManufacturer */
         $endpoint = $jtlManufacturer->getId()->getEndpoint();
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
-            $prestaManufacturer = $this->createPrestaManufacturer($jtlManufacturer, new PrestaManufacturer($endpoint));
+            $prestaManufacturer = $this->createPrestaManufacturer(
+                $jtlManufacturer,
+                new PrestaManufacturer((int)$endpoint)
+            );
             if (!$prestaManufacturer->update()) {
                 throw new \RuntimeException('Error updating manufacturer' . $jtlManufacturer->getName());
             }
@@ -128,7 +131,7 @@ class ManufacturerController extends AbstractController implements PushInterface
     ): PrestaManufacturer {
 
         $translations               = $this->createPrestaManufacturerTranslations(...$jtlManufacturer->getI18ns());
-        $prestaManufacturer->active = 1;
+        $prestaManufacturer->active = true;
 
         foreach ($translations as $key => $translation) {
             $prestaManufacturer->name                   = $jtlManufacturer->getName();
@@ -143,7 +146,7 @@ class ManufacturerController extends AbstractController implements PushInterface
 
     /**
      * @param JtlManufacturerI18n ...$jtlManufacturerI18ns
-     * @return array
+     * @return array<int, array<string, string>>
      * @throws \PrestaShopDatabaseException
      */
     protected function createPrestaManufacturerTranslations(JtlManufacturerI18n ...$jtlManufacturerI18ns): array
@@ -163,13 +166,13 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param JtlManufacturer $model
+     * @return JtlManufacturer
      * @throws \PrestaShopException
      */
     public function delete(AbstractModel $model): AbstractModel
     {
-        $manufacturer = new \Manufacturer($model->getId()->getEndpoint());
+        $manufacturer = new \Manufacturer((int)$model->getId()->getEndpoint());
 
         $manufacturer->delete();
 
@@ -190,7 +193,7 @@ class ManufacturerController extends AbstractController implements PushInterface
             ->leftJoin(self::MANUFACTURER_LINKING_TABLE, 'l', 'm.id_manufacturer = l.endpoint_id')
             ->where('l.host_id IS NULL');
 
-        $result = $this->db->getValue($sql);
+        $result = $this->db->getValue($sql->build());
 
         return (new Statistic())
             ->setAvailable((int)$result)

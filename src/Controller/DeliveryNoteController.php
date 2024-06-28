@@ -12,16 +12,16 @@ use jtl\Connector\Presta\Utils\QueryBuilder;
 class DeliveryNoteController extends AbstractController implements PushInterface
 {
     /**
-     * @param AbstractModel $deliveryNote
+     * @param DeliveryNote $deliveryNote
      *
-     * @return AbstractModel
+     * @return DeliveryNote
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function push(AbstractModel $deliveryNote): AbstractModel
     {
-        /** @var DeliveryNote $deliveryNote */
-        $prestaOrder = new \Order($deliveryNote->getCustomerOrderId()->getEndpoint());
+
+        $prestaOrder = new \Order((int) $deliveryNote->getCustomerOrderId()->getEndpoint());
 
         if (!$prestaOrder->id) {
             $this->logger->error(
@@ -39,7 +39,7 @@ class DeliveryNoteController extends AbstractController implements PushInterface
         $sql                = $qb->select('id_order_carrier')
                                 ->from('order_carrier')
                                 ->where('id_order = ' . (int)$prestaOrder->id);
-        $prestaOrderCarrier = $this->db->getValue($sql);
+        $prestaOrderCarrier = $this->db->getValue($sql->build());
 
         if (!$prestaOrderCarrier) {
             $this->logger->error(

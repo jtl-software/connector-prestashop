@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Mapper;
 
 use Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface;
@@ -10,9 +12,7 @@ use Psr\Log\NullLogger;
 
 class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 {
-    /**
-     * @var array|string[]
-     */
+    /** @var array|string[] */
     protected array $tableNames = [
             'jtl_connector_link_category',
             'jtl_connector_link_crossselling',
@@ -28,14 +28,8 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             'jtl_connector_link_tax_class'
     ];
 
-    /**
-     * @var \Db
-     */
     protected \Db $db;
 
-    /**
-     * @var LoggerInterface
-     */
     protected LoggerInterface $logger;
 
     public function __construct()
@@ -45,7 +39,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
     }
 
     /**
-     * @param int $type
+     * @param int    $type
      * @param string $endpointId
      * @return int|null
      */
@@ -77,7 +71,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             );
         }
 
-        return $hostId !== false ? (int)$hostId : null;
+        return (int)$hostId;
     }
 
     /**
@@ -118,9 +112,9 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
     }
 
     /**
-     * @param int $type
+     * @param int    $type
      * @param string $endpointId
-     * @param int $hostId
+     * @param int    $hostId
      * @return bool
      */
     public function save(int $type, string $endpointId, int $hostId): bool
@@ -146,12 +140,12 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
     }
 
     /**
-     * @param int $type
+     * @param int         $type
      * @param string|null $endpointId
-     * @param int|null $hostId
+     * @param int|null    $hostId
      * @return bool
      */
-    public function delete(int $type, string $endpointId = null, int $hostId = null): bool
+    public function delete(int $type, ?string $endpointId = null, ?int $hostId = null): bool
     {
         $tableName = self::getTableName($type);
 
@@ -165,7 +159,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 
         $where = [];
 
-        if ($endpointId && $endpointId != '') {
+        if (!empty($endpointId)) {
             $where[] = 'endpoint_id = "' . $endpointId . '"';
         }
 
@@ -188,7 +182,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
      * @param int|null $type
      * @return bool
      */
-    public function clear(int $type = null): bool
+    public function clear(?int $type = null): bool
     {
         $this->logger->debug('Clearing linking tables');
 
@@ -201,10 +195,10 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 
 
     /**
-     * @param $type
+     * @param  int $type
      * @return string|null
      */
-    public static function getTableName($type): ?string
+    public static function getTableName(int $type): ?string
     {
         return match ($type) {
             IdentityType::CATEGORY =>
