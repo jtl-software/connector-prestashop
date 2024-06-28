@@ -110,8 +110,8 @@ build-zip:
     script:
       - php ./lib/bin/phing release -Dversion=${VERSION}
     artifacts:
-      expose_as: 'build'
-      name: 'build'
+      expose_as: 'zip'
+      name: 'zip'
       paths:
         - jtl_connector_prestashop_${VERSION}.zip
 
