@@ -64,7 +64,7 @@
     ],
     "phpcs": "phpcs --basepath=. --extensions=php --standard=JtlConnector --report=full src controllers index.php jtlconnector.php",
     "phpcs:fix": "phpcbf --basepath=. --extensions=php --standard=JtlConnector src controllers index.php jtlconnector.php",
-    "phpcs:ci": "phpcs --basepath=. --extensions=php --standard=JtlConnector --report=full --report-\\\\Micheh\\\\PhpCodeSniffer\\\\Report\\\\Gitlab=phpcs-quality-report.json src tests",
+    "phpcs:ci": "phpcs --basepath=. --extensions=php --standard=JtlConnector --report=full --report-\\\\Micheh\\\\PhpCodeSniffer\\\\Report\\\\Gitlab=phpcs-quality-report.json src controllers index.php jtlconnector.php",
     "phpstan": "phpstan analyse src controllers index.php jtlconnector.php --level max -c ./phpstan.neon",
     "phpstan:ci": "phpstan analyse src controllers index.php jtlconnector.php --level max -c ./phpstan.neon --error-format gitlab > phpstan-quality-report.json"
   }
