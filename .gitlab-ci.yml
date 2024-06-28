@@ -18,6 +18,7 @@ stages:
   - createMR
   - build
   - test
+  - build-zip
   - extract-changelog
   - update-changelog
 
@@ -93,7 +94,7 @@ combine_reports:
     when: always
 
 build-zip:
-    stage: build
+    stage: build-zip
     variables:
       VERSION: dev
     rules:
@@ -103,7 +104,7 @@ build-zip:
       - if: $CI_PIPELINE_SOURCE == "merge_request_event"
         variables:
           VERSION: $CI_COMMIT_REF_NAME
-    needs:
+    dependencies:
       - build
     script:
       - php ./lib/bin/phing release -Dversion=${VERSION}
