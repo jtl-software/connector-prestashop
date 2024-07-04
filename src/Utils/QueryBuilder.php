@@ -6,73 +6,10 @@ namespace jtl\Connector\Presta\Utils;
 
 use DbQuery;
 
-class QueryBuilder
+class QueryBuilder extends DbQuery
 {
-    /**
-     * List of data to build the query.
-     *
-     * @var array{
-     *      type: string,
-     *      select: array<int,string>,
-     *      from: array<int,string>,
-     *      join: array<int,string>,
-     *      where: array<int,string>,
-     *      group: array<int,string>,
-     *      having: array<int,string>,
-     *      order: array<int,string>,
-     *      limit: array{
-     *       offset: int<0, max>,
-     *       limit: int
-     *   }
-     *  }
-     */
-    protected array $query = [
-        'type' => 'SELECT',
-        'select' => [],
-        'from' => [],
-        'join' => [],
-        'where' => [],
-        'group' => [],
-        'having' => [],
-        'order' => [],
-        'limit' => ['offset' => 0, 'limit' => 0],
-    ];
 
     protected bool $usePrefix = true;
-
-    /**
-     * Sets type of the query.
-     *
-     * @param string $type SELECT|DELETE
-     *
-     * @return $this
-     */
-    public function type(string $type): self
-    {
-        $types = ['SELECT', 'DELETE'];
-
-        if (!empty($type) && \in_array($type, $types)) {
-            $this->query['type'] = $type;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Adds fields to SELECT clause.
-     *
-     * @param string $fields List of fields to concat to other fields
-     *
-     * @return $this
-     */
-    public function select(string $fields): self
-    {
-        if (!empty($fields)) {
-            $this->query['select'][] = $fields;
-        }
-
-        return $this;
-    }
 
     /**
      * Sets table for FROM clause.
@@ -83,7 +20,7 @@ class QueryBuilder
      * @return $this
      * @throws \PrestaShopException
      */
-    public function from(DbQuery|string $table, ?string $alias = null): self
+    public function from($table, $alias = null): self
     {
         if ($this->usePrefix) {
             if (!empty($table)) {
@@ -113,23 +50,6 @@ class QueryBuilder
     }
 
     /**
-     * Adds JOIN clause
-     * E.g. $this->join('RIGHT JOIN '._DB_PREFIX_.'product p ON ...');.
-     *
-     * @param string $join Complete string
-     *
-     * @return $this
-     */
-    public function join(string $join): self
-    {
-        if (!empty($join)) {
-            $this->query['join'][] = $join;
-        }
-
-        return $this;
-    }
-
-    /**
      * Adds a LEFT JOIN clause.
      *
      * @param string      $table Table name (without prefix)
@@ -138,7 +58,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function leftJoin(string $table, string|null $alias = null, string|null $on = null): self
+    public function leftJoin($table, $alias = null, $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('LEFT JOIN `'
@@ -163,7 +83,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function innerJoin(string $table, string|null $alias = null, string|null $on = null): self
+    public function innerJoin($table, $alias = null, $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('INNER JOIN `'
@@ -187,7 +107,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function leftOuterJoin(string $table, string|null $alias = null, string|null $on = null): self
+    public function leftOuterJoin($table, $alias = null, $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('LEFT OUTER JOIN `'
@@ -210,7 +130,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function naturalJoin(string $table, string|null $alias = null): self
+    public function naturalJoin($table, $alias = null): self
     {
         if ($this->usePrefix) {
             return $this->join('NATURAL JOIN `'
@@ -231,7 +151,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function rightJoin(string $table, string|null $alias = null, string|null $on = null): self
+    public function rightJoin($table, $alias = null, $on = null): self
     {
         if ($this->usePrefix) {
             return $this->join('RIGHT JOIN `'
@@ -246,45 +166,13 @@ class QueryBuilder
     }
 
     /**
-     * Adds a restriction in WHERE clause (each restriction will be separated by AND statement).
-     *
-     * @param string $restriction
-     *
-     * @return $this
-     */
-    public function where(string $restriction): self
-    {
-        if (!empty($restriction)) {
-            $this->query['where'][] = $restriction;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Adds a restriction in HAVING clause (each restriction will be separated by AND statement).
-     *
-     * @param string $restriction
-     *
-     * @return $this
-     */
-    public function having(string $restriction): self
-    {
-        if (!empty($restriction)) {
-            $this->query['having'][] = $restriction;
-        }
-
-        return $this;
-    }
-
-    /**
      * Adds an ORDER BY restriction.
      *
      * @param string|array<int, string> $fields List of fields to sort. E.g. $this->order('myField, b.mySecondField DESC')
      *
      * @return $this
      */
-    public function orderBy(string|array $fields): self
+    public function orderBy($fields): self
     {
         if (!empty($fields)) {
             if (\is_string($fields)) {
@@ -304,7 +192,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function groupBy(string|array $fields): self
+    public function groupBy($fields): self
     {
         if (!empty($fields)) {
             if (\is_string($fields)) {
@@ -325,7 +213,7 @@ class QueryBuilder
      *
      * @return $this
      */
-    public function limit(int $limit, int $offset = 0): self
+    public function limit($limit, $offset = 0): self
     {
         $this->query['limit'] = [
             'offset' => \max($offset, 0),
@@ -333,89 +221,6 @@ class QueryBuilder
         ];
 
         return $this;
-    }
-
-    /**
-     * Generates query and return SQL string.
-     *
-     * @return string
-     *
-     * @throws \PrestaShopException
-     */
-    public function build(): string
-    {
-        if ($this->query['type'] == 'SELECT') {
-            $sql = 'SELECT ' . ((($this->query['select'])) ? \implode(",\n", $this->query['select']) : '*') . "\n";
-        } else {
-            $sql = $this->query['type'] . ' ';
-        }
-
-        if (!$this->query['from']) {
-            throw new \PrestaShopException('Table name not set in DbQuery object. Cannot build a valid SQL query.');
-        }
-
-        $sql .= 'FROM ' . \implode(', ', $this->query['from']) . "\n";
-
-        if ($this->query['join']) {
-            $sql .= \implode("\n", $this->query['join']) . "\n";
-        }
-
-        if ($this->query['where']) {
-            $sql .= 'WHERE (' . \implode(') AND (', $this->query['where']) . ")\n";
-        }
-
-        if ($this->query['group']) {
-            $sql .= 'GROUP BY ' . \implode(', ', $this->query['group']) . "\n";
-        }
-
-        if ($this->query['having']) {
-            $sql .= 'HAVING (' . \implode(') AND (', $this->query['having']) . ")\n";
-        }
-
-        if ($this->query['order']) {
-            $sql .= 'ORDER BY ' . \implode(', ', $this->query['order']) . "\n";
-        }
-
-        if ($this->query['limit']['limit']) {
-            $limit = $this->query['limit'];
-            $sql  .= 'LIMIT ' . ($limit['offset'] ? $limit['offset'] . ', ' : '') . $limit['limit'];
-        }
-
-        return $sql;
-    }
-
-    /**
-     * Converts object to string.
-     *
-     * @return string
-     * @throws \PrestaShopException
-     */
-    public function __toString(): string
-    {
-        return $this->build();
-    }
-
-    /**
-     * Get query.
-     *
-     * @return array{
-     *      type: string,
-     *      select: array<int,string>,
-     *      from: array<int,string>,
-     *      join: array<int,string>,
-     *      where: array<int,string>,
-     *      group: array<int,string>,
-     *      having: array<int,string>,
-     *      order: array<int,string>,
-     *      limit: array{
-     *       offset: int<0, max>,
-     *       limit: int
-     *   }
-     *  }
-     */
-    public function getQuery(): array
-    {
-        return $this->query;
     }
 
     /**
