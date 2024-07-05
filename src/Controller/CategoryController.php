@@ -37,40 +37,62 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             ->leftJoin(self::CATEGORY_LINKING_TABLE, 'l', 'c.id_category = l.endpoint_id')
             ->where('l.host_id IS NULL AND c.id_parent != 0')
             ->orderBy('c.nleft')
-            ->limit($this->db->escape($queryFilter->getLimit()));
+            ->limit((int)$this->db->escape((string)$queryFilter->getLimit()));
 
         $prestaCategories = $this->db->executeS($sql);
 
         $jtlCategories = [];
 
-        foreach ($prestaCategories as $prestaCategory) {
-            $jtlCategory     = $this->createJtlCategory($prestaCategory);
-            $jtlCategories[] = $jtlCategory;
+        if (\is_array($prestaCategories) && !empty($prestaCategories)) {
+            foreach ($prestaCategories as $prestaCategory) {
+                $jtlCategory     = $this->createJtlCategory($prestaCategory);
+                $jtlCategories[] = $jtlCategory;
+            }
         }
 
         return $jtlCategories;
     }
 
     /**
-     * @param array $prestaCategory
+     * @param array<string, string|int> $prestaCategory
      * @return JtlCategory
      * @throws PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function createJtlCategory(array $prestaCategory): JtlCategory
     {
+        $isActive = \is_int($prestaCategory['active'])
+            ? (bool)$prestaCategory['active']
+            : throw new \RuntimeException('active must be an integer');
+
+        $level = \is_int($prestaCategory['level_depth'])
+            ? $prestaCategory['level_depth']
+            : throw new \RuntimeException('level_depth must be an integer');
+
+        $prestaCategoryId = \is_int($prestaCategory['id_category'])
+            ? $prestaCategory['id_category']
+            : throw new \RuntimeException('id_category must be an integer');
+
+        $prestaParentCategoryId = \is_int($prestaCategory['id_parent'])
+            ? $prestaCategory['id_parent']
+            : throw new \RuntimeException('id_parent must be an integer');
+
+        $prestaRootCategoryId = \is_int(PrestaCategory::getRootCategory()->id)
+            ? PrestaCategory::getRootCategory()->id
+            : throw new \RuntimeException('Root category id not found');
+
         $jtlCategory = (new JtlCategory())
-            ->setId(new Identity((string)$prestaCategory['id_category']))
-            ->setIsActive((bool)$prestaCategory['active'])
-            ->setLevel($prestaCategory['level_depth'])
+            ->setId(new Identity((string)$prestaCategoryId))
+            ->setIsActive($isActive)
+            ->setLevel($level)
             ->setParentCategoryId(
-                $prestaCategory['id_parent'] == PrestaCategory::getRootCategory()->id
-                || $prestaCategory['id_parent'] == 2
+                ($prestaParentCategoryId === $prestaRootCategoryId || $prestaParentCategoryId == 2)
                 ? new Identity('')
-                : new Identity((string)$prestaCategory['id_parent'])
+                : new Identity((string)$prestaParentCategoryId)
             );
 
 
-        $jtlCategoryI18ns = $this->createJtlCategoryTranslations($prestaCategory['id_category']);
+        $jtlCategoryI18ns = $this->createJtlCategoryTranslations($prestaCategoryId);
 
         $jtlCategory
             ->setI18ns(...$jtlCategoryI18ns);
@@ -79,7 +101,18 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param array $prestaCategoryI18n
+     * @param array{
+     *     id_category: int,
+     *     id_shop: int,
+     *     id_lang: int,
+     *     name: string,
+     *     description: string,
+     *     additional_description: string,
+     *     link_rewrite: string,
+     *     meta_title: string,
+     *     meta_keywords: string,
+     *     meta_description: string
+     * } $prestaCategoryI18n
      * @return JtlCategoryI18n
      * @throws PrestaShopDatabaseException
      */
@@ -96,12 +129,14 @@ class CategoryController extends AbstractController implements PullInterface, Pu
 
     /**
      * @param int $prestaCategoryId
-     * @return array
-     * @throws PrestaShopDatabaseException
+     * @return array<JtlCategoryI18n>
+     * @throws PrestaShopDatabaseException|PrestaShopException|\RuntimeException
      */
     protected function createJtlCategoryTranslations(int $prestaCategoryId): array
     {
-        $shopId = \Context::getContext()->shop->id;
+        $context = \Context::getContext();
+        $shop    = !\is_null($context) ? $context->shop : throw new \RuntimeException('Shop not found');
+        $shopId  = !\is_null($shop) ? $shop->id : throw new \RuntimeException('Shop id not found');
 
         $sql = (new QueryBuilder())
             ->select('cl.*')
@@ -113,8 +148,10 @@ class CategoryController extends AbstractController implements PullInterface, Pu
 
         $i18ns = [];
 
-        foreach ($results as $result) {
-            $i18ns[] = $this->createJtlCategoryTranslation($result);
+        if (\is_array($results) && !empty($results)) {
+            foreach ($results as $result) {
+                $i18ns[] = $this->createJtlCategoryTranslation($result);
+            }
         }
 
         return $i18ns;
@@ -134,7 +171,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
-            $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory($endpoint));
+            $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory((int)$endpoint));
             if (!$prestaCategory->update()) {
                 throw new \RuntimeException('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
             }
@@ -154,29 +191,38 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
         }
 
-        $this->mapper->save(IdentityType::CATEGORY, $prestaCategory->id, $jtlCategory->getId()->getHost());
+        $this->mapper->save(IdentityType::CATEGORY, (string)$prestaCategory->id, $jtlCategory->getId()->getHost());
 
         return $jtlCategory;
     }
 
     /**
-     * @param JtlCategory $jtlCategory
+     * @param JtlCategory    $jtlCategory
      * @param PrestaCategory $prestaCategory
      *
      * @return PrestaCategory
      * @throws PrestaShopDatabaseException
-*/
+     */
     protected function createPrestaCategory(JtlCategory $jtlCategory, PrestaCategory $prestaCategory): PrestaCategory
     {
         $translations              = $this->createPrestaCategoryTranslations(...$jtlCategory->getI18ns());
+        $prestaRootCategoryId      = \is_int(PrestaCategory::getRootCategory()->id)
+            ? PrestaCategory::getRootCategory()->id
+            : throw new \RuntimeException('Root category id not found');
         $prestaCategory->active    = $jtlCategory->getIsActive();
         $prestaCategory->position  = $jtlCategory->getSort();
         $prestaCategory->id_parent =
             empty($jtlCategory->getParentCategoryId()->getEndpoint())
-                ? PrestaCategory::getRootCategory()->id
-                : $jtlCategory->getParentCategoryId()->getEndpoint();
+                ? $prestaRootCategoryId
+                : (int)$jtlCategory->getParentCategoryId()->getEndpoint();
 
         foreach ($translations as $key => $translation) {
+            $prestaCategory->name             = [];
+            $prestaCategory->description      = [];
+            $prestaCategory->meta_description = [];
+            $prestaCategory->meta_keywords    = [];
+            $prestaCategory->link_rewrite     = [];
+
             $prestaCategory->name[$key]             = $translation['name'];
             $prestaCategory->description[$key]      = $translation['description'];
             $prestaCategory->meta_description[$key] = $translation['metaDescription'];
@@ -189,7 +235,15 @@ class CategoryController extends AbstractController implements PullInterface, Pu
 
     /**
      * @param JtlCategoryI18n ...$jtlCategoryI18ns
-     * @return array
+     * @return array<
+     *    int, array{
+     *     name: string,
+     *     description: string,
+     *     metaDescription: string,
+     *     metaKeywords: string,
+     *     url: string
+     *  }
+     * >
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
      */
@@ -198,23 +252,27 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $translations = [];
         foreach ($jtlCategoryI18ns as $jtlCategoryI18n) {
             $languageIso = $this->getPrestaLanguageIdFromIso($jtlCategoryI18n->getLanguageIso());
+            $name        = \preg_replace('/[<>;=#{}]/', '_', $jtlCategoryI18n->getName());
+            $url         = \Tools::str2url(empty($jtlCategoryI18n->getUrlPath())
+                ? $jtlCategoryI18n->getName()
+                : $jtlCategoryI18n->getUrlPath());
 
             $langId                                   = $languageIso;
-            $translations[$langId]['name']            = \preg_replace('/[<>;=#{}]/', '_', $jtlCategoryI18n->getName());
+            $translations[$langId]['name']            = \is_string($name)
+                ? $name
+                : throw new \RuntimeException('Name must be a string');
             $translations[$langId]['description']     = $jtlCategoryI18n->getDescription();
             $translations[$langId]['metaDescription'] = $jtlCategoryI18n->getMetaDescription();
             $translations[$langId]['metaKeywords']    = $jtlCategoryI18n->getMetaKeywords();
-            $translations[$langId]['url']             = \Tools::str2url(
-                empty($jtlCategoryI18n->getUrlPath())
-                ? $jtlCategoryI18n->getName()
-                : $jtlCategoryI18n->getUrlPath()
-            );
+            $translations[$langId]['url']             = \is_string($url)
+                ? $url
+                : throw new \RuntimeException('Url must be a string');
 
             if (\Configuration::get('jtlconnector_truncate_desc')) {
                 $translations[$langId]['description']     =
-                    \Tools::substr($translations[$langId]['description'], 0, 21844);
+                    \mb_substr($translations[$langId]['description'], 0, 21844);
                 $translations[$langId]['metaDescription'] =
-                    \Tools::substr($translations[$langId]['metaDescription'], 0, 512);
+                    \mb_substr($translations[$langId]['metaDescription'], 0, 512);
             }
         }
 
@@ -228,7 +286,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      */
     public function delete(AbstractModel $model): AbstractModel
     {
-        $category = new PrestaCategory($model->getId()->getEndpoint());
+        /** @var JtlCategory $model */
+        $category = new PrestaCategory((int)$model->getId()->getEndpoint());
 
         $category->delete();
 
