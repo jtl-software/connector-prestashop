@@ -8,6 +8,7 @@ use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
+use Jtl\Connector\Core\Exception\DefinitionException;
 use Jtl\Connector\Core\Model\AbstractImage;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\CategoryImage;
@@ -36,7 +37,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param QueryFilter $queryFilter
-     * @return array
+     * @return array<AbstractImage>
      * @throws \PrestaShopDatabaseException
      */
     private function getProductImages(QueryFilter $queryFilter): array
@@ -49,30 +50,32 @@ class ImageController extends AbstractController implements PushInterface, PullI
             ->from(\_DB_PREFIX_ . 'image', 'i')
             ->leftJoin(self::IMAGE_LINKING_TABLE, 'l', 'i.id_image = l.endpoint_id')
             ->where('l.host_id IS NULL')
-            ->limit($this->db->escape($queryFilter->getLimit()));
+            ->limit((int)$this->db->escape((string)$queryFilter->getLimit()));
 
         $images = $this->db->executeS($sql);
 
         $prestaImages = [];
         $jtlImages    = [];
 
-        foreach ($images as $image) {
-            $path = \Image::getImgFolderStatic($image['id_image']);
+        if (\is_array($images)) {
+            foreach ($images as $image) {
+                $path = \Image::getImgFolderStatic($image['id_image']);
 
-            if (\file_exists(\_PS_PROD_IMG_DIR_ . $path . $image['id_image'] . '.jpg')) {
-                $prestaImages[] = [
-                    'id'           => (string)$image['id_image'],
-                    'foreignKey'   => (string)$image['id_product'],
-                    'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_PROD_DIR_ . $path . $image['id_image'] . '.jpg',
-                    'filename'     => $image['id_image'] . '.jpg',
-                    'relationType' => 'product',
-                    'sort'         => $image['position']
-                ];
+                if (\file_exists(\_PS_PROD_IMG_DIR_ . $path . $image['id_image'] . '.jpg')) {
+                    $prestaImages[] = [
+                        'id'           => (string)$image['id_image'],
+                        'foreignKey'   => (string)$image['id_product'],
+                        'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_PROD_DIR_ . $path . $image['id_image'] . '.jpg',
+                        'filename'     => $image['id_image'] . '.jpg',
+                        'relationType' => 'product',
+                        'sort'         => $image['position']
+                    ];
+                }
             }
-        }
 
-        foreach ($prestaImages as $prestaImage) {
-            $jtlImages[] = $this->createJtlImage($prestaImage);
+            foreach ($prestaImages as $prestaImage) {
+                $jtlImages[] = $this->createJtlImage($prestaImage);
+            }
         }
 
         return $jtlImages;
@@ -80,7 +83,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param QueryFilter $queryFilter
-     * @return array
+     * @return array<AbstractImage>
      * @throws \PrestaShopDatabaseException
      */
     private function getCategoryImages(QueryFilter $queryFilter): array
@@ -116,7 +119,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param QueryFilter $queryFilter
-     * @return array
+     * @return array<AbstractImage>
      * @throws \PrestaShopDatabaseException
      */
     private function getManufacturerImages(QueryFilter $queryFilter): array
@@ -151,8 +154,16 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
-     * @param array $image
+     * @param array{
+     *     id: string,
+     *     foreignKey: string,
+     *     remoteUrl: string,
+     *     filename: string,
+     *     relationType: string,
+     *     sort?: int
+     * } $image
      * @return AbstractImage
+     * @throws \RuntimeException|\PrestaShopDatabaseException
      */
     protected function createJtlImage(array $image): AbstractImage
     {
@@ -168,6 +179,10 @@ class ImageController extends AbstractController implements PushInterface, PullI
                 break;
         }
 
+        if (!isset($jtlImage)) {
+            throw new \RuntimeException('Unable to set $jtlImage based on relationType');
+        }
+
         $jtlImage
             ->setId(new Identity($image['id']))
             ->setForeignKey(new Identity($image['foreignKey']))
@@ -180,7 +195,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param AbstractImage $image
-     * @return array
+     * @return array<ImageI18n>
      * @throws \PrestaShopDatabaseException
      */
     protected function createJtlImageI18ns(AbstractImage $image): array
@@ -199,8 +214,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
     /**
      * @param AbstractImage $image
-     * @return array
-     * @throws \PrestaShopDatabaseException
+     * @return array<int, array{id_lang: int,altText: string}>
+     * @throws \PrestaShopDatabaseException|\PrestaShopException
      */
     protected function getPrestaImageI18n(AbstractImage $image): array
     {
@@ -215,13 +230,21 @@ class ImageController extends AbstractController implements PushInterface, PullI
             ->leftJoin('lang', 'l', 'l.id_lang = il.id_lang')
             ->where("l.id_lang IS NOT NULL AND il.id_image = $id");
 
-        return $this->db->executeS($sql);
+        $results = $this->db->executeS($sql);
+
+        if (!\is_array($results)) {
+            throw new \RuntimeException('Unable to fetch image i18n data');
+        }
+
+        return $results;
     }
 
     /**
      * @param AbstractModel $jtlImage
      * @return AbstractModel
-     * @throws \Jtl\Connector\Core\Exception\DefinitionException
+     * @throws DefinitionException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function push(AbstractModel $jtlImage): AbstractModel
     {
@@ -359,7 +382,14 @@ class ImageController extends AbstractController implements PushInterface, PullI
         $img->position   = $jtlImage->getSort();
 
         $defaultImageLegend = false;
-        $defaultLanguageId  = \Context::getContext()->language->id;
+        $context            = \Context::getContext();
+        $language           = !\is_null($context)
+            ? $context->language
+            : throw new \RuntimeException('No context set');
+
+        $defaultLanguageId = !\is_null($language)
+            ? $language->id
+            : throw new \RuntimeException('No language id set in context');
 
         foreach ($jtlImage->getI18ns() as $imageI18n) {
             $languageId = $this->getPrestaLanguageIdFromIso($imageI18n->getLanguageISO());
@@ -370,16 +400,16 @@ class ImageController extends AbstractController implements PushInterface, PullI
         }
 
         if ($defaultImageLegend !== false) {
-            $img->legend = $defaultImageLegend;
+            $img->legend = [(int)$defaultLanguageId => $defaultImageLegend];
         }
 
         if (empty($combiId) && $img->position == 1) {
-            $img->cover = 1;
+            $img->cover = true;
 
             $coverId = \Product::getCover($productId);
             if (isset($coverId['id_image'])) {
                 $oldCover        = new \Image($coverId['id_image']);
-                $oldCover->cover = 0;
+                $oldCover->cover = false;
                 $oldCover->save();
             }
         }
@@ -396,8 +426,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
                     $jtlImage->getFilename(),
                     $new_path . '-' . \stripslashes($image_type['name']) . '.jpg',
                     $image_type['width'],
-                    $image_type['height'],
-                    null
+                    $image_type['height']
                 );
             }
         }
@@ -442,12 +471,12 @@ class ImageController extends AbstractController implements PushInterface, PullI
         if (!empty($fId)) {
             switch ($jtlImage->getRelationType()) {
                 case 'category':
-                    $cat = new \Category($fId);
+                    $cat = new \Category((int)$fId);
                     $cat->deleteImage();
                     break;
 
                 case 'manufacturer':
-                    $manufacturer = new \Manufacturer($fId);
+                    $manufacturer = new \Manufacturer((int)$fId);
                     $manufacturer->deleteImage();
                     break;
 
