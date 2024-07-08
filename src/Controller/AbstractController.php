@@ -18,24 +18,12 @@ use WhiteCube\Lingua\Service;
 
 abstract class AbstractController implements LoggerAwareInterface
 {
-    /**
-     * @var \Db
-     */
     protected \Db $db;
 
-    /**
-     * @var Container
-     */
     protected Container $container;
 
-    /**
-     * @var string
-     */
     protected string $controllerName;
 
-    /**
-     * @var LoggerInterface
-     */
     protected LoggerInterface $logger;
 
     protected PrimaryKeyMapper $mapper;
@@ -90,8 +78,8 @@ abstract class AbstractController implements LoggerAwareInterface
         /** @var array{0: array{language_code: string}} $result */
         $result = $this->db->executeS($sql->build());
 
-        $code   = $result[0]['language_code'];
-        $code   = \explode('-', $code)[0];
+        $code = $result[0]['language_code'];
+        $code = \explode('-', $code)[0];
 
         $linguaConverter = Service::createFromISO_639_1($code);
 
@@ -126,10 +114,10 @@ abstract class AbstractController implements LoggerAwareInterface
 
     /**
      * @param string $languageIso
-     * @return int|null
+     * @return int
      * @throws PrestaShopDatabaseException
      */
-    protected function getPrestaCountryIdFromIso(string $languageIso): ?int
+    protected function getPrestaCountryIdFromIso(string $languageIso): int
     {
         $sql = (new QueryBuilder())
             ->select('id_country')
@@ -139,9 +127,29 @@ abstract class AbstractController implements LoggerAwareInterface
         /** @var array{0: array{id_country: string|null}}|array{} $result */
         $result = $this->db->executeS($sql->build());
         if (\count($result) === 0 || !isset($result[0]['id_country'])) {
-            return null;
+            return $this->getDefaultPrestaShopCountryId();
         }
         return (int)$result[0]['id_country'];
+    }
+
+    /**
+     * @return int
+     * @throws PrestaShopDatabaseException|\PrestaShopException|\RuntimeException
+     */
+    protected function getDefaultPrestaShopCountryId(): int
+    {
+        $sql = (new QueryBuilder())
+            ->select('value')
+            ->from('configuration')
+            ->where("name = 'PS_COUNTRY_DEFAULT'");
+
+        $result = $this->db->getValue($sql);
+
+        if (!$result) {
+            throw new \RuntimeException('Default country not found in PrestaShop configuration');
+        }
+
+        return (int)$result;
     }
 
     /**
@@ -165,9 +173,9 @@ abstract class AbstractController implements LoggerAwareInterface
     //TODO: Rewrite to support multiple leftjoins or remove.
     /**
      * @param QueryFilter $queryFilter
-     * @param string $linkingTable
-     * @param string $prestaTable
-     * @param string $columns
+     * @param string      $linkingTable
+     * @param string      $prestaTable
+     * @param string      $columns
      * @param string|null $fromDate
      *
      * @return array<int, array<string, string>>
@@ -195,7 +203,7 @@ abstract class AbstractController implements LoggerAwareInterface
 
         // if order table, check if order has deleted column
         if ($linkingTable === self::CUSTOMER_ORDER_LINKING_TABLE) {
-            $sql2   = \sprintf("SHOW COLUMNS FROM `%s%s` LIKE 'deleted';", \_DB_PREFIX_, $prestaTable);
+            $sql2 = \sprintf("SHOW COLUMNS FROM `%s%s` LIKE 'deleted';", \_DB_PREFIX_, $prestaTable);
             /** @var array<int, array<string, string>> $result */
             $result = $this->db->executeS($sql2);
             if (\count($result) !== 0) {

@@ -38,21 +38,76 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->leftJoin(self::CUSTOMER_LINKING_TABLE, 'l', 'c.id_customer = l.endpoint_id')
             ->where('l.host_id IS NULL AND a.id_address IS NOT NULL')
             ->groupBy('c.id_customer')
-            ->limit($this->db->escape($queryFilter->getLimit()));
+            ->limit((int)$this->db->escape((string)$queryFilter->getLimit()));
 
         $results = $this->db->executeS($sql);
 
         $jtlCustomers = [];
 
-        foreach ($results as $result) {
-            $jtlCustomers[] = $this->createJtlCustomer($result);
+        if (\is_array($results) && !empty($results)) {
+            foreach ($results as $result) {
+                $jtlCustomers[] = $this->createJtlCustomer($result);
+            }
         }
 
         return $jtlCustomers;
     }
 
     /**
-     * @param array $prestaCustomer
+     * @param array{
+     *     id_customer: int,
+     *     id_shop_group: int,
+     *     id_shop: int,
+     *     id_gender: int,
+     *     id_default_group: int,
+     *     id_lang: int,
+     *     id_risk: int,
+     *     company: string,
+     *     siret: string,
+     *     ape: string,
+     *     firstname: string,
+     *     lastname: string,
+     *     email: string,
+     *     passwd: string,
+     *     last_passwd_gen: string,
+     *     birthday: string,
+     *     newsletter: int,
+     *     ip_registration_newsletter: string,
+     *     newsletter_date_add: string,
+     *     optin: int,
+     *     website: string,
+     *     outstanding_allow_amount: string,
+     *     show_public_prices: int,
+     *     max_payment_days: int,
+     *     secure_key: string,
+     *     note: string,
+     *     active: int,
+     *     is_guest: int,
+     *     deleted: int,
+     *     date_add: string,
+     *     date_upd: string,
+     *     reset_password_token: string,
+     *     reset_password_validity: string,
+     *     cid: int,
+     *     id_address: int,
+     *     id_country: int,
+     *     id_state: int,
+     *     id_manufacturer: int,
+     *     id_supplier: int,
+     *     id_warehouse: int,
+     *     alias: string,
+     *     adress1: string,
+     *     adress2: string,
+     *     postcode: string,
+     *     city: string,
+     *     other: string,
+     *     phone: string,
+     *     phone_mobile: string,
+     *     vat_number: string,
+     *     dni: string,
+     *     iso_code: string,
+     *     id_group: int
+     * } $prestaCustomer
      * @return JtlCustomer
      * @throws \PrestaShopDatabaseException
      */
@@ -70,7 +125,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setCreationDate(new \DateTime($prestaCustomer['date_add']))
             ->setCustomerNumber((string)$prestaCustomer['id_customer'])
             ->setEMail($prestaCustomer['email'])
-            ->setExtraAddressLine($prestaCustomer['address2'])
+            ->setExtraAddressLine($prestaCustomer['adress2'])
             ->setFirstName($prestaCustomer['firstname'])
             ->setHasCustomerAccount(true)
             ->setHasNewsletterSubscription((bool)$prestaCustomer['newsletter'])
@@ -80,9 +135,9 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setMobile($prestaCustomer['phone_mobile'])
             ->setPhone($prestaCustomer['phone'])
             ->setSalutation($this->determineSalutation(new PrestaCustomer($prestaCustomer['id_gender'])))
-            ->setStreet($prestaCustomer['address1'])
+            ->setStreet($prestaCustomer['adress1'])
             ->setVatNumber($prestaCustomer['vat_number'])
-            ->setWebsiteUrl($prestaCustomer['website'] ?? '')
+            ->setWebsiteUrl($prestaCustomer['website'])
             ->setZipCode($prestaCustomer['postcode']);
 
         return $jtlCustomer;
@@ -102,12 +157,11 @@ class CustomerController extends AbstractController implements PullInterface, Pu
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
-            $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer($endpoint));
+            $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer((int)$endpoint));
             if (!$prestaCustomer->update()) {
                 throw new \Exception('Error updating Customer' . $jtlCustomer->getCustomerNumber());
             }
             $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, empty($jtlCustomer->getId()->getEndpoint()));
-            $prestaAddress = $this->createPrestaAddress($jtlCustomer, new PrestaAddress($endpoint), $prestaCustomer);
             if (!$prestaCustomer->update()) {
                 throw new \Exception('Error updating address on Customer' . $jtlCustomer->getCustomerNumber());
             }
@@ -125,7 +179,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param JtlCustomer $jtlCustomer
+     * @param JtlCustomer    $jtlCustomer
      * @param PrestaCustomer $prestaCustomer
      * @return PrestaCustomer
      * @throws \PrestaShopDatabaseException
@@ -134,10 +188,20 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     protected function createPrestaCustomer(JtlCustomer $jtlCustomer, PrestaCustomer $prestaCustomer): PrestaCustomer
     {
         $genPassword = \Tools::passwdGen(24);
-        $password    = empty($prestaCustomer->passwd) ? \Tools::hash($genPassword) : $prestaCustomer->passwd;
+        if (!\is_string($genPassword)) {
+            throw new Exception('Error generating password');
+        }
+        $password = empty($prestaCustomer->passwd) ? \Tools::hash($genPassword) : $prestaCustomer->passwd;
+        $context  = \Context::getContext();
+        $shop     = !\is_null($context) && !\is_null($context->shop)
+            ? $context->shop
+            : throw new \RuntimeException('Shop not found');
+        $shopId   = !\is_null($shop->id) ? $shop->id : throw new \RuntimeException('Shop id not found');
 
-        $prestaCustomer->id_shop    = \Context::getContext()->shop->id;
-        $prestaCustomer->birthday   = $jtlCustomer->getBirthday()->format('Y-m-d');
+        $prestaCustomer->id_shop = $shopId;
+        if ($jtlCustomer->getBirthday() !== null) {
+            $prestaCustomer->birthday = $jtlCustomer->getBirthday()->format('Y-m-d');
+        }
         $prestaCustomer->company    = $jtlCustomer->getCompany();
         $prestaCustomer->email      = $jtlCustomer->getEMail();
         $prestaCustomer->firstname  = $jtlCustomer->getFirstName();
@@ -153,9 +217,9 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param JtlCustomer $jtlCustomer
+     * @param JtlCustomer    $jtlCustomer
      * @param PrestaCustomer $prestaCustomer
-     * @param bool $isNew
+     * @param bool           $isNew
      * @return void
      */
     protected function changeCustomerGroup(JtlCustomer $jtlCustomer, PrestaCustomer $prestaCustomer, bool $isNew): void
@@ -166,8 +230,8 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param JtlCustomer $jtlCustomer
-     * @param PrestaAddress $prestaAddress
+     * @param JtlCustomer    $jtlCustomer
+     * @param PrestaAddress  $prestaAddress
      * @param PrestaCustomer $prestaCustomer
      * @return PrestaAddress
      */
@@ -200,7 +264,8 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      */
     public function delete(AbstractModel $model): AbstractModel
     {
-        $customer = new PrestaCustomer($model->getId()->getEndpoint());
+        /** @var JtlCustomer $model */
+        $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
 
         $customer->delete();
 
