@@ -253,4 +253,21 @@ abstract class AbstractController implements LoggerAwareInterface
 
         return $object;
     }
+
+    /**
+     * @return int
+     * @throws \RuntimeException
+     */
+    protected function getContextPrestaLanguageId(): int
+    {
+        $context    = \Context::getContext();
+        $language   = !\is_null($context)
+            ? $context->language
+            : throw new \RuntimeException('Context not found');
+        $languageId = !\is_null($language)
+            ? $language->id
+            : throw new \RuntimeException('Language not found');
+
+        return $languageId;
+    }
 }
