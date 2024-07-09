@@ -96,8 +96,8 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      *     id_supplier: int,
      *     id_warehouse: int,
      *     alias: string,
-     *     adress1: string,
-     *     adress2: string,
+     *     address1: string,
+     *     address2: string,
      *     postcode: string,
      *     city: string,
      *     other: string,
@@ -125,7 +125,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setCreationDate(new \DateTime($prestaCustomer['date_add']))
             ->setCustomerNumber((string)$prestaCustomer['id_customer'])
             ->setEMail($prestaCustomer['email'])
-            ->setExtraAddressLine($prestaCustomer['adress2'])
+            ->setExtraAddressLine($prestaCustomer['address2'])
             ->setFirstName($prestaCustomer['firstname'])
             ->setHasCustomerAccount(true)
             ->setHasNewsletterSubscription((bool)$prestaCustomer['newsletter'])
@@ -135,7 +135,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setMobile($prestaCustomer['phone_mobile'])
             ->setPhone($prestaCustomer['phone'])
             ->setSalutation($this->determineSalutation(new PrestaCustomer($prestaCustomer['id_gender'])))
-            ->setStreet($prestaCustomer['adress1'])
+            ->setStreet($prestaCustomer['address1'])
             ->setVatNumber($prestaCustomer['vat_number'])
             ->setWebsiteUrl($prestaCustomer['website'])
             ->setZipCode($prestaCustomer['postcode']);

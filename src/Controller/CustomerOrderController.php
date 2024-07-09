@@ -49,6 +49,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         $jtlOrders = [];
 
         foreach ($prestaOrderIds as $prestaOrderId) {
+            /** @var array{id_order: int} $prestaOrderId */
             $jtlOrders[] = $this->createJtlCustomerOrder(new PrestaCustomerOrder($prestaOrderId['id_order']));
         }
 
@@ -129,7 +130,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                 )
             )
             ->setShippingDate($this->createDateTime($prestaOrder->delivery_date))
-            ->setShippingInfo($prestaOrder->getShippingNumber())
+            ->setShippingInfo($prestaOrder->getShippingNumber() ?? '')
             ->setShippingMethodName($prestaCarrier->name)
             ->setTotalSum((float)$prestaOrder->total_paid)
             ->setTotalSumGross((float)$prestaOrder->total_paid_tax_incl)
@@ -195,7 +196,6 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-
     protected function getShippingLineItem(
         PrestaCustomerOrder $prestaOrder,
         PrestaCarrier       $carrier
@@ -215,11 +215,15 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     /**
      * @param PrestaCart $prestaCart
      *
-     * @return array
+     * @return array<JtlCustomerOrderItem>
+     * @throws \PrestaShopDatabaseException|\PrestaShopException|\RuntimeException
      */
     protected function getCustomerOrderItems(PrestaCart $prestaCart): array
     {
-        $context           = \Context::getContext();
+        $context = \Context::getContext();
+        if (\is_null($context)) {
+            throw new \RuntimeException('Context is null');
+        }
         $context->cart     = $prestaCart;
         $context->country  = $prestaCart->getTaxCountry();
         $context->shop     = new \Shop($prestaCart->getShopId());
@@ -388,6 +392,11 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
         $sql2   = \sprintf("SHOW COLUMNS FROM `%sorders` LIKE 'deleted';", \_DB_PREFIX_);
         $result = $this->db->executeS($sql2);
+
+        if (!\is_array($result)) {
+            throw new \RuntimeException('Error while fetching deleted column from orders table');
+        }
+
         if (\count($result) !== 0) {
             $sql->where('o.deleted = 0');
         }

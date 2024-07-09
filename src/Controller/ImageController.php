@@ -387,6 +387,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
             ? $context->language
             : throw new \RuntimeException('No context set');
 
+        /** @var \Language|null $language */
         $defaultLanguageId = !\is_null($language)
             ? $language->id
             : throw new \RuntimeException('No language id set in context');
