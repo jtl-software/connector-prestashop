@@ -8,8 +8,6 @@ use DI\Container;
 use Jtl\Connector\Core\Model\QueryFilter;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\QueryBuilder;
-use mysqli_result;
-use PDOStatement;
 use PrestaShopDatabaseException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -258,16 +256,21 @@ abstract class AbstractController implements LoggerAwareInterface
      * @return int
      * @throws \RuntimeException
      */
-    protected function getContextPrestaLanguageId(): int
+    protected function getPrestaContextLanguageId(): int
     {
-        $context    = \Context::getContext();
-        $language   = !\is_null($context)
-            ? $context->language
-            : throw new \RuntimeException('Context not found');
-        $languageId = !\is_null($language)
-            ? $language->id
-            : throw new \RuntimeException('Language not found');
+        $language = \Context::getContext()?->language ?? throw new \RuntimeException('Language not found');
 
-        return $languageId;
+        // if prestashop ever fixes their doctypes, this can be removed
+        /** @var \Language $language */
+        return $language->id;
+    }
+
+    /**
+     * @return int
+     * @throws \RuntimeException
+     */
+    protected function getPrestaContextShopId(): int
+    {
+        return \Context::getContext()?->shop?->id ?? throw new \RuntimeException('Shop not found');
     }
 }

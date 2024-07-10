@@ -192,13 +192,8 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             throw new Exception('Error generating password');
         }
         $password = empty($prestaCustomer->passwd) ? \Tools::hash($genPassword) : $prestaCustomer->passwd;
-        $context  = \Context::getContext();
-        $shop     = !\is_null($context) && !\is_null($context->shop)
-            ? $context->shop
-            : throw new \RuntimeException('Shop not found');
-        $shopId   = !\is_null($shop->id) ? $shop->id : throw new \RuntimeException('Shop id not found');
 
-        $prestaCustomer->id_shop = $shopId;
+        $prestaCustomer->id_shop = $this->getPrestaContextShopId();
         if ($jtlCustomer->getBirthday() !== null) {
             $prestaCustomer->birthday = $jtlCustomer->getBirthday()->format('Y-m-d');
         }

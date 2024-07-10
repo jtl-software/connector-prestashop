@@ -382,15 +382,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
         $img->position   = $jtlImage->getSort();
 
         $defaultImageLegend = false;
-        $context            = \Context::getContext();
-        $language           = !\is_null($context)
-            ? $context->language
-            : throw new \RuntimeException('No context set');
-
-        /** @var \Language|null $language */
-        $defaultLanguageId = !\is_null($language)
-            ? $language->id
-            : throw new \RuntimeException('No language id set in context');
+        $defaultLanguageId  = $this->getPrestaContextLanguageId();
 
         foreach ($jtlImage->getI18ns() as $imageI18n) {
             $languageId = $this->getPrestaLanguageIdFromIso($imageI18n->getLanguageISO());

@@ -134,11 +134,9 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      */
     protected function createJtlCategoryTranslations(int $prestaCategoryId): array
     {
-        $context = \Context::getContext();
-        $shop    = !\is_null($context) ? $context->shop : throw new \RuntimeException('Shop not found');
-        $shopId  = !\is_null($shop) ? $shop->id : throw new \RuntimeException('Shop id not found');
 
-        $sql = (new QueryBuilder())
+        $shopId = $this->getPrestaContextShopId();
+        $sql    = (new QueryBuilder())
             ->select('cl.*')
             ->from('category_lang', 'cl')
             ->leftJoin('lang', 'l', 'l.id_lang = cl.id_lang')

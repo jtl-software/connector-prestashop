@@ -66,7 +66,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
      */
     protected function getCustomerGroups(): array
     {
-        $prestaCustomerGroups = \Group::getGroups($this->getContextPrestaLanguageId());
+        $prestaCustomerGroups = \Group::getGroups($this->getPrestaContextLanguageId());
         $jtlCustomerGroups    = [];
 
 
@@ -97,7 +97,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
     protected function createJtlCustomerGroupI18n(array $prestaCustomerGroup): JtlCustomerGroupI18n
     {
         return (new JtlCustomerGroupI18n())
-            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($this->getContextPrestaLanguageId()))
+            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($this->getPrestaContextLanguageId()))
             ->setName($prestaCustomerGroup['name']);
     }
 
@@ -106,7 +106,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
      */
     protected function getTaxRates(): array
     {
-        $prestaTaxes = \Tax::getTaxes($this->getContextPrestaLanguageId());
+        $prestaTaxes = \Tax::getTaxes($this->getPrestaContextLanguageId());
         $jtlTaxes    = [];
 
         foreach ($prestaTaxes as $prestaTax) {
@@ -131,7 +131,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
                     ->setNameEnglish($prestaLanguage['name'])
                     ->setNameGerman($prestaLanguage['name'])
                     ->setLanguageIso($prestaLanguage['iso_code'])
-                    ->setIsDefault($prestaLanguage['id_lang'] === $this->getContextPrestaLanguageId());
+                    ->setIsDefault($prestaLanguage['id_lang'] === $this->getPrestaContextLanguageId());
 
                 $jtlLanguages[] = $jtlLanguage;
             }
@@ -145,7 +145,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
      */
     protected function getShippingMethods(): array
     {
-        $prestaShippingMethods = \Carrier::getCarriers($this->getContextPrestaLanguageId());
+        $prestaShippingMethods = \Carrier::getCarriers($this->getPrestaContextLanguageId());
         $jtlShippingMethods    = [];
 
         foreach ($prestaShippingMethods as $prestaShippingMethod) {
