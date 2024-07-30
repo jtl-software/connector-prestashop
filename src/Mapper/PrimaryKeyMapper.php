@@ -97,7 +97,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 
         $dbResult = $this->db->getValue($sql);
 
-        $endpointId = $dbResult ?: null;
+        $endpointId = (string)$dbResult ?: null;
 
         $this->logger->debug(
             \sprintf(
