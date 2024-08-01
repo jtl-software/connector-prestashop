@@ -96,6 +96,8 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param string|null $fromDate
      * @return array<int, array<string, string>>
      * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function getNotLinkedEntities(
         QueryFilter $queryFilter,
@@ -322,7 +324,7 @@ class ProductController extends ProductPriceController implements PullInterface,
     /**
      * @param PrestaProduct $prestaProduct
      * @return array<JtlSpecialPrice>
-     * @throws \Exception
+     * @throws \RuntimeException
      */
     protected function createJtlSpecialPrices(PrestaProduct $prestaProduct): array
     {
@@ -409,7 +411,8 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param array{
+     * @param array $prestaProductI18n
+     * @phpstan-param  array{
      *     id_product: int,
      *     id_shop: int,
      *     id_lang: int,
@@ -508,7 +511,8 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param array<int, array{
+     * @param array $variations
+     * @phpstan-param  array<int, array{
      *      id_attribute_group: int,
      *      is_color_group: int,
      *      group_name: string,
@@ -603,8 +607,9 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param int               $variationId
-     * @param array<int, array{
+     * @param int   $variationId
+     * @param array $prestaVariations
+     * @phpstan-param  array<int, array{
      *       id_attribute_group: int,
      *       is_color_group: int,
      *       group_name: string,
@@ -633,6 +638,8 @@ class ProductController extends ProductPriceController implements PullInterface,
      *  > $prestaVariations
      * @return array<JtlProductVariationValue>
      * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createJtlProductVariationValues(int $variationId, array $prestaVariations): array
     {
@@ -845,6 +852,13 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
     }
 
+    /**
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return PrestaProduct
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     protected function createMinPrestaVariant(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
     {
         // create attribute for combination
@@ -871,6 +885,14 @@ class ProductController extends ProductPriceController implements PullInterface,
         return $prestaProduct;
     }
 
+    /**
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @param int           $combiId
+     * @return PrestaProduct
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
     protected function updatePrestaVariant(
         JtlProduct $jtlProduct,
         PrestaProduct $prestaProduct,
@@ -971,6 +993,9 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param JtlProduct    $jtlProduct
      * @param PrestaProduct $prestaProduct
      * @return bool
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function updatePrestaProductCategories(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): bool
     {
@@ -1037,6 +1062,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
     /**
      * @param JtlProductVariation $jtlVariation
+     * @param string              $groupType
      * @return array<int, array<string, string>>
      * @throws \PrestaShopDatabaseException
      */
@@ -1213,6 +1239,9 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param PrestaProduct $prestaProduct
      * @return void
      * @throws TranslatableAttributeException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     private function pushSpecialAttributes(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): void
     {

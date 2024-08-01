@@ -65,6 +65,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
                     $prestaImages[] = [
                         'id'           => (string)$image['id_image'],
                         'foreignKey'   => (string)$image['id_product'],
+                        /** @phpstan-ignore-next-line */
                         'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_PROD_DIR_ . $path . $image['id_image'] . '.jpg',
                         'filename'     => $image['id_image'] . '.jpg',
                         'relationType' => 'product',
@@ -103,6 +104,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
                 $prestaImages[] = [
                     'id'           => 'c' . $image['id_category'],
                     'foreignKey'   => (string)$image['id_category'],
+                    /** @phpstan-ignore-next-line */
                     'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_CAT_DIR_ . $image['id_category'] . '.jpg',
                     'filename'     => $image['id_category'] . '.jpg',
                     'relationType' => 'category'
@@ -139,6 +141,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
                 $prestaImages[] = [
                     'id'           => 'm' . $image['id_manufacturer'],
                     'foreignKey'   => (string)$image['id_manufacturer'],
+                    /** @phpstan-ignore-next-line */
                     'remoteUrl'    => \_PS_BASE_URL_ . \_THEME_MANU_DIR_ . $image['id_manufacturer'] . '.jpg',
                     'filename'     => $image['id_manufacturer'] . '.jpg',
                     'relationType' => 'manufacturer'
@@ -154,7 +157,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
-     * @param array{
+     * @param array $image
+     * @phpstan-param array{
      *     id: string,
      *     foreignKey: string,
      *     remoteUrl: string,
@@ -163,7 +167,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
      *     sort?: int
      * } $image
      * @return AbstractImage
-     * @throws \RuntimeException|\PrestaShopDatabaseException
+     * @throws \RuntimeException
+     * @throws \PrestaShopDatabaseException
      */
     protected function createJtlImage(array $image): AbstractImage
     {
@@ -197,6 +202,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
      * @param AbstractImage $image
      * @return array<ImageI18n>
      * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     protected function createJtlImageI18ns(AbstractImage $image): array
     {
@@ -215,7 +221,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
     /**
      * @param AbstractImage $image
      * @return array<int, array{id_lang: int,altText: string}>
-     * @throws \PrestaShopDatabaseException|\PrestaShopException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     protected function getPrestaImageI18n(AbstractImage $image): array
     {

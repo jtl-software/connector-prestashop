@@ -11,6 +11,8 @@
  * JTL Connector Module
  */
 
+declare(strict_types=1);
+
 if (!defined('CONNECTOR_DIR')) {
     define("CONNECTOR_DIR", _PS_MODULE_DIR_ . 'jtlconnector/');
 }
@@ -57,6 +59,9 @@ class JTLConnector extends Module
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
+    /**
+     * @return void
+     */
     public function viewAccess(): void
     {
         /** @var Context $context */
@@ -66,6 +71,10 @@ class JTLConnector extends Module
         Tools::redirectAdmin($link->getAdminLink('AdminModules') . '&configure=jtlconnector');
     }
 
+    /**
+     * @return bool
+     * @throws PrestaShopDatabaseException
+     */
     public function install(): bool
     {
         $minimumPhpversion = '8.0';
@@ -188,6 +197,10 @@ class JTLConnector extends Module
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
     }
 
+    /**
+     * @return bool
+     * @throws PrestaShopDatabaseException
+     */
     private function createLinkingTables(): bool
     {
         $db = Db::getInstance();
@@ -262,6 +275,9 @@ class JTLConnector extends Module
         return true;
     }
 
+    /**
+     * @return bool
+     */
     private function convertLinkingTables(): bool
     {
         $db = Db::getInstance();
@@ -286,6 +302,9 @@ class JTLConnector extends Module
         return true;
     }
 
+    /**
+     * @return bool
+     */
     public function uninstall(): bool
     {
 
@@ -305,6 +324,9 @@ class JTLConnector extends Module
         return parent::uninstall() && Configuration::deleteByName('jtlconnector_pass');
     }
 
+    /**
+     * @return string
+     */
     public function getContent(): string
     {
         require_once CONNECTOR_DIR . '/lib/autoload.php';
@@ -371,6 +393,9 @@ class JTLConnector extends Module
         return $output . $this->displayForm();
     }
 
+    /**
+     * @return void
+     */
     private function clearLogs(): void
     {
         $logDir = CONNECTOR_DIR . '/var/log';
@@ -389,6 +414,9 @@ class JTLConnector extends Module
         }
     }
 
+    /**
+     * @return void
+     */
     private function downloadJTLLogs(): void
     {
         $logDir   = CONNECTOR_DIR . '/var/log';
@@ -429,6 +457,9 @@ class JTLConnector extends Module
         }
     }
 
+    /**
+     * @return string
+     */
     public function displayForm(): string
     {
         $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');

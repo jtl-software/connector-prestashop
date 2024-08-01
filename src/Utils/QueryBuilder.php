@@ -8,7 +8,6 @@ use DbQuery;
 
 class QueryBuilder extends DbQuery
 {
-
     protected bool $usePrefix = true;
 
     /**
@@ -20,7 +19,7 @@ class QueryBuilder extends DbQuery
      * @return $this
      * @throws \PrestaShopException
      */
-    public function from($table, $alias = null): self
+    public function from($table, $alias = null): self // phpcs:ignore
     {
         if ($this->usePrefix) {
             if (!empty($table)) {
@@ -58,7 +57,7 @@ class QueryBuilder extends DbQuery
      *
      * @return $this
      */
-    public function leftJoin($table, $alias = null, $on = null): self
+    public function leftJoin($table, $alias = null, $on = null): self // phpcs:ignore
     {
         if ($this->usePrefix) {
             return $this->join('LEFT JOIN `'
@@ -83,7 +82,7 @@ class QueryBuilder extends DbQuery
      *
      * @return $this
      */
-    public function innerJoin($table, $alias = null, $on = null): self
+    public function innerJoin($table, $alias = null, $on = null): self // phpcs:ignore
     {
         if ($this->usePrefix) {
             return $this->join('INNER JOIN `'
@@ -107,7 +106,7 @@ class QueryBuilder extends DbQuery
      *
      * @return $this
      */
-    public function leftOuterJoin($table, $alias = null, $on = null): self
+    public function leftOuterJoin($table, $alias = null, $on = null): self // phpcs:ignore
     {
         if ($this->usePrefix) {
             return $this->join('LEFT OUTER JOIN `'
@@ -130,7 +129,7 @@ class QueryBuilder extends DbQuery
      *
      * @return $this
      */
-    public function naturalJoin($table, $alias = null): self
+    public function naturalJoin($table, $alias = null): self // phpcs:ignore
     {
         if ($this->usePrefix) {
             return $this->join('NATURAL JOIN `'
@@ -151,7 +150,7 @@ class QueryBuilder extends DbQuery
      *
      * @return $this
      */
-    public function rightJoin($table, $alias = null, $on = null): self
+    public function rightJoin($table, $alias = null, $on = null): self // phpcs:ignore
     {
         if ($this->usePrefix) {
             return $this->join('RIGHT JOIN `'
@@ -168,11 +167,11 @@ class QueryBuilder extends DbQuery
     /**
      * Adds an ORDER BY restriction.
      *
-     * @param string|array<int, string> $fields List of fields to sort. E.g. $this->order('myField, b.mySecondField DESC')
+     * @param string|array<int, string> $fields fields to sort. E.G. $this->order('myField, b.mySecondField DESC')
      *
      * @return $this
      */
-    public function orderBy($fields): self
+    public function orderBy($fields): self // phpcs:ignore
     {
         if (!empty($fields)) {
             if (\is_string($fields)) {
@@ -192,7 +191,7 @@ class QueryBuilder extends DbQuery
      *
      * @return $this
      */
-    public function groupBy($fields): self
+    public function groupBy($fields): self // phpcs:ignore
     {
         if (!empty($fields)) {
             if (\is_string($fields)) {
@@ -213,7 +212,7 @@ class QueryBuilder extends DbQuery
      *
      * @return $this
      */
-    public function limit($limit, $offset = 0): self
+    public function limit($limit, $offset = 0): self // phpcs:ignore
     {
         $this->query['limit'] = [
             'offset' => \max($offset, 0),

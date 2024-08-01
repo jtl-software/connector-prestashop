@@ -15,7 +15,7 @@ class Utils
      *
      * @return array{0: string, 1: string|T}
      */
-    public static function explodeProductEndpoint(string $id, mixed $padValue = null): array
+    public static function explodeProductEndpoint(string $id, mixed $padValue = null): array // phpcs:ignore
     {
         /** @var array{0: string, 1: T} $result */
         $result = \array_pad(\explode('_', $id, 2), 2, $padValue);
@@ -34,7 +34,7 @@ class Utils
     }
 
     /**
-     * @param $module
+     * @param string $module
      *
      * @return string
      */
@@ -54,6 +54,11 @@ class Utils
         };
     }
 
+    /**
+     * @param string $input
+     *
+     * @return float
+     */
     public static function stringToFloat(string $input): float
     {
         if (\is_numeric($input)) {

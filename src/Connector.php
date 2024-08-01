@@ -17,7 +17,9 @@ use jtl\Connector\Presta\Controller\ProductController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Auth\TokenValidator;
 use Noodlehaus\ConfigInterface;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Yaml\Yaml;
 
@@ -25,6 +27,13 @@ class Connector implements ConnectorInterface
 {
     protected ContainerInterface $container;
 
+    /**
+     * @param ConfigInterface $config
+     * @param Container       $container
+     * @param EventDispatcher $dispatcher
+     *
+     * @return void
+     */
     public function initialize(ConfigInterface $config, Container $container, EventDispatcher $dispatcher): void
     {
         $this->container = $container;
@@ -59,6 +68,11 @@ class Connector implements ConnectorInterface
         );
     }
 
+    /**
+     * @return PrimaryKeyMapperInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getPrimaryKeyMapper(): PrimaryKeyMapperInterface
     {
         /** @var PrimaryKeyMapper $class */
@@ -66,6 +80,11 @@ class Connector implements ConnectorInterface
         return $class;
     }
 
+    /**
+     * @return TokenValidatorInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getTokenValidator(): TokenValidatorInterface
     {
         /** @var TokenValidator $class */
@@ -73,11 +92,17 @@ class Connector implements ConnectorInterface
         return $class;
     }
 
+    /**
+     * @return string
+     */
     public function getControllerNamespace(): string
     {
         return __NAMESPACE__ . '\Controller';
     }
 
+    /**
+     * @return string
+     */
     public function getEndpointVersion(): string
     {
         $yaml = Yaml::parseFile(__DIR__ . '/../build-config.yaml');
@@ -87,11 +112,17 @@ class Connector implements ConnectorInterface
         return 'dev-master';
     }
 
+    /**
+     * @return string
+     */
     public function getPlatformVersion(): string
     {
         return '1';
     }
 
+    /**
+     * @return string
+     */
     public function getPlatformName(): string
     {
         return 'Prestashop';

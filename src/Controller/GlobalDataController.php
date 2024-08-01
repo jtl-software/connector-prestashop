@@ -45,6 +45,8 @@ class GlobalDataController extends AbstractController implements PullInterface, 
     }
 
     /**
+     * @throws \RuntimeException
+     *
      * @return JtlCurrency
      */
     protected function createJtlCurrency(): JtlCurrency
@@ -63,6 +65,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
 
     /**
      * @return JtlCustomerGroup[]
+     * @throws \PrestaShopDatabaseException
      */
     protected function getCustomerGroups(): array
     {
@@ -84,7 +87,8 @@ class GlobalDataController extends AbstractController implements PullInterface, 
     }
 
     /**
-     * @param array{
+     * @param array $prestaCustomerGroup
+     * @phpstan-param  array{
      *     id_group: int,
      *     reduction: string,
      *     price_display_method: int,

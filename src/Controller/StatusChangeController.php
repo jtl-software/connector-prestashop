@@ -12,13 +12,14 @@ use Jtl\Connector\Core\Model\StatusChange;
 class StatusChangeController extends AbstractController implements PushInterface
 {
     /**
-     * @param StatusChange $model
+     * @param AbstractModel $model
      * @return StatusChange
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function push(AbstractModel $model): AbstractModel
     {
+        /** @var StatusChange $model */
         $orderId = $model->getCustomerOrderId()?->getEndpoint();
         if ($orderId === null) {
             throw new \RuntimeException('Order id is missing');

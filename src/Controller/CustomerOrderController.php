@@ -61,6 +61,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *
      * @return JtlCustomerOrder
      * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createJtlCustomerOrder(PrestaCustomerOrder $prestaOrder): JtlCustomerOrder
     {
@@ -240,7 +242,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     }
 
     /**
-     * @param array{
+     * @param array $prestaProduct
+     * @phpstan-param  array{
      *     id_product: int,
      *     id_product_attribute: int,
      *     name: string,
@@ -286,6 +289,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *
      * @return JtlCustomerOrderBillingAddress
      * @throws \PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function createJtlCustomerOrderBillingAddress(
         PrestaAddress  $prestaAddress,
@@ -323,6 +327,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *
      * @return JtlCustomerOrderShippingAddress
      * @throws \PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function createJtlCustomerOrderShippingAddress(
         PrestaAddress  $prestaAddress,
@@ -370,6 +375,9 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
     /**
      * @return Statistic
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     public function statistic(): Statistic
     {

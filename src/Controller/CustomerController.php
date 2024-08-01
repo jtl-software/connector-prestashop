@@ -54,7 +54,8 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param array{
+     * @param array $prestaCustomer
+     * @phpstan-param  array{
      *     id_customer: int,
      *     id_shop_group: int,
      *     id_shop: int,

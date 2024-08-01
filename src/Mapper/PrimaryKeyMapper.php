@@ -32,6 +32,9 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 
     protected LoggerInterface $logger;
 
+    /**
+     * PrimaryKeyMapper constructor.
+     */
     public function __construct()
     {
         $this->db     = \Db::getInstance();

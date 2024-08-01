@@ -197,7 +197,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param Specific $jtlSpecific
+     * @param AbstractModel $jtlSpecific
      * @return Specific
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
@@ -234,7 +234,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param JtlSpecific $jtlSpecific
+     * @param JtlSpecific    $jtlSpecific
      * @param PrestaSpecific $prestaSpecific
      * @return PrestaSpecific
      */
@@ -269,8 +269,8 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
     /**
      * @param PrestaSpecificValue $prestaSpecificValue
-     * @param JtlSpecificValue $jtlSpecificValue
-     * @param string $prestaSpecificId
+     * @param JtlSpecificValue    $jtlSpecificValue
+     * @param string              $prestaSpecificId
      * @return PrestaSpecificValue
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
@@ -309,7 +309,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
     /**
      * @param JtlSpecificValueI18n $jtlSpecificValueI18n
-     * @param PrestaSpecificValue $prestaSpecificValue
+     * @param PrestaSpecificValue  $prestaSpecificValue
      * @return PrestaSpecificValue
      * @throws \PrestaShopDatabaseException
      */
@@ -325,13 +325,14 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param Specific $model
+     * @param AbstractModel $model
      * @return Specific
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function delete(AbstractModel $model): AbstractModel
     {
+        /** @var Specific $model */
         $specific = new PrestaSpecific((int)$model->getId()->getEndpoint());
 
         $specific->delete();

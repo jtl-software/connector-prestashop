@@ -12,7 +12,7 @@ use jtl\Connector\Presta\Utils\QueryBuilder;
 class DeliveryNoteController extends AbstractController implements PushInterface
 {
     /**
-     * @param DeliveryNote $deliveryNote
+     * @param AbstractModel $deliveryNote
      *
      * @return DeliveryNote
      * @throws \PrestaShopDatabaseException
@@ -21,6 +21,7 @@ class DeliveryNoteController extends AbstractController implements PushInterface
     public function push(AbstractModel $deliveryNote): AbstractModel
     {
 
+        /** @var DeliveryNote $deliveryNote */
         $prestaOrder = new \Order((int) $deliveryNote->getCustomerOrderId()->getEndpoint());
 
         if (!$prestaOrder->id) {

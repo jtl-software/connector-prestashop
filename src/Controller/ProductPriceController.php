@@ -15,13 +15,14 @@ use Jtl\Connector\Core\Model\ProductPriceItem as JtlProductPriceItem;
 class ProductPriceController extends AbstractController implements PushInterface
 {
     /**
-     * @param JtlProduct $model
+     * @param AbstractModel $model
      * @return JtlProduct
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
     public function push(AbstractModel $model): AbstractModel
     {
+        /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();
 
         if (!empty($endpoint)) {
@@ -61,11 +62,11 @@ class ProductPriceController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param \SpecificPrice $price
+     * @param \SpecificPrice      $price
      * @param JtlProductPriceItem $priceItem
-     * @param int $productId
-     * @param int $combiId
-     * @param int $groupId
+     * @param int                 $productId
+     * @param int                 $combiId
+     * @param int                 $groupId
      * @return void
      * @throws \PrestaShopException
      */
@@ -95,8 +96,8 @@ class ProductPriceController extends AbstractController implements PushInterface
 
     /**
      * @param JtlProductPriceItem $priceItem
-     * @param int $productId
-     * @param int $combiId
+     * @param int                 $productId
+     * @param int                 $combiId
      * @return void
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
@@ -123,9 +124,9 @@ class ProductPriceController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param int $productId
-     * @param int $combiId
-     * @param int $groupId
+     * @param int                 $productId
+     * @param int                 $combiId
+     * @param int                 $groupId
      * @param JtlProductPriceItem ...$priceItems
      * @return void
      * @throws \PrestaShopDatabaseException

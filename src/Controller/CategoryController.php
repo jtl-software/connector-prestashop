@@ -101,7 +101,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param array{
+     * @param array $prestaCategoryI18n
+     * @phpstan-param array{
      *     id_category: int,
      *     id_shop: int,
      *     id_lang: int,
@@ -160,7 +161,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      * @return AbstractModel
      * @throws PrestaShopException
      * @throws PrestaShopDatabaseException
-     * @throws \Exception
+     * @throws \RuntimeException
      */
     public function push(AbstractModel $jtlCategory): AbstractModel
     {
@@ -184,6 +185,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
                     // explicitly delete category to prevent broken category
                     $prestaCategory->delete();
                 } catch (\Exception) {
+                    // ignore
                 }
             }
             throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
@@ -200,6 +202,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      *
      * @return PrestaCategory
      * @throws PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function createPrestaCategory(JtlCategory $jtlCategory, PrestaCategory $prestaCategory): PrestaCategory
     {

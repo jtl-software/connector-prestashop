@@ -2,11 +2,6 @@
 
 declare(strict_types=1);
 
-/**
- * @author    Jan Weskamp <jan.weskamp@jtl-software.com>
- * @copyright 2010-2013 JTL-Software GmbH
- */
-
 namespace jtl\Connector\Presta\Utils;
 
 class Config
@@ -22,6 +17,9 @@ class Config
     {
     }
 
+    /**
+     * @return \stdClass|null
+     */
     public static function getData(): ?\stdClass
     {
         self::getInstance();
@@ -61,6 +59,7 @@ class Config
     /**
      * @param string $name
      * @param mixed  $value
+     * @return void
      */
     public static function set(string $name, mixed $value): void
     {
@@ -126,6 +125,8 @@ class Config
     /**
      * clone
      * Kopieren der Instanz von aussen ebenfalls verbieten
+     *
+     * @return void
      */
     protected function __clone()
     {

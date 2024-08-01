@@ -85,8 +85,11 @@ abstract class AbstractController implements LoggerAwareInterface
     }
 
     /**
+     * @param string $languageIso
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
+     *
+     * @return int
      */
     protected function getPrestaLanguageIdFromIso(string $languageIso): int
     {
