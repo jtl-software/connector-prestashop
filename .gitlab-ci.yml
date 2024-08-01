@@ -1,7 +1,7 @@
 variables:
   FF_USE_FASTZIP: 1
   COMPOSER_CACHE_DIR: ${CI_PROJECT_DIR}/.composer-cache
-  PHP_VERSION: '8.0'
+  PHP_VERSION: '8.1'
 
 default:
   image: gitlab.jtl-software.com:4567/connector/connector-utils/ci-docker/php/cli:$PHP_VERSION
