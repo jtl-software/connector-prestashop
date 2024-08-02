@@ -296,7 +296,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderBillingAddress {
         try {
-            return (new JtlCustomerOrderBillingAddress())
+            $address = (new JtlCustomerOrderBillingAddress())
+                ->setVatNumber($prestaAddress->vat_number)
                 ->setCity($prestaAddress->city)
                 ->setCompany($prestaAddress->company)
                 ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
@@ -307,9 +308,11 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                 ->setMobile($prestaAddress->phone_mobile)
                 ->setPhone($prestaAddress->phone)
                 ->setSalutation($this->determineSalutation($prestaCustomer))
-                ->setVatNumber($prestaAddress->vat_number)
                 ->setStreet($prestaAddress->address1)
                 ->setZipCode($prestaAddress->postcode);
+            // FIXME: wrong return type from core
+            /** @var JtlCustomerOrderBillingAddress $address */
+            return $address;
         } catch (\TypeError $e) {
             $message = \sprintf(
                 'Error while creating Billing Address for Customer %s | Error: %s',
@@ -334,7 +337,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderShippingAddress {
         try {
-            return (new JtlCustomerOrderShippingAddress())
+            $address = (new JtlCustomerOrderShippingAddress())
                 ->setCity($prestaAddress->city)
                 ->setCompany($prestaAddress->company)
                 ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
@@ -347,6 +350,9 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                 ->setSalutation($this->determineSalutation($prestaCustomer))
                 ->setStreet($prestaAddress->address1)
                 ->setZipCode($prestaAddress->postcode);
+            // FIXME: wrong return type from core
+            /** @var JtlCustomerOrderShippingAddress $address */
+            return $address;
         } catch (\TypeError $e) {
             $message = \sprintf(
                 'Error while creating Shipping Address for Customer %s | Error: %s',

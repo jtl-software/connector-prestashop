@@ -15,6 +15,7 @@ use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\Product as JtlProduct;
 use Jtl\Connector\Core\Model\Product2Category as JtlProductCategory;
+use Jtl\Connector\Core\Model\ProductAttribute;
 use Jtl\Connector\Core\Model\ProductI18n as JtlProductI18n;
 use Jtl\Connector\Core\Model\ProductPrice as JtlPrice;
 use Jtl\Connector\Core\Model\ProductPriceItem as JtlPriceItem;
@@ -488,6 +489,8 @@ class ProductController extends ProductPriceController implements PullInterface,
                 );
         }
 
+        // FIXME: This is a temporary fix for wrong return types in core
+        /** @var array<int, ProductAttribute> $jtlAttributes */
         return $jtlAttributes;
     }
 
@@ -1262,7 +1265,10 @@ class ProductController extends ProductPriceController implements PullInterface,
                 }
 
                 if (isset($specialAttributes[$name])) {
-                    $foundSpecialAttributes[$name] = $i18n->getValue();
+                    // FIXME: use strict return method once core is updated
+                    /** @var string $value */
+                    $value                         = $i18n->getValue();
+                    $foundSpecialAttributes[$name] = $value;
                     break;
                 }
             }
