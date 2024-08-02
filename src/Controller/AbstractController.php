@@ -16,24 +16,12 @@ use WhiteCube\Lingua\Service;
 
 abstract class AbstractController implements LoggerAwareInterface
 {
-    /**
-     * @var \Db
-     */
     protected \Db $db;
 
-    /**
-     * @var Container
-     */
     protected Container $container;
 
-    /**
-     * @var string|null
-     */
-    protected ?string $controllerName;
+    protected string $controllerName;
 
-    /**
-     * @var LoggerInterface
-     */
     protected LoggerInterface $logger;
 
     protected PrimaryKeyMapper $mapper;
@@ -85,9 +73,11 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from('lang')
             ->where("id_lang = $langId");
 
-        $result = $this->db->executeS($sql);
-        $code   = $result[0]['language_code'];
-        $code   = \explode('-', $code)[0];
+        /** @var array{0: array{language_code: string}} $result */
+        $result = $this->db->executeS($sql->build());
+
+        $code = $result[0]['language_code'];
+        $code = \explode('-', $code)[0];
 
         $linguaConverter = Service::createFromISO_639_1($code);
 
@@ -95,8 +85,11 @@ abstract class AbstractController implements LoggerAwareInterface
     }
 
     /**
+     * @param string $languageIso
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
+     *
+     * @return int
      */
     protected function getPrestaLanguageIdFromIso(string $languageIso): int
     {
@@ -110,32 +103,54 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from('lang')
             ->where("iso_code = '$languageIso'");
 
-        $result = $this->db->executeS($sql)[0]['id_lang'];
+        /** @var array{0: array{id_lang: string|null}} $result */
+        $result = $this->db->executeS($sql->build());
 
-        if (\is_null($result)) {
+        if (\is_null($result[0]['id_lang'])) {
             throw new \RuntimeException("Language '$languageIso' is missing in Prestashop");
         }
 
-        return $this->db->executeS($sql)[0]['id_lang'];
+        return (int)$result[0]['id_lang'];
     }
 
     /**
      * @param string $languageIso
-     * @return int|null
+     * @return int
      * @throws PrestaShopDatabaseException
      */
-    protected function getPrestaCountryIdFromIso(string $languageIso): ?int
+    protected function getPrestaCountryIdFromIso(string $languageIso): int
     {
         $sql = (new QueryBuilder())
             ->select('id_country')
             ->from('country')
             ->where("iso_code = '$languageIso'");
 
-        $result = $this->db->executeS($sql);
+        /** @var array{0: array{id_country: string|null}}|array{} $result */
+        $result = $this->db->executeS($sql->build());
         if (\count($result) === 0 || !isset($result[0]['id_country'])) {
-            return null;
+            return $this->getDefaultPrestaShopCountryId();
         }
-        return $result[0]['id_country'];
+        return (int)$result[0]['id_country'];
+    }
+
+    /**
+     * @return int
+     * @throws PrestaShopDatabaseException|\PrestaShopException|\RuntimeException
+     */
+    protected function getDefaultPrestaShopCountryId(): int
+    {
+        $sql = (new QueryBuilder())
+            ->select('value')
+            ->from('configuration')
+            ->where("name = 'PS_COUNTRY_DEFAULT'");
+
+        $result = $this->db->getValue($sql);
+
+        if (!$result) {
+            throw new \RuntimeException('Default country not found in PrestaShop configuration');
+        }
+
+        return (int)$result;
     }
 
     /**
@@ -150,19 +165,22 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from('country')
             ->where("id_country = $languageId");
 
-        return $this->db->executeS($sql)[0]['iso_code'];
+        /** @var array{0: array{iso_code: string}} $result */
+        $result = $this->db->executeS($sql->build());
+        return $result[0]['iso_code'];
     }
 
 
     //TODO: Rewrite to support multiple leftjoins or remove.
     /**
      * @param QueryFilter $queryFilter
-     * @param string $linkingTable
-     * @param string $prestaTable
-     * @param string $columns
+     * @param string      $linkingTable
+     * @param string      $prestaTable
+     * @param string      $columns
      * @param string|null $fromDate
-     * @return array
-     * @throws PrestaShopDatabaseException
+     *
+     * @return array<int, array<string, string>>
+     * @throws PrestaShopDatabaseException|\PrestaShopException
      */
     protected function getNotLinkedEntities(
         QueryFilter $queryFilter,
@@ -182,18 +200,21 @@ abstract class AbstractController implements LoggerAwareInterface
             ->from(\_DB_PREFIX_ . $prestaTable, 'pt')
             ->leftJoin($linkingTable, 'lt', "pt.$columns = lt.endpoint_id")
             ->where('lt.host_id IS NULL' . $where)
-            ->limit($this->db->escape($queryFilter->getLimit()));
+            ->limit($queryFilter->getLimit());
 
         // if order table, check if order has deleted column
         if ($linkingTable === self::CUSTOMER_ORDER_LINKING_TABLE) {
-            $sql2   = \sprintf("SHOW COLUMNS FROM `%s%s` LIKE 'deleted';", \_DB_PREFIX_, $prestaTable);
+            $sql2 = \sprintf("SHOW COLUMNS FROM `%s%s` LIKE 'deleted';", \_DB_PREFIX_, $prestaTable);
+            /** @var array<int, array<string, string>> $result */
             $result = $this->db->executeS($sql2);
             if (\count($result) !== 0) {
                 $sql->where('pt.deleted = 0');
             }
         }
 
-        return $this->db->executeS($sql);
+        /** @var array<int, array<string, string>> $return */
+        $return = $this->db->executeS($sql->build());
+        return $return;
     }
 
     /**
@@ -232,5 +253,27 @@ abstract class AbstractController implements LoggerAwareInterface
         }
 
         return $object;
+    }
+
+    /**
+     * @return int
+     * @throws \RuntimeException
+     */
+    protected function getPrestaContextLanguageId(): int
+    {
+        $language = \Context::getContext()?->language ?? throw new \RuntimeException('Language not found');
+
+        // if prestashop ever fixes their doctypes, this can be removed
+        /** @var \Language $language */
+        return $language->id;
+    }
+
+    /**
+     * @return int
+     * @throws \RuntimeException
+     */
+    protected function getPrestaContextShopId(): int
+    {
+        return \Context::getContext()?->shop?->id ?? throw new \RuntimeException('Shop not found');
     }
 }

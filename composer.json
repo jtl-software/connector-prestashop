@@ -19,10 +19,13 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "config": {
-    "vendor-dir": "lib"
+    "vendor-dir": "lib",
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
   },
   "require": {
-    "php": ">= 8.0",
+    "php": ">= 8.1",
     "jtl/connector": "^5.2.10",
     "symfony/yaml": "^3.4",
     "ext-json": "*",
@@ -46,7 +49,23 @@
     }
   },
   "require-dev": {
-    "friendsofphp/php-cs-fixer": "^2.16",
-    "symfony/polyfill-php80": "<=1.18.1"
+    "stancer/php-stubs-prestashop": "^8.1",
+    "jtl/connector-cq": "*",
+    "phpstan/phpstan": "^1.11",
+    "squizlabs/php_codesniffer": "^3.10",
+    "micheh/phpcs-gitlab": "^1.1",
+    "slevomat/coding-standard": "^8.15"
+  },
+  "scripts": {
+    "analyze": "@analyse",
+    "analyse": [
+      "@phpcs",
+      "@phpstan"
+    ],
+    "phpcs": "phpcs --basepath=. --extensions=php --standard=JtlConnector --report=full src controllers index.php jtlconnector.php",
+    "phpcs:fix": "phpcbf --basepath=. --extensions=php --standard=JtlConnector src controllers index.php jtlconnector.php",
+    "phpcs:ci": "phpcs --basepath=. --extensions=php --standard=JtlConnector --report=full --report-\\\\Micheh\\\\PhpCodeSniffer\\\\Report\\\\Gitlab=phpcs-quality-report.json src controllers index.php jtlconnector.php",
+    "phpstan": "phpstan analyse src controllers index.php jtlconnector.php --level max -c ./phpstan.neon",
+    "phpstan:ci": "phpstan analyse src controllers index.php jtlconnector.php --level max -c ./phpstan.neon --error-format gitlab > phpstan-quality-report.json"
   }
 }

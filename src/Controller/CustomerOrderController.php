@@ -49,6 +49,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         $jtlOrders = [];
 
         foreach ($prestaOrderIds as $prestaOrderId) {
+            /** @var array{id_order: int} $prestaOrderId */
             $jtlOrders[] = $this->createJtlCustomerOrder(new PrestaCustomerOrder($prestaOrderId['id_order']));
         }
 
@@ -60,6 +61,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *
      * @return JtlCustomerOrder
      * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createJtlCustomerOrder(PrestaCustomerOrder $prestaOrder): JtlCustomerOrder
     {
@@ -129,7 +132,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                 )
             )
             ->setShippingDate($this->createDateTime($prestaOrder->delivery_date))
-            ->setShippingInfo($prestaOrder->getShippingNumber())
+            ->setShippingInfo($prestaOrder->getShippingNumber() ?? '')
             ->setShippingMethodName($prestaCarrier->name)
             ->setTotalSum((float)$prestaOrder->total_paid)
             ->setTotalSumGross((float)$prestaOrder->total_paid_tax_incl)
@@ -195,7 +198,6 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-
     protected function getShippingLineItem(
         PrestaCustomerOrder $prestaOrder,
         PrestaCarrier       $carrier
@@ -215,11 +217,15 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     /**
      * @param PrestaCart $prestaCart
      *
-     * @return array
+     * @return array<JtlCustomerOrderItem>
+     * @throws \PrestaShopDatabaseException|\PrestaShopException|\RuntimeException
      */
     protected function getCustomerOrderItems(PrestaCart $prestaCart): array
     {
-        $context           = \Context::getContext();
+        $context = \Context::getContext();
+        if (\is_null($context)) {
+            throw new \RuntimeException('Context is null');
+        }
         $context->cart     = $prestaCart;
         $context->country  = $prestaCart->getTaxCountry();
         $context->shop     = new \Shop($prestaCart->getShopId());
@@ -236,7 +242,8 @@ class CustomerOrderController extends AbstractController implements PullInterfac
     }
 
     /**
-     * @param array{
+     * @param array $prestaProduct
+     * @phpstan-param  array{
      *     id_product: int,
      *     id_product_attribute: int,
      *     name: string,
@@ -282,13 +289,15 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *
      * @return JtlCustomerOrderBillingAddress
      * @throws \PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function createJtlCustomerOrderBillingAddress(
         PrestaAddress  $prestaAddress,
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderBillingAddress {
         try {
-            return (new JtlCustomerOrderBillingAddress())
+            $address = (new JtlCustomerOrderBillingAddress())
+                ->setVatNumber($prestaAddress->vat_number)
                 ->setCity($prestaAddress->city)
                 ->setCompany($prestaAddress->company)
                 ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
@@ -299,9 +308,11 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                 ->setMobile($prestaAddress->phone_mobile)
                 ->setPhone($prestaAddress->phone)
                 ->setSalutation($this->determineSalutation($prestaCustomer))
-                ->setVatNumber($prestaAddress->vat_number)
                 ->setStreet($prestaAddress->address1)
                 ->setZipCode($prestaAddress->postcode);
+            // FIXME: wrong return type from core
+            /** @var JtlCustomerOrderBillingAddress $address */
+            return $address;
         } catch (\TypeError $e) {
             $message = \sprintf(
                 'Error while creating Billing Address for Customer %s | Error: %s',
@@ -319,13 +330,14 @@ class CustomerOrderController extends AbstractController implements PullInterfac
      *
      * @return JtlCustomerOrderShippingAddress
      * @throws \PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function createJtlCustomerOrderShippingAddress(
         PrestaAddress  $prestaAddress,
         PrestaCustomer $prestaCustomer
     ): JtlCustomerOrderShippingAddress {
         try {
-            return (new JtlCustomerOrderShippingAddress())
+            $address = (new JtlCustomerOrderShippingAddress())
                 ->setCity($prestaAddress->city)
                 ->setCompany($prestaAddress->company)
                 ->setCountryIso($this->getJtlCountryIsoFromPrestaCountryId($prestaAddress->id_country))
@@ -338,6 +350,9 @@ class CustomerOrderController extends AbstractController implements PullInterfac
                 ->setSalutation($this->determineSalutation($prestaCustomer))
                 ->setStreet($prestaAddress->address1)
                 ->setZipCode($prestaAddress->postcode);
+            // FIXME: wrong return type from core
+            /** @var JtlCustomerOrderShippingAddress $address */
+            return $address;
         } catch (\TypeError $e) {
             $message = \sprintf(
                 'Error while creating Shipping Address for Customer %s | Error: %s',
@@ -366,6 +381,9 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
     /**
      * @return Statistic
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     public function statistic(): Statistic
     {
@@ -388,6 +406,11 @@ class CustomerOrderController extends AbstractController implements PullInterfac
 
         $sql2   = \sprintf("SHOW COLUMNS FROM `%sorders` LIKE 'deleted';", \_DB_PREFIX_);
         $result = $this->db->executeS($sql2);
+
+        if (!\is_array($result)) {
+            throw new \RuntimeException('Error while fetching deleted column from orders table');
+        }
+
         if (\count($result) !== 0) {
             $sql->where('o.deleted = 0');
         }

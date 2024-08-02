@@ -1,47 +1,119 @@
 variables:
   FF_USE_FASTZIP: 1
   COMPOSER_CACHE_DIR: ${CI_PROJECT_DIR}/.composer-cache
+  PHP_VERSION: '8.1'
 
 default:
-  image: gitlab.jtl-software.com:4567/connector/connector-utils/ci-docker/php/cli:8.0
+  image: gitlab.jtl-software.com:4567/connector/connector-utils/ci-docker/php/cli:$PHP_VERSION
   tags:
     - docker
-  before_script:
-    - composer update --no-interaction --no-progress
-  cache:
-    key: vendor
-    paths:
-      - vendor
-      - .composer-cache
 
 include:
   - project: 'connector/connector-utils/CI-Templates'
     file:
       - 'auto-create-mr/ci.yaml'
-      - 'code-quality/ci.yaml'
       - 'update-changelog/ci.yaml'
 
 stages:
   - createMR
+  - build
   - test
+  - build-zip
   - extract-changelog
   - update-changelog
 
-code_quality:
-  before_script: []
 
-# disabled since we don't have a working prestashop in CI yet
-.test:integration:
-  parallel:
-    matrix:
-      - VERSION: [ '8.0','8.1' ]
-  image: gitlab.jtl-software.com:4567/connector/connector-utils/ci-docker/php/cli:${VERSION}
-  stage: test
+build:
+  stage: build
   script:
-    - vendor/bin/phpunit --configuration phpunit.xml.dist --log-junit junit.xml
+    - composer config http-basic.gitlab.jtl-software.com gitlab-ci-token "${CI_JOB_TOKEN}"
+    - composer install --no-progress --no-interaction
+  cache:
+    key:
+      files:
+        - composer.lock
+        - composer.json
+    paths:
+      - lib/
+      - .composer-cache
+  artifacts:
+    paths:
+      - lib/
+
+random_files:
+  image: alpine:latest
+  stage: test
+  needs: []
+  script:
+    - >-
+      if [ `find . \( -name .idea -o -name .code -o -name .DS_Store \) -not -path "./lib/*"` ] ; then
+        echo "Found .idea, .code or .DS_Store. Please remove them from your project.";
+        exit 1
+      fi
+
+code_quality:
+  stage: test
+  needs:
+    - build
+  script:
+    - composer run phpcs:ci
+  artifacts:
+    paths:
+      - phpcs-quality-report.json
+    when: always
+
+phpstan:
+  stage: test
+  needs:
+    - build
+  script:
+    - composer run phpstan:ci
+  artifacts:
+    paths:
+      - phpstan-quality-report.json
+    when: always
+
+combine_reports:
+  stage: test
+  needs:
+    - code_quality
+    - phpstan
+  when: always
+  script:
+    - >-
+      if [[ -f phpcs-quality-report.json ]] && [[ -f phpstan-quality-report.json ]]; then
+        jq -s 'add' phpcs-quality-report.json phpstan-quality-report.json > codeclimate-quality-report.json;
+      elif [[ -f phpcs-quality-report.json ]]; then
+        mv phpcs-quality-report.json codeclimate-quality-report.json;
+      elif [[ -f phpstan-quality-report.json ]]; then
+        mv phpstan-quality-report.json codeclimate-quality-report.json;
+      fi
   artifacts:
     reports:
-      junit: junit.xml
+      codequality: codeclimate-quality-report.json
+    when: always
+
+build-zip:
+    stage: build-zip
+    variables:
+      VERSION: $CI_COMMIT_REF_SLUG
+    rules:
+      - if: $CI_COMMIT_TAG
+        variables:
+          VERSION: $CI_COMMIT_TAG
+        when: on_success
+      - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+        when: never
+      - when: on_success
+    needs:
+      - build
+    script:
+      - php ./lib/bin/phing release -Dversion=${VERSION}
+    artifacts:
+      expose_as: 'zip'
+      name: 'zip'
+      paths:
+        - jtl_connector_prestashop_${VERSION}.zip
 
 
 extractChangelog:

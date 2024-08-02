@@ -32,9 +32,10 @@ class PaymentController extends AbstractController implements PullInterface
             ->leftJoin(self::CUSTOMER_ORDER_LINKING_TABLE, 'co', 'co.endpoint_id = o.id_order')
             ->where('l.host_id IS NULL AND co.endpoint_id IS NOT NULL')
             ->where('p.transaction_id != ""')
-            ->limit($this->db->escape($queryFilter->getLimit()));
+            ->limit($queryFilter->getLimit());
 
-        $prestaPayments = $this->db->executeS($sql);
+        /** @var array<int, array<string, string>> $prestaPayments */
+        $prestaPayments = $this->db->executeS($sql->build());
 
         $jtlPayments = [];
 
@@ -46,7 +47,7 @@ class PaymentController extends AbstractController implements PullInterface
     }
 
     /**
-     * @param array $prestaPayment
+     * @param array<string, string> $prestaPayment
      * @return JtlPayment
      * @throws \Exception
      */
@@ -77,7 +78,7 @@ class PaymentController extends AbstractController implements PullInterface
             ->leftJoin(self::PAYMENT_LINKING_TABLE, 'l', 'p.id_order_payment = l.endpoint_id')
             ->where('l.host_id IS NULL AND p.transaction_id != ""');
 
-        $result = $this->db->getValue($sql);
+        $result = $this->db->getValue($sql->build());
 
         return (new Statistic())
             ->setAvailable((int)$result)

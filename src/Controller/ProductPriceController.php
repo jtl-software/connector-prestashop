@@ -16,7 +16,7 @@ class ProductPriceController extends AbstractController implements PushInterface
 {
     /**
      * @param AbstractModel $model
-     * @return AbstractModel
+     * @return JtlProduct
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
@@ -26,7 +26,7 @@ class ProductPriceController extends AbstractController implements PushInterface
         $endpoint = $model->getId()->getEndpoint();
 
         if (!empty($endpoint)) {
-            list($productId, $combiId) = Utils::explodeProductEndpoint($endpoint, 0);
+            [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint, null);
 
             foreach ($model->getPrices() as $price) {
                 if (!empty($productId) && !\is_null($combiId)) {
@@ -53,17 +53,20 @@ class ProductPriceController extends AbstractController implements PushInterface
             ->from('specific_price')
             ->where("id_product = $productId AND id_product_attribute = $combiId AND id_group = $groupId");
 
-        $id = $this->db->getValue($sql);
+        $id = $this->db->getValue($sql->build());
+        if (\is_numeric($id) & (int)$id > 0) {
+            return new \SpecificPrice((int)$id);
+        }
 
-        return new \SpecificPrice($id > 0 ? $id : null);
+        return new \SpecificPrice(null);
     }
 
     /**
-     * @param \SpecificPrice $price
+     * @param \SpecificPrice      $price
      * @param JtlProductPriceItem $priceItem
-     * @param int $productId
-     * @param int $combiId
-     * @param int $groupId
+     * @param int                 $productId
+     * @param int                 $combiId
+     * @param int                 $groupId
      * @return void
      * @throws \PrestaShopException
      */
@@ -93,8 +96,8 @@ class ProductPriceController extends AbstractController implements PushInterface
 
     /**
      * @param JtlProductPriceItem $priceItem
-     * @param int $productId
-     * @param int $combiId
+     * @param int                 $productId
+     * @param int                 $combiId
      * @return void
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
@@ -121,9 +124,9 @@ class ProductPriceController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param int $productId
-     * @param int $combiId
-     * @param int $groupId
+     * @param int                 $productId
+     * @param int                 $combiId
+     * @param int                 $groupId
      * @param JtlProductPriceItem ...$priceItems
      * @return void
      * @throws \PrestaShopDatabaseException

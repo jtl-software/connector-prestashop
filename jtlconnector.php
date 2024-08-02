@@ -11,6 +11,8 @@
  * JTL Connector Module
  */
 
+declare(strict_types=1);
+
 if (!defined('CONNECTOR_DIR')) {
     define("CONNECTOR_DIR", _PS_MODULE_DIR_ . 'jtlconnector/');
 }
@@ -36,7 +38,12 @@ class JTLConnector extends Module
         $this->name = 'jtlconnector';
         $this->tab  = 'payments_gateways';
         try {
-            $this->version = Yaml::parseFile(__DIR__ . '/build-config.yaml')['version'];
+            $yaml = Yaml::parseFile(__DIR__ . '/build-config.yaml');
+            if (\is_array($yaml) && isset($yaml['version']) && \is_string($yaml['version'])) {
+                $this->version = $yaml['version'];
+            } else {
+                $this->version = 'Unknown';
+            }
         } catch (\Exception $e) {
             $this->version = 'Unknown';
         }
@@ -52,12 +59,23 @@ class JTLConnector extends Module
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
-    public function viewAccess()
+    /**
+     * @return void
+     */
+    public function viewAccess(): void
     {
-        Tools::redirectAdmin(Context::getContext()->link->getAdminLink('AdminModules') . '&configure=jtlconnector');
+        /** @var Context $context */
+        $context = Context::getContext();
+        /** @var Link $link */
+        $link = $context->link;
+        Tools::redirectAdmin($link->getAdminLink('AdminModules') . '&configure=jtlconnector');
     }
 
-    public function install()
+    /**
+     * @return bool
+     * @throws PrestaShopDatabaseException
+     */
+    public function install(): bool
     {
         $minimumPhpversion = '8.0';
         if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
@@ -103,22 +121,25 @@ class JTLConnector extends Module
         }
 
         $oldLogDir = CONNECTOR_DIR . 'logs';
-        if (is_dir($oldLogDir)) {
+        if (\is_dir($oldLogDir)) {
             // should not have sub dirs
-            foreach (glob($oldLogDir . '/*') as $file) {
-                if (is_file($file)) {
-                    // move files to new log dir
-                    copy($file, $logDir . '/' . basename($file));
-                    // remove old files
-                    unlink($file);
+            $files = \glob($oldLogDir . '/*');
+            if (\is_array($files)) { // log dir is not empty
+                foreach ($files as $file) {
+                    if (\is_file($file)) {
+                        // move files to new log dir
+                        \copy($file, $logDir . '/' . \basename($file));
+                        // remove old files
+                        \unlink($file);
+                    }
                 }
             }
             // remove old log dir
-            rmdir($oldLogDir);
+            \rmdir($oldLogDir);
         }
 
-        if (count($this->_errors) != 0) {
-            $this->_errors[] = '<b>' . sprintf(
+        if (\count($this->_errors) != 0) {
+            $this->_errors[] = '<b>' . \sprintf(
                 $this->l(
                     'Please read the %s for requirements and setup instructions.'
                 ),
@@ -135,7 +156,7 @@ class JTLConnector extends Module
         // remove old meta if exists
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
 
-        if (isset($meta['id_meta'])) {
+        if (\is_array($meta) && isset($meta['id_meta'])) {
             $delMeta = new \Meta($meta['id_meta']);
             $delMeta->delete();
         }
@@ -145,7 +166,6 @@ class JTLConnector extends Module
         $meta->page         = 'module-jtlconnector-api';
         $meta->url_rewrite  = [1 => 'jtlconnector'];
         $meta->configurable = '0';
-        $meta->multilang    = false;
 
         $meta->save();
 
@@ -164,7 +184,9 @@ class JTLConnector extends Module
         $name           = "JTL-Connector";
         $tab->id_parent = (int)Tab::getIdFromClassName('IMPROVE');
         foreach (\Language::getLanguages(true) as $lang) {
-            $tab->name[$lang['id_lang']] = $name;
+            if (\is_array($lang) && isset($lang['id_lang']) && \is_int($lang['id_lang'])) {
+                $tab->name[$lang['id_lang']] = $name;
+            }
         }
         $tab->active     = true;
         $tab->position   = 0;
@@ -175,7 +197,11 @@ class JTLConnector extends Module
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
     }
 
-    private function createLinkingTables()
+    /**
+     * @return bool
+     * @throws PrestaShopDatabaseException
+     */
+    private function createLinkingTables(): bool
     {
         $db = Db::getInstance();
 
@@ -211,24 +237,28 @@ class JTLConnector extends Module
 
         foreach ($types as $id => $name) {
             if ($id == 16 || $id == 64) {
+                // @phpstan-ignore-next-line
                 $db->query(
                     sprintf($queryChar, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
                 )->execute();
             } else {
+                // @phpstan-ignore-next-line
                 $db->query(
                     sprintf($queryInt, 'jtl_connector_link_' . $name, JTL_CONNECTOR_DATABASE_COLLATION)
-                )->execute();
+                )->execute(); //phpstan-ignore-line
             }
         }
 
         $check = $db->executeS('SHOW TABLES LIKE "jtl_connector_link"');
 
         if (!empty($check)) {
+            /** @var array<int, array{type: int}> $existingTypes */
             $existingTypes = $db->executeS('SELECT type FROM jtl_connector_link GROUP BY type');
 
             foreach ($existingTypes as $existingType) {
                 $typeId    = (int)$existingType['type'];
                 $tableName = 'jtl_connector_link_' . $types[$typeId];
+                // @phpstan-ignore-next-line
                 $db->query(
                     "INSERT INTO {$tableName} (host_id, endpoint_id)
                     SELECT hostId, endpointId FROM jtl_connector_link WHERE type = {$typeId}
@@ -237,6 +267,7 @@ class JTLConnector extends Module
             }
 
             if (count($existingTypes) > 0) {
+                // @phpstan-ignore-next-line
                 $db->query("RENAME TABLE jtl_connector_link TO jtl_connector_link_backup")->execute();
             }
         }
@@ -244,12 +275,16 @@ class JTLConnector extends Module
         return true;
     }
 
-    private function convertLinkingTables()
+    /**
+     * @return bool
+     */
+    private function convertLinkingTables(): bool
     {
         $db = Db::getInstance();
 
         $query = 'alter table `%s` convert to character set utf8 collate utf8_general_ci;';
 
+        /** @var array<int,array<string, string>> $newLinkingTables */
         $newLinkingTables = $db->executeS('SHOW TABLES LIKE "jtl_connector_link_%"');
 
         if (!empty($newLinkingTables)) {
@@ -257,6 +292,7 @@ class JTLConnector extends Module
                 if (!empty($newLinkingTable)) {
                     $newLinkingTable = reset($newLinkingTable);
                     if ($newLinkingTable !== 'jtl_connector_link_backup') {
+                        // @phpstan-ignore-next-line
                         $db->query(sprintf($query, $newLinkingTable))->execute();
                     }
                 }
@@ -266,7 +302,10 @@ class JTLConnector extends Module
         return true;
     }
 
-    public function uninstall()
+    /**
+     * @return bool
+     */
+    public function uninstall(): bool
     {
 
         $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
@@ -277,7 +316,7 @@ class JTLConnector extends Module
 
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
 
-        if (isset($meta['id_meta'])) {
+        if (\is_array($meta) && isset($meta['id_meta'])) {
             $delMeta = new \Meta($meta['id_meta']);
             $delMeta->delete();
         }
@@ -285,7 +324,10 @@ class JTLConnector extends Module
         return parent::uninstall() && Configuration::deleteByName('jtlconnector_pass');
     }
 
-    public function getContent()
+    /**
+     * @return string
+     */
+    public function getContent(): string
     {
         require_once CONNECTOR_DIR . '/lib/autoload.php';
 
@@ -323,8 +365,8 @@ class JTLConnector extends Module
             } elseif (Tools::getValue('jtlconnector_download_logs')) {
                 $this->downloadJTLLogs();
             } else {
-                $pass = (string)Tools::getValue('jtlconnector_pass');
-                if (!$pass || empty($pass) || !Validate::isPlaintextPassword($pass, 8)) {
+                $pass = Tools::getValue('jtlconnector_pass');
+                if (!\is_string($pass) || empty($pass) || \strlen($pass) < 8) {
                     $output .= $this->displayError($this->l('Password must have a minimum length of 8 chars!'));
                 } else {
                     Configuration::updateValue('jtlconnector_pass', $pass);
@@ -351,35 +393,48 @@ class JTLConnector extends Module
         return $output . $this->displayForm();
     }
 
-    private function clearLogs()
+    /**
+     * @return void
+     */
+    private function clearLogs(): void
     {
         $logDir = CONNECTOR_DIR . '/var/log';
 
-        $files = glob($logDir . '/*.log');
+        $files = \glob($logDir . '/*.log');
 
+        if (!\is_array($files)) {
+            return;
+        }
         foreach ($files as $file) {
-            if (!is_dir($file)) {
-                if (file_exists($file)) {
-                    unlink($file);
+            if (!\is_dir($file)) {
+                if (\file_exists($file)) {
+                    \unlink($file);
                 }
             }
         }
     }
 
-    private function downloadJTLLogs()
+    /**
+     * @return void
+     */
+    private function downloadJTLLogs(): void
     {
         $logDir   = CONNECTOR_DIR . '/var/log';
-        $zip_file = tempnam(sys_get_temp_dir(), 'logs') . '.zip';
+        $zip_file = \tempnam(sys_get_temp_dir(), 'logs') . '.zip';
 
         $zip = new ZipArchive();
         $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
-        $files = glob($logDir . '/*.log');
+        $files = \glob($logDir . '/*.log');
+
+        if (!\is_array($files)) {
+            $files = [];
+        }
 
         $fileCounter = 0;
         foreach ($files as $file) {
-            if (!is_dir($file)) {
-                $relativePath = substr($file, strlen($logDir) + 1);
+            if (!\is_dir($file)) {
+                $relativePath = \substr($file, \strlen($logDir) + 1);
 
                 $zip->addFile($file, $relativePath);
                 $fileCounter++;
@@ -402,7 +457,10 @@ class JTLConnector extends Module
         }
     }
 
-    public function displayForm()
+    /**
+     * @return string
+     */
+    public function displayForm(): string
     {
         $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
@@ -410,6 +468,9 @@ class JTLConnector extends Module
         if ($limit <= 0) {
             $limit = 800;
         }
+
+        /** @var Link $link */
+        $link = $this->context->link;
 
         $fields_form            = [];
         $fields_form[0]['form'] = [
@@ -421,7 +482,7 @@ class JTLConnector extends Module
                 '<b>%s</b><br>%s: <b>%s</b><br/>',
                 $this->l('Please enter the following URL in your Wawi connector setup:'),
                 $this->l('The "Onlineshop URL" is'),
-                $this->context->link->getModuleLink('jtlconnector', 'api')
+                $link->getModuleLink('jtlconnector', 'api')
             ),
             'input'       => [
                 [

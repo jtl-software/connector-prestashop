@@ -45,11 +45,17 @@ class GlobalDataController extends AbstractController implements PullInterface, 
     }
 
     /**
+     * @throws \RuntimeException
+     *
      * @return JtlCurrency
      */
     protected function createJtlCurrency(): JtlCurrency
     {
         $currency = \Currency::getCurrency(\Currency::getDefaultCurrencyId());
+
+        if (!\is_array($currency)) {
+            throw new \RuntimeException('Default currency not found');
+        }
 
         return (new JtlCurrency())
             ->setIsDefault(true)
@@ -59,10 +65,11 @@ class GlobalDataController extends AbstractController implements PullInterface, 
 
     /**
      * @return JtlCustomerGroup[]
+     * @throws \PrestaShopDatabaseException
      */
     protected function getCustomerGroups(): array
     {
-        $prestaCustomerGroups = \Group::getGroups(\Context::getContext()->language->id);
+        $prestaCustomerGroups = \Group::getGroups($this->getPrestaContextLanguageId());
         $jtlCustomerGroups    = [];
 
 
@@ -79,10 +86,22 @@ class GlobalDataController extends AbstractController implements PullInterface, 
         return $jtlCustomerGroups;
     }
 
+    /**
+     * @param array $prestaCustomerGroup
+     * @phpstan-param  array{
+     *     id_group: int,
+     *     reduction: string,
+     *     price_display_method: int,
+     *     show_prices: int,
+     *     name: string
+     * } $prestaCustomerGroup
+     * @return JtlCustomerGroupI18n
+     * @throws \PrestaShopDatabaseException
+     */
     protected function createJtlCustomerGroupI18n(array $prestaCustomerGroup): JtlCustomerGroupI18n
     {
         return (new JtlCustomerGroupI18n())
-            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId(\Context::getContext()->language->id))
+            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($this->getPrestaContextLanguageId()))
             ->setName($prestaCustomerGroup['name']);
     }
 
@@ -91,7 +110,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
      */
     protected function getTaxRates(): array
     {
-        $prestaTaxes = \Tax::getTaxes(\Context::getContext()->language->id);
+        $prestaTaxes = \Tax::getTaxes($this->getPrestaContextLanguageId());
         $jtlTaxes    = [];
 
         foreach ($prestaTaxes as $prestaTax) {
@@ -111,13 +130,15 @@ class GlobalDataController extends AbstractController implements PullInterface, 
         $jtlLanguages    = [];
 
         foreach ($prestaLanguages as $prestaLanguage) {
-            $jtlLanguage = (new JtlLanguage())
-                ->setNameEnglish($prestaLanguage['name'])
-                ->setNameGerman($prestaLanguage['name'])
-                ->setLanguageIso($prestaLanguage['iso_code'])
-                ->setIsDefault($prestaLanguage['id_lang'] === \Context::getContext()->language->id);
+            if (\is_array($prestaLanguage)) {
+                $jtlLanguage = (new JtlLanguage())
+                    ->setNameEnglish($prestaLanguage['name'])
+                    ->setNameGerman($prestaLanguage['name'])
+                    ->setLanguageIso($prestaLanguage['iso_code'])
+                    ->setIsDefault($prestaLanguage['id_lang'] === $this->getPrestaContextLanguageId());
 
-            $jtlLanguages[] = $jtlLanguage;
+                $jtlLanguages[] = $jtlLanguage;
+            }
         }
 
         return $jtlLanguages;
@@ -128,7 +149,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
      */
     protected function getShippingMethods(): array
     {
-        $prestaShippingMethods = \Carrier::getCarriers(\Context::getContext()->language->id);
+        $prestaShippingMethods = \Carrier::getCarriers($this->getPrestaContextLanguageId());
         $jtlShippingMethods    = [];
 
         foreach ($prestaShippingMethods as $prestaShippingMethod) {

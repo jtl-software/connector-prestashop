@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace jtl\Connector\Presta\Auth;
 
 use Jtl\Connector\Core\Authentication\TokenValidatorInterface;
@@ -7,9 +9,6 @@ use Jtl\Connector\Core\Exception\TokenValidatorException;
 
 class TokenValidator implements TokenValidatorInterface
 {
-    /**
-     * @var string
-     */
     protected string $connectorToken;
 
     /**
