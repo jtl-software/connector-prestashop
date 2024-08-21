@@ -1,4 +1,5 @@
 ## unreleased
+- CO-2508 - Use wawi tracking lists
 
 ## 2.0.0 _2024-06-19_
 - CO-2404 Update to Connector Core 5.2
