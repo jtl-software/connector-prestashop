@@ -54,27 +54,27 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param array<string, string|int> $prestaCategory
+     * @param array<string, string> $prestaCategory
      * @return JtlCategory
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
      */
     protected function createJtlCategory(array $prestaCategory): JtlCategory
     {
-        $isActive = \is_int($prestaCategory['active'])
+        $isActive = \is_numeric($prestaCategory['active'])
             ? (bool)$prestaCategory['active']
             : throw new \RuntimeException('active must be an integer');
 
-        $level = \is_int($prestaCategory['level_depth'])
-            ? $prestaCategory['level_depth']
+        $level = \is_numeric($prestaCategory['level_depth'])
+            ? (int)$prestaCategory['level_depth']
             : throw new \RuntimeException('level_depth must be an integer');
 
-        $prestaCategoryId = \is_int($prestaCategory['id_category'])
-            ? $prestaCategory['id_category']
+        $prestaCategoryId = \is_numeric($prestaCategory['id_category'])
+            ? (int)$prestaCategory['id_category']
             : throw new \RuntimeException('id_category must be an integer');
 
-        $prestaParentCategoryId = \is_int($prestaCategory['id_parent'])
-            ? $prestaCategory['id_parent']
+        $prestaParentCategoryId = \is_numeric($prestaCategory['id_parent'])
+            ? (int)$prestaCategory['id_parent']
             : throw new \RuntimeException('id_parent must be an integer');
 
         $prestaRootCategoryId = \is_int(PrestaCategory::getRootCategory()->id)
@@ -103,9 +103,9 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     /**
      * @param array $prestaCategoryI18n
      * @phpstan-param array{
-     *     id_category: int,
-     *     id_shop: int,
-     *     id_lang: int,
+     *     id_category: numeric-string,
+     *     id_shop: numeric-string,
+     *     id_lang: numeric-string,
      *     name: string,
      *     description: string,
      *     additional_description: string,
@@ -120,11 +120,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     protected function createJtlCategoryTranslation(array $prestaCategoryI18n): JtlCategoryI18n
     {
         return (new JtlCategoryI18n())
-            ->setName((string)$prestaCategoryI18n['name'])
-            ->setTitleTag((string)$prestaCategoryI18n['meta_title'])
-            ->setDescription((string)$prestaCategoryI18n['description'])
-            ->setMetaDescription((string)$prestaCategoryI18n['meta_description'])
-            ->setMetaKeywords((string)$prestaCategoryI18n['meta_keywords'])
+            ->setName($prestaCategoryI18n['name'])
+            ->setTitleTag($prestaCategoryI18n['meta_title'])
+            ->setDescription($prestaCategoryI18n['description'])
+            ->setMetaDescription($prestaCategoryI18n['meta_description'])
+            ->setMetaKeywords($prestaCategoryI18n['meta_keywords'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCategoryI18n['id_lang']));
     }
 
