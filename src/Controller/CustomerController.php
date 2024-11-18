@@ -76,7 +76,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      *     ip_registration_newsletter: string,
      *     newsletter_date_add: string,
      *     optin: int,
-     *     website: string,
+     *     website: string|null,
      *     outstanding_allow_amount: string,
      *     show_public_prices: int,
      *     max_payment_days: int,
@@ -138,7 +138,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             ->setSalutation($this->determineSalutation(new PrestaCustomer($prestaCustomer['id_gender'])))
             ->setStreet($prestaCustomer['address1'])
             ->setVatNumber($prestaCustomer['vat_number'])
-            ->setWebsiteUrl($prestaCustomer['website'])
+            ->setWebsiteUrl($prestaCustomer['website'] ?? '')
             ->setZipCode($prestaCustomer['postcode']);
 
         return $jtlCustomer;
