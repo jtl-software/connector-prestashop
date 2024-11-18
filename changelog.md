@@ -1,5 +1,6 @@
 ## unreleased
-- CO-2686 fix missing customer website
+- CO-2508 - Use wawi tracking lists
+- CO-2686 - fix missing customer website
 
 ## 2.0.1 _2024-07-05_
 - Fixed type errors
