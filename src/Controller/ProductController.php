@@ -176,7 +176,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setPrices($this->createJtlPrice((float)$prestaProduct->price))
             ->setI18ns(...$this->createJtlProductTranslations($prestaProductId))
             ->setAvailableFrom($this->createDateTime($prestaProduct->available_date))
-            ->setBasePriceUnitName($prestaProduct->unity ?? '') // @phpstan-ignore-line
+            ->setBasePriceUnitName($prestaProduct->unity ?? '') //phpcs:ignore @phpstan-ignore-line
             ->setConsiderStock($prestaStock->out_of_stock === 0 || $prestaStock->out_of_stock === 2)
             ->setPermitNegativeStock($prestaStock->out_of_stock === 0)
             ->setIsActive(true)
