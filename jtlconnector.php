@@ -184,7 +184,7 @@ class JTLConnector extends Module
         $name           = "JTL-Connector";
         $tab->id_parent = (int)Tab::getIdFromClassName('IMPROVE');
         foreach (\Language::getLanguages(true) as $lang) {
-            if (\is_array($lang) && isset($lang['id_lang']) && \is_int($lang['id_lang'])) {
+            if (\is_array($lang) && isset($lang['id_lang']) && \is_numeric($lang['id_lang'])) {
                 $tab->name[$lang['id_lang']] = $name;
             }
         }
