@@ -154,6 +154,8 @@ class ProductController extends ProductPriceController implements PullInterface,
             ? $prestaProduct->id
             : throw new \RuntimeException('Product ID is not an integer');
 
+        \is_numeric($prestaStock->quantity) ? $prestaQuantity = (float)$prestaStock->quantity : $prestaQuantity = 0.0;
+
         $jtlProduct = (new JtlProduct())
             ->setId(new Identity((string)$prestaProduct->id))
             ->setManufacturerId(new Identity((string)$prestaProduct->id_manufacturer))
@@ -168,7 +170,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setShippingWeight((float)$prestaProduct->weight)
             ->setSku($prestaProduct->reference)
             ->setUpc($prestaProduct->upc)
-            ->setStockLevel($prestaStock->quantity)
+            ->setStockLevel($prestaQuantity)
             ->setSpecialPrices(...$this->createJtlSpecialPrices($prestaProduct))
             ->setVat($prestaProduct->getTaxesRate())
             ->setAttributes(...$this->createJtlSpecialAttributes($prestaProduct))
@@ -340,12 +342,16 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         foreach ($prestaSpecialPrices as $prestaSpecialPrice) {
             /** @var \SpecificPrice $prestaSpecialPrice */
+            \is_numeric($prestaSpecialPrice->from_quantity)
+                ? $fromQuantity = (int)$prestaSpecialPrice->from_quantity
+                : $fromQuantity = 0;
+
             $jtlSpecialPrices[] = (new JtlSpecialPrice())
                 ->setIsActive(true)
                 ->setActiveFromDate($this->createDateTime($prestaSpecialPrice->from))
                 ->setActiveUntilDate($this->createDateTime($prestaSpecialPrice->to))
                 ->setConsiderStockLimit(true)
-                ->setStockLimit($prestaSpecialPrice->from_quantity)
+                ->setStockLimit($fromQuantity)
                 ->addItem($this->createJtlSpecialPriceItem($prestaSpecialPrice, $prestaProduct));
         }
 
@@ -1219,7 +1225,11 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $result = $this->db->executeS($sql);
 
-        return \is_array($result) ? $result[0]['id_tax_rules_group'] : null;
+        \is_array($result) && \is_numeric($result[0]['id_tax_rules_group'])
+            ? $return = (int)$result[0]['id_tax_rules_group']
+            : $return = null;
+
+        return $return;
     }
 
     /**
