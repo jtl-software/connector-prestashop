@@ -154,6 +154,8 @@ class ProductController extends ProductPriceController implements PullInterface,
             ? $prestaProduct->id
             : throw new \RuntimeException('Product ID is not an integer');
 
+        //we ignore this line as prestashop hasn't updated their PHPDoc yet
+        //@phpstan-ignore-next-line
         \is_numeric($prestaStock->quantity) ? $prestaQuantity = (float)$prestaStock->quantity : $prestaQuantity = 0.0;
 
         $jtlProduct = (new JtlProduct())
@@ -446,7 +448,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setDescription((string)$prestaProductI18n['description'])
             ->setShortDescription((string)$prestaProductI18n['description_short'])
             ->setMetaDescription((string)$prestaProductI18n['meta_description'])
-            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId((int)$prestaProductI18n['id_lang']));
+            ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaProductI18n['id_lang']));
     }
 
     /**
