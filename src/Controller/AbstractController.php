@@ -154,11 +154,11 @@ abstract class AbstractController implements LoggerAwareInterface
     }
 
     /**
-     * @param int $languageId
+     * @param int|string $languageId
      * @return string
      * @throws PrestaShopDatabaseException
      */
-    protected function getJtlCountryIsoFromPrestaCountryId(int $languageId): string
+    protected function getJtlCountryIsoFromPrestaCountryId(int|string $languageId): string
     {
         $sql = (new QueryBuilder())
             ->select('iso_code')
