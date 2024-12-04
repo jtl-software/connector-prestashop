@@ -960,6 +960,8 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     protected function updatePrestaProduct(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
     {
+        $this->processGpsr($jtlProduct);
+
         $translations = $this->createPrestaProductTranslations(...$jtlProduct->getI18ns());
         $categories   = $jtlProduct->getCategories();
 
@@ -1440,5 +1442,63 @@ class ProductController extends ProductPriceController implements PullInterface,
         $combi->id_product = $prestaProduct->id ?? throw new \RuntimeException('Product ID is missing');
         $combi->setAttributes($valueIds);
         $combi->save();
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
+     *
+     * @return void
+     * @throws TranslatableAttributeException
+     */
+    private function processGpsr(JtlProduct $jtlProduct): void
+    {
+        if (\Configuration::get('jtlconnector_disable_gpsr')) {
+            return;
+        }
+
+        /** @var array<string, array<string, string>> $gpsri18nMap */
+        $gpsri18nMap = [];
+
+        foreach ($jtlProduct->getAttributes() as $attribute) {
+            foreach ($attribute->getI18ns() as $i18n) {
+                $name = $i18n->getName();
+
+                if (
+                    \str_starts_with($name, 'gpsr_manufacturer_')
+                    || \str_starts_with($name, 'gpsr_responsibleperson_')
+                ) {
+                    $value = $i18n->getValue();
+
+                    if (\is_string($value)) {
+                        $gpsri18nMap[$i18n->getLanguageIso()][$name] = $value;
+                    }
+                }
+            }
+        }
+
+        foreach ($jtlProduct->getI18ns() as $i18n) {
+            foreach ($gpsri18nMap as $gpsri18ns) {
+                $description  = $i18n->getDescription() . "<br/><br/>";
+                $description .= '<h3>GPSR Information</h3>';
+                $description .= <<<HTML
+                    <table>
+                        <tr>
+                            <th>GPSR Field</th>
+                            <th>Value</th>
+                        </tr>
+                        /data/
+                    </table>
+HTML;
+
+                $tableData = '';
+
+                foreach ($gpsri18ns as $gpsrKey => $gpsrValue) {
+                    $tableData .= "<tr><td>$gpsrKey</td><td>$gpsrValue</td></tr>";
+                }
+
+                $description = \str_replace('/data/', $tableData, $description);
+                $i18n->setDescription($description);
+            }
+        }
     }
 }
