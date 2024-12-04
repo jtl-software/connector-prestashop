@@ -372,6 +372,9 @@ class JTLConnector extends Module
                 } else {
                     Configuration::updateValue('jtlconnector_pass', $pass);
                     Configuration::updateValue(
+                        'jtlconnector_disable_gpsr',
+                        Tools::getValue('jtlconnector_disable_gpsr')
+                    );Configuration::updateValue(
                         'jtlconnector_truncate_desc',
                         Tools::getValue('jtlconnector_truncate_desc')
                     );
@@ -497,6 +500,30 @@ class JTLConnector extends Module
                         'attributes' => [
                             'onclick' =>
                                 'document.getElementById("jtlconnector_pass").select();document.execCommand("copy");',
+                        ],
+                    ],
+                ],
+                [
+                    'type'    => 'switch',
+                    'label'   => $this->l('Do not append GPSR information to product description'),
+                    'name'    => 'jtlconnector_disable_gpsr',
+                    'is_bool' => true,
+                    'desc'    => sprintf(
+                        $this->l(
+                            'If this option is enabled, GPSR metadata will not be appended to product descriptions.'
+                        ),
+                        $limit
+                    ),
+                    'values'  => [
+                        [
+                            'id'    => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled'),
+                        ],
+                        [
+                            'id'    => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled'),
                         ],
                     ],
                 ],
@@ -656,6 +683,9 @@ class JTLConnector extends Module
 
         // Load current value
         $helper->fields_value['jtlconnector_pass']                    = Configuration::get('jtlconnector_pass');
+        $helper->fields_value['jtlconnector_disable_gpsr']            = Configuration::get(
+            'jtlconnector_disable_gpsr'
+        );
         $helper->fields_value['jtlconnector_truncate_desc']           = Configuration::get(
             'jtlconnector_truncate_desc'
         );
