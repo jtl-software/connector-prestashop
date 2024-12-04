@@ -86,7 +86,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             );
         }
 
-        if ($prestaCustomer->id !== $prestaOrder->id_customer) {
+        if ($prestaCustomer->id !== (int)$prestaOrder->id_customer) {
             throw new \RuntimeException(
                 \sprintf(
                     'Customer ID %s from Order %s does not match Customer ID from Customer %s',
@@ -277,7 +277,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
             ->setName($name)
             ->setPrice($prestaProduct['price_with_reduction_without_tax'])
             ->setPriceGross($prestaProduct['price_with_reduction'])
-            ->setQuantity($prestaProduct['cart_quantity'])
+            ->setQuantity((float)$prestaProduct['cart_quantity'])
             ->setSku($prestaProduct['reference'])
             ->setType(JtlCustomerOrderItem::TYPE_PRODUCT)
             ->setVat($prestaProduct['rate']);
