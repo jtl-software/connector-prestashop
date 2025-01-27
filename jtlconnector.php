@@ -374,7 +374,11 @@ class JTLConnector extends Module
                     Configuration::updateValue(
                         'jtlconnector_disable_gpsr',
                         Tools::getValue('jtlconnector_disable_gpsr')
-                    );Configuration::updateValue(
+                    );
+                    Configuration::updateValue('jtlconnector_gpsr_attributes',
+                        Tools::getValue('jtlconnector_gpsr_attributes')
+                    );
+                    Configuration::updateValue(
                         'jtlconnector_truncate_desc',
                         Tools::getValue('jtlconnector_truncate_desc')
                     );
@@ -511,6 +515,30 @@ class JTLConnector extends Module
                     'desc'    => sprintf(
                         $this->l(
                             'If this option is enabled, GPSR metadata will not be appended to product descriptions.'
+                        ),
+                        $limit
+                    ),
+                    'values'  => [
+                        [
+                            'id'    => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled'),
+                        ],
+                        [
+                            'id'    => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled'),
+                        ],
+                    ],
+                ],
+                [
+                    'type'    => 'switch',
+                    'label'   => $this->l('Save GPSR information additionally as product attributes'),
+                    'name'    => 'jtlconnector_gpsr_attributes',
+                    'is_bool' => true,
+                    'desc'    => sprintf(
+                        $this->l(
+                            'If this option is enabled, GPSR metadata will additionally be saved as attributes.'
                         ),
                         $limit
                     ),
@@ -685,6 +713,9 @@ class JTLConnector extends Module
         $helper->fields_value['jtlconnector_pass']                    = Configuration::get('jtlconnector_pass');
         $helper->fields_value['jtlconnector_disable_gpsr']            = Configuration::get(
             'jtlconnector_disable_gpsr'
+        );
+        $helper->fields_value['jtlconnector_gpsr_attributes']         = Configuration::get(
+            'jtlconnector_gpsr_attributes'
         );
         $helper->fields_value['jtlconnector_truncate_desc']           = Configuration::get(
             'jtlconnector_truncate_desc'
