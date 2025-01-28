@@ -1505,7 +1505,7 @@ HTML;
             }
         }
 
-        if ($gpsrAsAttributes = \Configuration::get('jtlconnector_gpsr_attributes')) {
+        if (\Configuration::get('jtlconnector_gpsr_attributes')) {
             $this->addGpsrToFeatures($jtlProduct, $prestaProduct, $gpsri18nMap);
         }
     }
@@ -1514,16 +1514,20 @@ HTML;
         foreach ($jtlProduct->getI18ns() as $i18n) {
             $langId = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
             foreach ($gpsri18nMap as $gpsri18ns) {
-                foreach ($gpsri18ns as $gpsrKey => $gpsrValue ) {
-                    $gpsrKeyId = PrestaSpecific::addFeatureImport($gpsrKey);
-                    PrestaSpecificValue::addFeatureValueImport(
-                        $gpsrKeyId,
+                foreach ($gpsri18ns as $gpsrKey => $gpsrValue) {
+                    $gpsrKeyId   = PrestaSpecific::addFeatureImport($gpsrKey);
+                    $gpsrValueId = PrestaSpecificValue::addFeatureValueImport(
+                        (int)$gpsrKeyId,
                         $gpsrValue,
-                        $jtlProduct->getId()->getEndpoint(),
+                        (int)$jtlProduct->getId()->getEndpoint(),
                         $langId,
                         true
                     );
-                    break;
+                    $prestaProduct->addFeatureProductImport(
+                        (int)$jtlProduct->getId()->getEndpoint(),
+                        (int)$gpsrKeyId,
+                        (int)$gpsrValueId
+                    );
                 }
             }
         }
