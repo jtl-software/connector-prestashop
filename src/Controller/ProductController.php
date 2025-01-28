@@ -1507,10 +1507,20 @@ HTML;
 
         if (\Configuration::get('jtlconnector_gpsr_attributes')) {
             $this->addGpsrToFeatures($jtlProduct, $prestaProduct, $gpsri18nMap);
+        } else {
+            $this->deleteAllGpsrFeatures($jtlProduct, $prestaProduct);
         }
     }
 
-    private function addGpsrToFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, $gpsri18nMap) {
+    /**
+     * @param JtlProduct $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @param array<string, array<string, string>> $gpsri18nMap
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     */
+    private function addGpsrToFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, $gpsri18nMap):void
+    {
         foreach ($jtlProduct->getI18ns() as $i18n) {
             $langId = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
             foreach ($gpsri18nMap as $gpsri18ns) {
@@ -1531,5 +1541,28 @@ HTML;
                 }
             }
         }
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     */
+    private function deleteAllGpsrFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct):void
+    {
+        foreach ($jtlProduct->getI18ns() as $i18n) {
+            $langId = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
+            $productFeatures = $prestaProduct->getFeatures();
+            foreach ($productFeatures as $productFeature) {
+                $feature = PrestaSpecific::getFeature($langId, $productFeature['id_feature']);
+                if (str_contains($feature['name'], 'gpsr_')) {
+                    #PrestaSpecific::deleteProductFeature();
+                    #$prestaProduct->delete;
+                    (new PrestaSpecific())->deleteSelection($feature);
+                }
+            }
+        }
+
     }
 }
