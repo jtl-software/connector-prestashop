@@ -1447,12 +1447,14 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param JtlProduct $jtlProduct
-     *
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
      * @return void
      * @throws TranslatableAttributeException
+     * @throws \JsonException
+     * @throws \PrestaShopDatabaseException
      */
-    private function addGpsrToDescription(JtlProduct $jtlProduct, $prestaProduct): void
+    private function addGpsrToDescription(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): void
     {
         if (\Configuration::get('jtlconnector_disable_gpsr')) {
             return;
@@ -1511,13 +1513,13 @@ HTML;
     }
 
     /**
-     * @param JtlProduct $jtlProduct
-     * @param PrestaProduct $prestaProduct
+     * @param JtlProduct                           $jtlProduct
+     * @param PrestaProduct                        $prestaProduct
      * @param array<string, array<string, string>> $gpsri18nMap
      * @return void
      * @throws \PrestaShopDatabaseException
      */
-    private function addGpsrToFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, $gpsri18nMap):void
+    private function addGpsrToFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, array $gpsri18nMap): void
     {
         foreach ($jtlProduct->getI18ns() as $i18n) {
             $langId = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
@@ -1542,21 +1544,19 @@ HTML;
     }
 
     /**
-     * @param JtlProduct $jtlProduct
+     * @param JtlProduct    $jtlProduct
      * @param PrestaProduct $prestaProduct
      * @return void
      * @throws \PrestaShopDatabaseException
      */
-    private function deleteAllGpsrFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct):void
+    private function deleteAllGpsrFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): void
     {
         foreach ($jtlProduct->getI18ns() as $i18n) {
-            $langId = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
+            $langId          = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
             $productFeatures = $prestaProduct->getFeatures();
             foreach ($productFeatures as $productFeature) {
                 $feature = PrestaSpecific::getFeature($langId, $productFeature['id_feature']);
                 if (str_contains($feature['name'], 'gpsr_')) {
-                    #PrestaSpecific::deleteProductFeature();
-                    #$prestaProduct->delete;
                     (new PrestaSpecific())->deleteSelection($feature);
                 }
             }
