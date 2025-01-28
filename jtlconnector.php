@@ -375,7 +375,8 @@ class JTLConnector extends Module
                         'jtlconnector_disable_gpsr',
                         Tools::getValue('jtlconnector_disable_gpsr')
                     );
-                    Configuration::updateValue('jtlconnector_gpsr_attributes',
+                    Configuration::updateValue(
+                        'jtlconnector_gpsr_attributes',
                         Tools::getValue('jtlconnector_gpsr_attributes')
                     );
                     Configuration::updateValue(
