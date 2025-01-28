@@ -27,7 +27,6 @@ use Jtl\Connector\Core\Model\ProductVariationI18n as JtlProductVariationI18n;
 use Jtl\Connector\Core\Model\ProductVariationValue as JtlProductVariationValue;
 use Jtl\Connector\Core\Model\ProductVariationValueI18n as JtlProductVariationValueI18n;
 use Jtl\Connector\Core\Model\QueryFilter;
-use Jtl\Connector\Core\Model\Specific;
 use Jtl\Connector\Core\Model\Statistic;
 use Jtl\Connector\Core\Model\TaxRate;
 use Jtl\Connector\Core\Model\TranslatableAttribute;
@@ -970,7 +969,6 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         $prestaProduct->id                  = (int)$jtlProduct->getId()->getEndpoint();
         $prestaProduct->id_manufacturer     = (int)$jtlProduct->getManufacturerId()->getEndpoint();
-        //TODO: wenn $categories leer ist schlägt Abgleich hier fehl
         $prestaProduct->id_category_default = (int)$categories[0]->getCategoryId()->getEndpoint();
         $prestaProduct->date_add            = $jtlProduct->getCreationDate()?->format('Y-m-d H:i:s') ?? '';
         $prestaProduct->date_upd            = $jtlProduct->getModified()?->format('Y-m-d H:i:s') ?? '';
@@ -1482,7 +1480,7 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         foreach ($jtlProduct->getI18ns() as $i18n) {
             foreach ($gpsri18nMap as $gpsri18ns) {
-                $description = $i18n->getDescription() . "<br/><br/>";
+                $description  = $i18n->getDescription() . "<br/><br/>";
                 $description .= '<h3>GPSR Information</h3>';
                 $description .= <<<HTML
                     <table>
