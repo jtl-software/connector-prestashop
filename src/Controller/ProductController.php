@@ -1556,11 +1556,10 @@ HTML;
             $productFeatures = $prestaProduct->getFeatures();
             foreach ($productFeatures as $productFeature) {
                 $feature = PrestaSpecific::getFeature($langId, $productFeature['id_feature']);
-                if (str_contains($feature['name'], 'gpsr_')) {
+                if (\str_contains($feature['name'], 'gpsr_')) {
                     (new PrestaSpecific())->deleteSelection($feature);
                 }
             }
         }
-
     }
 }
