@@ -135,7 +135,7 @@ class GlobalDataController extends AbstractController implements PullInterface, 
                     ->setNameEnglish($prestaLanguage['name'])
                     ->setNameGerman($prestaLanguage['name'])
                     ->setLanguageIso($prestaLanguage['iso_code'])
-                    ->setIsDefault($prestaLanguage['id_lang'] === $this->getPrestaContextLanguageId());
+                    ->setIsDefault((int)$prestaLanguage['id_lang'] === $this->getPrestaContextLanguageId());
 
                 $jtlLanguages[] = $jtlLanguage;
             }
