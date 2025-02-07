@@ -34,6 +34,8 @@ use Jtl\Connector\Core\Model\ProductAttribute as JtlProductAttribute;
 use Jtl\Connector\Core\Model\TranslatableAttributeI18n as JtlTranslatableAttributeI18n;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 use jtl\Connector\Presta\Utils\Utils;
+use Feature as PrestaSpecific;
+use FeatureValue as PrestaSpecificValue;
 use Product as PrestaProduct;
 
 class ProductController extends ProductPriceController implements PullInterface, PushInterface, DeleteInterface
@@ -960,7 +962,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     protected function updatePrestaProduct(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
     {
-        $this->processGpsr($jtlProduct);
+        $this->addGpsrToDescription($jtlProduct, $prestaProduct);
 
         $translations = $this->createPrestaProductTranslations(...$jtlProduct->getI18ns());
         $categories   = $jtlProduct->getCategories();
@@ -1445,12 +1447,14 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param JtlProduct $jtlProduct
-     *
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
      * @return void
      * @throws TranslatableAttributeException
+     * @throws \JsonException
+     * @throws \PrestaShopDatabaseException
      */
-    private function processGpsr(JtlProduct $jtlProduct): void
+    private function addGpsrToDescription(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): void
     {
         if (\Configuration::get('jtlconnector_disable_gpsr')) {
             return;
@@ -1498,6 +1502,63 @@ HTML;
 
                 $description = \str_replace('/data/', $tableData, $description);
                 $i18n->setDescription($description);
+            }
+        }
+
+        if (\Configuration::get('jtlconnector_gpsr_attributes')) {
+            $this->addGpsrToFeatures($jtlProduct, $prestaProduct, $gpsri18nMap);
+        } else {
+            $this->deleteAllGpsrFeatures($jtlProduct, $prestaProduct);
+        }
+    }
+
+    /**
+     * @param JtlProduct                           $jtlProduct
+     * @param PrestaProduct                        $prestaProduct
+     * @param array<string, array<string, string>> $gpsri18nMap
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     */
+    private function addGpsrToFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct, array $gpsri18nMap): void
+    {
+        foreach ($jtlProduct->getI18ns() as $i18n) {
+            $langId = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
+            foreach ($gpsri18nMap as $gpsri18ns) {
+                foreach ($gpsri18ns as $gpsrKey => $gpsrValue) {
+                    $gpsrKeyId   = PrestaSpecific::addFeatureImport($gpsrKey);
+                    $gpsrValueId = PrestaSpecificValue::addFeatureValueImport(
+                        (int)$gpsrKeyId,
+                        $gpsrValue,
+                        (int)$jtlProduct->getId()->getEndpoint(),
+                        $langId,
+                        true
+                    );
+                    $prestaProduct->addFeatureProductImport(
+                        (int)$jtlProduct->getId()->getEndpoint(),
+                        (int)$gpsrKeyId,
+                        (int)$gpsrValueId
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     */
+    private function deleteAllGpsrFeatures(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): void
+    {
+        foreach ($jtlProduct->getI18ns() as $i18n) {
+            $langId          = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
+            $productFeatures = $prestaProduct->getFeatures();
+            foreach ($productFeatures as $productFeature) {
+                $feature = PrestaSpecific::getFeature($langId, $productFeature['id_feature']);
+                if (\str_contains($feature['name'], 'gpsr_')) {
+                    (new PrestaSpecific())->deleteSelection($feature);
+                }
             }
         }
     }
