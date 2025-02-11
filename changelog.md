@@ -1,4 +1,6 @@
 ## unreleased
+
+## 2.0.2 _2025-11-02_
 - CO-2508 - Use wawi tracking lists
 - CO-2686 - fix missing customer website
 - CO-2786 - fix missing tab name
