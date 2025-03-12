@@ -16,6 +16,7 @@ use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
+use PrestaShopBundle\Form\Admin\Catalog\Category\CategoryType;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
@@ -87,8 +88,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             ->setLevel($level)
             ->setParentCategoryId(
                 ($prestaParentCategoryId === $prestaRootCategoryId || $prestaParentCategoryId == 2)
-                ? new Identity('')
-                : new Identity((string)$prestaParentCategoryId)
+                    ? new Identity('')
+                    : new Identity((string)$prestaParentCategoryId)
             );
 
 
@@ -166,16 +167,28 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     public function push(AbstractModel $jtlCategory): AbstractModel
     {
         /** @var JtlCategory $jtlCategory */
+        $parentEndpoint = $this->mapper->getEndpointId(
+            IdentityType::CATEGORY,
+            $jtlCategory->getParentCategoryId()->getHost()
+        );
+        if ($parentEndpoint !== null && $parentEndpoint !== $jtlCategory->getParentCategoryId()->getEndpoint()) {
+            $jtlCategory->setParentCategoryId(
+                new Identity($parentEndpoint, $jtlCategory->getParentCategoryId()->getHost())
+            );
+        }
+
         $endpoint = $jtlCategory->getId()->getEndpoint();
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
             $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory((int)$endpoint));
-            if (!$prestaCategory->update()) {
-                throw new \RuntimeException('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
-            }
+            if ($prestaCategory->id !== null) {
+                if (!$prestaCategory->update()) {
+                    throw new \RuntimeException('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
+                }
 
-            return $jtlCategory;
+                return $jtlCategory;
+            }
         }
 
         $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
@@ -191,6 +204,9 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
         }
 
+        if ($this->mapper->getEndpointId(IdentityType::CATEGORY, $jtlCategory->getId()->getHost())) {
+            $this->mapper->delete(IdentityType::CATEGORY, null, $jtlCategory->getId()->getHost());
+        }
         $this->mapper->save(IdentityType::CATEGORY, (string)$prestaCategory->id, $jtlCategory->getId()->getHost());
 
         return $jtlCategory;
@@ -255,8 +271,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             $languageIso = $this->getPrestaLanguageIdFromIso($jtlCategoryI18n->getLanguageIso());
             $name        = \preg_replace('/[<>;=#{}]/', '_', $jtlCategoryI18n->getName());
             $url         = \Tools::str2url(empty($jtlCategoryI18n->getUrlPath())
-                ? $jtlCategoryI18n->getName()
-                : $jtlCategoryI18n->getUrlPath());
+                                               ? $jtlCategoryI18n->getName()
+                                               : $jtlCategoryI18n->getUrlPath());
 
             $langId                                   = $languageIso;
             $translations[$langId]['name']            = \is_string($name)
