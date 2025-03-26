@@ -1,4 +1,5 @@
 ## unreleased
+- CO-2904 - Fix broken linkings for categories
 
 ## 2.0.2 _2025-11-02_
 - CO-2508 - Use wawi tracking lists
