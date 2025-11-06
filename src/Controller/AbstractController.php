@@ -115,10 +115,10 @@ abstract class AbstractController implements LoggerAwareInterface
 
     /**
      * @param string $languageIso
-     * @return int
+     * @return int|null
      * @throws PrestaShopDatabaseException
      */
-    protected function getPrestaCountryIdFromIso(string $languageIso): int
+    protected function getPrestaCountryIdFromIso(string $languageIso): ?int
     {
         $sql = (new QueryBuilder())
             ->select('id_country')
@@ -128,7 +128,7 @@ abstract class AbstractController implements LoggerAwareInterface
         /** @var array{0: array{id_country: string|null}}|array{} $result */
         $result = $this->db->executeS($sql->build());
         if (\count($result) === 0 || !isset($result[0]['id_country'])) {
-            return $this->getDefaultPrestaShopCountryId();
+            return null;
         }
         return (int)$result[0]['id_country'];
     }

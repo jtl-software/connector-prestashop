@@ -230,12 +230,15 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      * @param PrestaAddress  $prestaAddress
      * @param PrestaCustomer $prestaCustomer
      * @return PrestaAddress
+     *
+     * @throws \PrestaShopDatabaseException
      */
     protected function createPrestaAddress(
         JtlCustomer $jtlCustomer,
         PrestaAddress $prestaAddress,
         PrestaCustomer $prestaCustomer
     ): PrestaAddress {
+        $countryId = $this->getPrestaCountryIdFromIso($jtlCustomer->getCountryIso());
 
         $prestaAddress->id_customer  = $prestaCustomer->id;
         $prestaAddress->alias        = $jtlCustomer->getStreet();
@@ -248,7 +251,10 @@ class CustomerController extends AbstractController implements PullInterface, Pu
         $prestaAddress->phone        = $jtlCustomer->getPhone();
         $prestaAddress->phone_mobile = $jtlCustomer->getMobile();
         $prestaAddress->vat_number   = $jtlCustomer->getVatNumber();
-        $prestaAddress->id_country   = $this->getPrestaCountryIdFromIso($jtlCustomer->getCountryIso());
+
+        if ($countryId !== null) {
+            $prestaAddress->id_country = $countryId;
+        }
 
         return $prestaAddress;
     }
