@@ -1192,6 +1192,8 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param TaxRate ...$taxRates
      * @return int|null
      * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function findTaxClassId(TaxRate ...$taxRates): ?int
     {
@@ -1201,9 +1203,16 @@ class ProductController extends ProductPriceController implements PullInterface,
         $conditions      = [];
 
         foreach ($taxRates as $taxRate) {
-            if (\array_key_exists($this->getPrestaCountryIdFromIso($taxRate->getCountryIso()), $activeCountries)) {
-                $jtlTaxes[] = $taxRate;
+            $countryId = $this->getPrestaCountryIdFromIso($taxRate->getCountryIso());
+            if ($countryId !== null) {
+                if (\array_key_exists($countryId, $activeCountries)) {
+                    $jtlTaxes[] = $taxRate;
+                }
             }
+        }
+
+        if (empty($jtlTaxes)) {
+            throw new \RuntimeException('No active country found for submitted tax rates');
         }
 
         foreach (\Tax::getTaxes() as $tax) {
@@ -1211,10 +1220,11 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         foreach ($jtlTaxes as $jtlTax) {
-            if (!empty($jtlTax->getRate())) {
+            if (!empty($jtlTax->getRate()) && isset($prestaTaxes[\number_format($jtlTax->getRate(), 3)])) {
+                $countryId    = $this->getPrestaCountryIdFromIso($jtlTax->getCountryIso());
                 $conditions[] = \sprintf(
                     'tr.id_country = %s AND tr.id_tax = %s',
-                    $this->getPrestaCountryIdFromIso($jtlTax->getCountryIso()),
+                    $countryId,
                     $prestaTaxes[\number_format($jtlTax->getRate(), 3)]
                 );
             }
