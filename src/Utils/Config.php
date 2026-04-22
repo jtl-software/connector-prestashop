@@ -90,7 +90,7 @@ class Config
     {
         self::getInstance();
 
-        return self::$data->$name;
+        return self::has($name) ? self::$data->$name : null;
     }
 
     /**
