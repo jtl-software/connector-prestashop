@@ -1163,7 +1163,6 @@ class ProductController extends ProductPriceController implements PullInterface,
             $translations[$langId]['description']       = $jtlProductI18n->getDescription();
             $translations[$langId]['description_short'] = $jtlProductI18n->getShortDescription();
             $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
-            $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
             $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
             $translations[$langId]['link_rewrite']      = \Tools::str2url(
                 empty($jtlProductI18n->getUrlPath())

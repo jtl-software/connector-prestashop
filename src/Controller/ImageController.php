@@ -61,7 +61,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
             foreach ($images as $image) {
                 $path = \Image::getImgFolderStatic($image['id_image']);
 
-                if (\file_exists(\_PS_PROD_IMG_DIR_ . $path . $image['id_image'] . '.jpg')) {
+                if (\file_exists(\_PS_PRODUCT_IMG_DIR_ . $path . $image['id_image'] . '.jpg')) {
                     $prestaImages[] = [
                         'id'           => (string)$image['id_image'],
                         'foreignKey'   => (string)$image['id_product'],

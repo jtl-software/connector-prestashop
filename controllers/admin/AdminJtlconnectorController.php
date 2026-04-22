@@ -32,9 +32,12 @@ class AdminJtlconnectorController extends ModuleAdminController
      */
     public function initContent(): void
     {
-        $context = Context::getContext();
-        if ($context !== null && $context->link !== null) {
-            Tools::redirectAdmin($context->link->getAdminLink('AdminModules') . '&configure=jtlconnector');
+        $sfRouter = $this->get('router');
+        if ($sfRouter instanceof \Symfony\Component\Routing\RouterInterface) {
+            $url = $sfRouter->generate('admin_module_configure_action', [
+                'module_name' => 'jtlconnector',
+            ]);
+            Tools::redirectAdmin($url);
         }
     }
 }
