@@ -173,11 +173,13 @@ class JTLConnector extends Module
         $this->convertLinkingTables();
 
 
-        // remove old tab if exists
-        $id_tab = (int)Tab::getIdFromClassName('AdminJtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // remove old tab if exists (check both old and new class names for migration)
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $tab            = new \Tab();
@@ -309,10 +311,13 @@ class JTLConnector extends Module
     public function uninstall(): bool
     {
 
-        $id_tab = (int)Tab::getIdFromClassName('AdminJtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // remove tab (check both old and new class names for migration)
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
