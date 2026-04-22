@@ -174,7 +174,7 @@ class JTLConnector extends Module
 
 
         // remove old tab if exists
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
+        $id_tab = (int)Tab::getIdFromClassName('AdminJtlconnector');
         if ($id_tab) {
             $tab = new Tab($id_tab);
             $tab->delete();
@@ -192,7 +192,7 @@ class JTLConnector extends Module
         $tab->active     = true;
         $tab->position   = 0;
         $tab->module     = $this->name;
-        $tab->class_name = "jtlconnector";
+        $tab->class_name = "AdminJtlconnector";
         $tab->save();
 
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
@@ -309,7 +309,7 @@ class JTLConnector extends Module
     public function uninstall(): bool
     {
 
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
+        $id_tab = (int)Tab::getIdFromClassName('AdminJtlconnector');
         if ($id_tab) {
             $tab = new Tab($id_tab);
             $tab->delete();
