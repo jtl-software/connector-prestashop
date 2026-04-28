@@ -7,6 +7,8 @@ dist/**
 zip/**
 db/connector.s3db*
 .idea/**
+.code
+.DS_Store
 config_de.xml
 config.xml
 logs/**
