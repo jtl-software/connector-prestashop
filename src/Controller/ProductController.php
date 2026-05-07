@@ -450,7 +450,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setDescription((string)$prestaProductI18n['description'])
             ->setShortDescription((string)$prestaProductI18n['description_short'])
             ->setMetaDescription((string)$prestaProductI18n['meta_description'])
-            ->setDeliveryStatus((string)($prestaProductI18n['delivery_in_stock'] ?? ''))
+            ->setDeliveryStatus((string)$prestaProductI18n['delivery_in_stock'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaProductI18n['id_lang']));
     }
 
@@ -1266,8 +1266,8 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param JtlProduct    $jtlProduct
-     * @param PrestaProduct $prestaProduct
+     * @param JtlProduct                        $jtlProduct
+     * @param PrestaProduct                     $prestaProduct
      * @param array<int, array<string, string>> $translations
      * @return void
      */
@@ -1288,9 +1288,13 @@ class ProductController extends ProductPriceController implements PullInterface,
 
         if ($hasDeliveryStatus) {
             foreach ($jtlProduct->getI18ns() as $i18n) {
-                $langId = $this->getPrestaLanguageIdFromIso($i18n->getLanguageIso());
-                $prestaProduct->delivery_in_stock[$langId]  = $i18n->getDeliveryStatus();
-                $prestaProduct->delivery_out_stock[$langId] = $i18n->getDeliveryStatus();
+                $langId         = $this->getPrestaLanguageIdFromIso(
+                    $i18n->getLanguageIso()
+                );
+                $deliveryStatus = $i18n->getDeliveryStatus();
+
+                $prestaProduct->delivery_in_stock[$langId]  = $deliveryStatus;
+                $prestaProduct->delivery_out_stock[$langId] = $deliveryStatus;
             }
             $prestaProduct->additional_delivery_times = 1;
         } else {
