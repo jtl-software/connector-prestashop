@@ -1,6 +1,7 @@
 ## unreleased
 - CO-2904 - fix broken linkings for categories
 - CO-3043 - fix taxrate not found
+- CO-2793 - fix base price not set
 
 ## 2.0.2 _2025-11-02_
 - CO-2508 - Use wawi tracking lists
