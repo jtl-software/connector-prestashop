@@ -26,7 +26,7 @@
   },
   "require": {
     "php": ">= 8.1",
-    "jtl/connector": "^5.2.10",
+    "jtl/connector": "5.3.0",
     "symfony/yaml": "^3.4",
     "ext-json": "*",
     "phing/phing": "^2.16",

@@ -1296,7 +1296,7 @@ class ProductController extends ProductPriceController implements PullInterface,
                 $prestaProduct->delivery_in_stock[$langId]  = $deliveryStatus;
                 $prestaProduct->delivery_out_stock[$langId] = $deliveryStatus;
             }
-            $prestaProduct->additional_delivery_times = 1;
+            $prestaProduct->additional_delivery_times = 2;
         } else {
             $inStock  = $jtlProduct->getAdditionalHandlingTime();
             $outStock = $jtlProduct->getSupplierDeliveryTime();
@@ -1310,7 +1310,7 @@ class ProductController extends ProductPriceController implements PullInterface,
                         ? \sprintf('%d', $outStock)
                         : '';
                 }
-                $prestaProduct->additional_delivery_times = 1;
+                $prestaProduct->additional_delivery_times = 2;
             }
         }
     }
