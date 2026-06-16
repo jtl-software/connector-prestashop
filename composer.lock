@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "40f92eac50f872adaf613e67b62dda07",
+    "content-hash": "b8eabce117f5d1a8f83b08d68e56257e",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -1001,16 +1001,16 @@
         },
         {
             "name": "jtl/connector",
-            "version": "5.3.1",
+            "version": "5.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jtl-software/connector-core.git",
-                "reference": "1aa0164d1b14949fb914675469e9030b51753ce1"
+                "reference": "eb1bd0a4e73ec58110315f9abbbccece7adeb6e0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jtl-software/connector-core/zipball/1aa0164d1b14949fb914675469e9030b51753ce1",
-                "reference": "1aa0164d1b14949fb914675469e9030b51753ce1",
+                "url": "https://api.github.com/repos/jtl-software/connector-core/zipball/eb1bd0a4e73ec58110315f9abbbccece7adeb6e0",
+                "reference": "eb1bd0a4e73ec58110315f9abbbccece7adeb6e0",
                 "shasum": ""
             },
             "require": {
@@ -1083,9 +1083,9 @@
             ],
             "support": {
                 "issues": "https://github.com/jtl-software/connector-core/issues",
-                "source": "https://github.com/jtl-software/connector-core/tree/5.3.1"
+                "source": "https://github.com/jtl-software/connector-core/tree/5.3.0"
             },
-            "time": "2026-05-20T12:45:06+00:00"
+            "time": "2025-01-15T09:31:36+00:00"
         },
         {
             "name": "laravel/serializable-closure",
