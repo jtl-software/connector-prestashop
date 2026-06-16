@@ -6,7 +6,6 @@ on:
       - '*'
     branches-ignore:
       - '**/gh-readonly-queue/**'
-  pull_request:
 
 permissions:
   contents: read
