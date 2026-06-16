@@ -46,3 +46,7 @@ jobs:
       - name: PHPStan
         if: always()
         run: composer run phpstan -- --error-format=github
+
+      - name: PHPUnit
+        if: always()
+        run: composer run test
