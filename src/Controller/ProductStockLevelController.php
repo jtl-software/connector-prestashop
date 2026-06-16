@@ -48,7 +48,11 @@ class ProductStockLevelController extends AbstractController implements PushInte
                 $combiId = 0;
             }
             if (!empty($productId)) {
-                $model->setStockLevel((int) \StockAvailable::getQuantity((int) $productId, (int) $combiId));
+                $quantity = (int) \StockAvailable::getQuantityAvailableByProduct(
+                    (int) $productId,
+                    (int) $combiId
+                );
+                $model->setStockLevel($quantity);
             }
         }
 
