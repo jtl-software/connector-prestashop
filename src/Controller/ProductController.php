@@ -1359,11 +1359,14 @@ class ProductController extends ProductPriceController implements PullInterface,
             }
         }
 
-        $prices         = $jtlProduct->getPrices();
-        $lastPriceEntry = \end($prices);
-
-        if ($lastPriceEntry !== false) {
-            $prestaProduct->price = \round($lastPriceEntry->getItems()[0]->getNetPrice(), 6);
+        foreach ($jtlProduct->getPrices() as $priceEntry) {
+            if ($priceEntry->getCustomerGroupId()->getEndpoint() === '') {
+                $items = $priceEntry->getItems();
+                if (!empty($items)) {
+                    $prestaProduct->price = \round($items[0]->getNetPrice(), 6);
+                }
+                break;
+            }
         }
 
         $rrp = $jtlProduct->getRecommendedRetailPrice();

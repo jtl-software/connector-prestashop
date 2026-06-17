@@ -27,15 +27,31 @@ class ProductPriceController extends AbstractController implements PushInterface
 
         if (!empty($endpoint)) {
             [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint, null);
+            $combiIdInt            = $combiId !== null ? (int)$combiId : 0;
 
-            foreach ($model->getPrices() as $price) {
-                if (!empty($productId) && !\is_null($combiId)) {
+            if (!empty($productId)) {
+                $this->deleteGroupSpecificPrices((int)$productId, $combiIdInt);
+
+                foreach ($model->getPrices() as $price) {
                     $customerGroupId = (int)$price->getCustomerGroupId()->getEndpoint();
-                    $this->handlePrices((int)$productId, (int)$combiId, $customerGroupId, ...$price->getItems());
+                    $this->handlePrices((int)$productId, $combiIdInt, $customerGroupId, ...$price->getItems());
                 }
             }
         }
         return $model;
+    }
+
+    /**
+     * @param int $productId
+     * @param int $combiId
+     * @return void
+     */
+    protected function deleteGroupSpecificPrices(int $productId, int $combiId): void
+    {
+        $this->db->delete(
+            'specific_price',
+            "id_product = $productId AND id_product_attribute = $combiId AND id_group > 0"
+        );
     }
 
     /**
@@ -48,13 +64,19 @@ class ProductPriceController extends AbstractController implements PushInterface
      */
     protected function findSpecificPrice(int $productId, int $combiId, int $groupId): \SpecificPrice
     {
-        $sql = (new QueryBuilder())
+        $shopId = $this->getPrestaContextShopId();
+        $sql    = (new QueryBuilder())
             ->select('id_specific_price')
             ->from('specific_price')
-            ->where("id_product = $productId AND id_product_attribute = $combiId AND id_group = $groupId");
+            ->where(
+                "id_product = $productId"
+                . " AND id_product_attribute = $combiId"
+                . " AND id_group = $groupId"
+                . " AND id_shop = $shopId"
+            );
 
         $id = $this->db->getValue($sql->build());
-        if (\is_numeric($id) & (int)$id > 0) {
+        if (\is_numeric($id) && (int)$id > 0) {
             return new \SpecificPrice((int)$id);
         }
 
@@ -82,7 +104,7 @@ class ProductPriceController extends AbstractController implements PushInterface
         $price->id_group             = $groupId;
         $price->price                = \round($priceItem->getNetPrice(), 6);
         $price->from_quantity        = $priceItem->getQuantity();
-        $price->id_shop              = 0;
+        $price->id_shop              = $this->getPrestaContextShopId();
         $price->id_currency          = 0;
         $price->id_country           = 0;
         $price->id_customer          = 0;
