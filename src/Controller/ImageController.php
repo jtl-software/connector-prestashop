@@ -247,20 +247,36 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
+     * @throws DefinitionException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$models): array
+    {
+        $result = [];
+        foreach ($models as $model) {
+            $result[] = $this->pushSingle($model);
+        }
+        return $result;
+    }
+
+    /**
      * @param AbstractModel $jtlImage
      * @return AbstractModel
      * @throws DefinitionException
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlImage): AbstractModel
+    private function pushSingle(AbstractModel $jtlImage): AbstractModel
     {
         /** @var AbstractImage $jtlImage */
         $id = $jtlImage->getForeignKey()->getEndpoint();
 
         if (!empty($id)) {
             if (\in_array($jtlImage->getRelationType(), ['category', 'manufacturer'])) {
-                $this->delete($jtlImage);
+                $this->deleteSingle($jtlImage);
             }
 
             $generate_hight_dpi_images = (bool)\Configuration::get('PS_HIGHT_DPI');
@@ -457,13 +473,29 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
+     * @throws \Jtl\Connector\Core\Exception\DefinitionException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function delete(AbstractModel ...$models): array
+    {
+        $result = [];
+        foreach ($models as $model) {
+            $result[] = $this->deleteSingle($model);
+        }
+        return $result;
+    }
+
+    /**
      * @param AbstractModel $jtlImage
      * @return AbstractModel
      * @throws \Jtl\Connector\Core\Exception\DefinitionException
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $jtlImage): AbstractModel
+    private function deleteSingle(AbstractModel $jtlImage): AbstractModel
     {
         /** @var AbstractImage $jtlImage */
         $fId = $jtlImage->getForeignKey()->getEndpoint();

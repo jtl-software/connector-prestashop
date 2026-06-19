@@ -158,13 +158,29 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
+     * @throws PrestaShopException
+     * @throws PrestaShopDatabaseException
+     * @throws \RuntimeException
+     */
+    public function push(AbstractModel ...$models): array
+    {
+        $result = [];
+        foreach ($models as $model) {
+            $result[] = $this->pushSingle($model);
+        }
+        return $result;
+    }
+
+    /**
      * @param AbstractModel $jtlCategory
      * @return AbstractModel
      * @throws PrestaShopException
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
      */
-    public function push(AbstractModel $jtlCategory): AbstractModel
+    private function pushSingle(AbstractModel $jtlCategory): AbstractModel
     {
         /** @var JtlCategory $jtlCategory */
         $parentEndpoint = $this->mapper->getEndpointId(
@@ -297,18 +313,22 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var JtlCategory $model */
-        $category = new PrestaCategory((int)$model->getId()->getEndpoint());
+        $result = [];
+        foreach ($models as $model) {
+            /** @var JtlCategory $model */
+            $category = new PrestaCategory((int)$model->getId()->getEndpoint());
 
-        $category->delete();
+            $category->delete();
 
-        return $model;
+            $result[] = $model;
+        }
+        return $result;
     }
 
 

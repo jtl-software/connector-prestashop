@@ -197,12 +197,27 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param AbstractModel $jtlSpecific
-     * @return Specific
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlSpecific): AbstractModel
+    public function push(AbstractModel ...$models): array
+    {
+        $result = [];
+        foreach ($models as $model) {
+            $result[] = $this->pushSingle($model);
+        }
+        return $result;
+    }
+
+    /**
+     * @param AbstractModel $jtlSpecific
+     * @return AbstractModel
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    private function pushSingle(AbstractModel $jtlSpecific): AbstractModel
     {
         /** @var JtlSpecific $jtlSpecific */
         $endpoint = $jtlSpecific->getId()->getEndpoint();
@@ -325,19 +340,23 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param AbstractModel $model
-     * @return Specific
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var Specific $model */
-        $specific = new PrestaSpecific((int)$model->getId()->getEndpoint());
+        $result = [];
+        foreach ($models as $model) {
+            /** @var Specific $model */
+            $specific = new PrestaSpecific((int)$model->getId()->getEndpoint());
 
-        $specific->delete();
+            $specific->delete();
 
-        return $model;
+            $result[] = $model;
+        }
+        return $result;
     }
 
     /**

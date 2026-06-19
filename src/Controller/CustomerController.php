@@ -145,13 +145,29 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException|Exception
+     * @throws \Exception
+     */
+    public function push(AbstractModel ...$models): array
+    {
+        $result = [];
+        foreach ($models as $model) {
+            $result[] = $this->pushSingle($model);
+        }
+        return $result;
+    }
+
+    /**
      * @param AbstractModel $jtlCustomer
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException|Exception
      * @throws \Exception
      */
-    public function push(AbstractModel $jtlCustomer): AbstractModel
+    private function pushSingle(AbstractModel $jtlCustomer): AbstractModel
     {
         /** @var JtlCustomer $jtlCustomer */
         $endpoint = $jtlCustomer->getId()->getEndpoint();
@@ -260,18 +276,22 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var JtlCustomer $model */
-        $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
+        $result = [];
+        foreach ($models as $model) {
+            /** @var JtlCustomer $model */
+            $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
 
-        $customer->delete();
+            $customer->delete();
 
-        return $model;
+            $result[] = $model;
+        }
+        return $result;
     }
 
     /**

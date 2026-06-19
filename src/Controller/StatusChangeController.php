@@ -12,12 +12,27 @@ use Jtl\Connector\Core\Model\StatusChange;
 class StatusChangeController extends AbstractController implements PushInterface
 {
     /**
-     * @param AbstractModel $model
-     * @return StatusChange
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $model): AbstractModel
+    public function push(AbstractModel ...$models): array
+    {
+        $result = [];
+        foreach ($models as $model) {
+            $result[] = $this->pushSingle($model);
+        }
+        return $result;
+    }
+
+    /**
+     * @param AbstractModel $model
+     * @return AbstractModel
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    private function pushSingle(AbstractModel $model): AbstractModel
     {
         /** @var StatusChange $model */
         $orderId = $model->getCustomerOrderId()?->getEndpoint();
