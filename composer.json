@@ -44,8 +44,7 @@
   },
   "autoload": {
     "psr-4": {
-      "jtl\\Connector\\Presta\\": "src/",
-      "Tests\\": "tests/"
+      "jtl\\Connector\\Presta\\": "src/"
     },
     "psr-0": {
       "": "plugins/"
