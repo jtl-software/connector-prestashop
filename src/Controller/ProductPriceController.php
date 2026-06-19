@@ -15,30 +15,34 @@ use Jtl\Connector\Core\Model\ProductPriceItem as JtlProductPriceItem;
 class ProductPriceController extends AbstractController implements PushInterface
 {
     /**
-     * @param AbstractModel $model
-     * @return JtlProduct
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $model): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var JtlProduct $model */
-        $endpoint = $model->getId()->getEndpoint();
+        $result = [];
+        foreach ($models as $model) {
+            /** @var JtlProduct $model */
+            $endpoint = $model->getId()->getEndpoint();
 
-        if (!empty($endpoint)) {
-            [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint, null);
-            $combiIdInt            = $combiId !== null ? (int)$combiId : 0;
+            if (!empty($endpoint)) {
+                [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint, null);
+                $combiIdInt            = $combiId !== null ? (int)$combiId : 0;
 
-            if (!empty($productId)) {
-                $this->deleteGroupSpecificPrices((int)$productId, $combiIdInt);
+                if (!empty($productId)) {
+                    $this->deleteGroupSpecificPrices((int)$productId, $combiIdInt);
 
-                foreach ($model->getPrices() as $price) {
-                    $customerGroupId = (int)$price->getCustomerGroupId()->getEndpoint();
-                    $this->handlePrices((int)$productId, $combiIdInt, $customerGroupId, ...$price->getItems());
+                    foreach ($model->getPrices() as $price) {
+                        $customerGroupId = (int)$price->getCustomerGroupId()->getEndpoint();
+                        $this->handlePrices((int)$productId, $combiIdInt, $customerGroupId, ...$price->getItems());
+                    }
                 }
             }
+            $result[] = $model;
         }
-        return $model;
+        return $result;
     }
 
     /**

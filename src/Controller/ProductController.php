@@ -721,12 +721,27 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$models): array
+    {
+        $result = [];
+        foreach ($models as $model) {
+            $result[] = $this->pushSingle($model);
+        }
+        return $result;
+    }
+
+    /**
      * @param AbstractModel $jtlProduct
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlProduct): AbstractModel
+    private function pushSingle(AbstractModel $jtlProduct): AbstractModel
     {
         /** @var JtlProduct $jtlProduct */
         $endpoint        = $jtlProduct->getId()->getEndpoint();
@@ -1400,27 +1415,30 @@ class ProductController extends ProductPriceController implements PullInterface,
 
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var JtlProduct $model */
-        $endpoint = $model->getId()->getEndpoint();
-        if ($endpoint !== '') {
-            [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
-            if (!empty($combiId)) {
-                $obj = new \Product((int)$art);
-            } else {
-                $obj = new Combination((int)$combiId);
+        $result = [];
+        foreach ($models as $model) {
+            /** @var JtlProduct $model */
+            $endpoint = $model->getId()->getEndpoint();
+            if ($endpoint !== '') {
+                [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
+                if (!empty($combiId)) {
+                    $obj = new \Product((int)$art);
+                } else {
+                    $obj = new Combination((int)$combiId);
+                }
+
+                $obj->delete();
             }
-
-            $obj->delete();
+            $result[] = $model;
         }
-
-        return $model;
+        return $result;
     }
 
     /**

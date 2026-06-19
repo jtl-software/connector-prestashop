@@ -51,6 +51,11 @@
       "": "plugins/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "jtl\\Connector\\Presta\\Tests\\": "tests/"
+    }
+  },
   "require-dev": {
     "stancer/php-stubs-prestashop": "^8.1",
     "jtl/connector-cq": "*",
