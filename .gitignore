@@ -21,3 +21,5 @@ tmp/**
 var
 .phpunit.result.cache
 phpcs-report.xml
+coverage
+.claude/
