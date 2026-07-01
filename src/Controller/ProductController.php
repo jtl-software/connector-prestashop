@@ -979,18 +979,18 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->reference           = $jtlProduct->getSku();
         $prestaProduct->upc                 = $jtlProduct->getUpc();
         $prestaProduct->isbn                = $jtlProduct->getIsbn();
-        $taxRulesGroupId = $this->findTaxClassId(...$jtlProduct->getTaxRates());
+        $taxRulesGroupId                    = $this->findTaxClassId(...$jtlProduct->getTaxRates());
         if ($taxRulesGroupId !== null) {
             $prestaProduct->id_tax_rules_group = $taxRulesGroupId;
         }
-        $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
-        $prestaProduct->unit_price          = $this->calculateUnitPrice($jtlProduct);
-        $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
-        $prestaProduct->active              = $jtlProduct->getIsActive();
-        $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
-        $prestaProduct->minimal_quantity    = (int)$jtlProduct->getMinimumOrderQuantity();
-        $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
-        $prestaProduct->wholesale_price     = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
+        $prestaProduct->unity            = $this->createPrestaBasePrice($jtlProduct);
+        $prestaProduct->unit_price       = $this->calculateUnitPrice($jtlProduct);
+        $prestaProduct->available_date   = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
+        $prestaProduct->active           = $jtlProduct->getIsActive();
+        $prestaProduct->on_sale          = $jtlProduct->getIsTopProduct();
+        $prestaProduct->minimal_quantity = (int)$jtlProduct->getMinimumOrderQuantity();
+        $prestaProduct->mpn              = $jtlProduct->getManufacturerNumber();
+        $prestaProduct->wholesale_price  = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
 
         foreach ($translations as $key => $translation) {
             $prestaProduct->name[$key]              = $translation['name'];
@@ -1038,6 +1038,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @return int
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttributeGroup(JtlProductVariation $jtlVariation): int
     {
@@ -1068,7 +1069,13 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         $fallbackTranslation = \reset($groupTranslations);
-        foreach (\Language::getLanguages(true) as $lang) {
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute group translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
             $langId = (int)$lang['id_lang'];
             if (!isset($groupTranslations[$langId])) {
                 $groupTranslations[$langId] = $fallbackTranslation;
@@ -1111,6 +1118,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param int                      $prestaAttributeGroupId
      * @return int
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttribute(JtlProductVariationValue $jtlValue, int $prestaAttributeGroupId): int
     {
@@ -1127,7 +1135,13 @@ class ProductController extends ProductPriceController implements PullInterface,
         $attributeTranslations = $this->createPrestaAttributeTranslations($jtlValue);
 
         $fallbackTranslation = \reset($attributeTranslations);
-        foreach (\Language::getLanguages(true) as $lang) {
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
             $langId = (int)$lang['id_lang'];
             if (!isset($attributeTranslations[$langId])) {
                 $attributeTranslations[$langId] = $fallbackTranslation;
@@ -1230,7 +1244,9 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         if (empty($jtlTaxes)) {
-            $this->logger->warning('No active country found for submitted tax rates — tax rule group will not be updated');
+            $this->logger->warning(
+                'No active country found for submitted tax rates — tax rule group will not be updated'
+            );
             return null;
         }
 

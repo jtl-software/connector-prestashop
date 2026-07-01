@@ -235,11 +235,11 @@ class CategoryController extends AbstractPushController implements PullInterface
                 ? $prestaRootCategoryId
                 : (int)$jtlCategory->getParentCategoryId()->getEndpoint();
 
-        $prestaCategory->name             = \is_array($prestaCategory->name) ? $prestaCategory->name : [];
-        $prestaCategory->description      = \is_array($prestaCategory->description) ? $prestaCategory->description : [];
-        $prestaCategory->meta_description = \is_array($prestaCategory->meta_description) ? $prestaCategory->meta_description : [];
-        $prestaCategory->meta_keywords    = \is_array($prestaCategory->meta_keywords) ? $prestaCategory->meta_keywords : [];
-        $prestaCategory->link_rewrite     = \is_array($prestaCategory->link_rewrite) ? $prestaCategory->link_rewrite : [];
+        $prestaCategory->name             = $this->ensureArray($prestaCategory->name);
+        $prestaCategory->description      = $this->ensureArray($prestaCategory->description);
+        $prestaCategory->meta_description = $this->ensureArray($prestaCategory->meta_description);
+        $prestaCategory->meta_keywords    = $this->ensureArray($prestaCategory->meta_keywords);
+        $prestaCategory->link_rewrite     = $this->ensureArray($prestaCategory->link_rewrite);
 
         foreach ($translations as $key => $translation) {
             $prestaCategory->name[$key]             = $translation['name'];
@@ -250,6 +250,15 @@ class CategoryController extends AbstractPushController implements PullInterface
         }
 
         return $prestaCategory;
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<mixed>
+     */
+    private function ensureArray(mixed $value): array
+    {
+        return \is_array($value) ? $value : [];
     }
 
     /**
@@ -304,10 +313,11 @@ class CategoryController extends AbstractPushController implements PullInterface
         if (!empty($translations)) {
             $fallback        = \reset($translations);
             $activeLanguages = \Language::getLanguages(true, $this->getPrestaContextShopId());
+            /** @var array<int, array<string, int|string>> $activeLanguages */
             foreach ($activeLanguages as $lang) {
                 $psLangId = (int)$lang['id_lang'];
                 if (!isset($translations[$psLangId])) {
-                    $url = \Tools::str2url($fallback['name']);
+                    $url                            = \Tools::str2url($fallback['name']);
                     $translations[$psLangId]        = $fallback;
                     $translations[$psLangId]['url'] = \is_string($url) ? $url : $fallback['url'];
                 }

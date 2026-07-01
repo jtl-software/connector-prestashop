@@ -103,7 +103,7 @@ class ProductPriceController extends AbstractPushController
         $price->id_product_attribute = $combiId;
         $price->id_group             = $groupId;
         $price->price                = \round($priceItem->getNetPrice(), 6);
-        $price->from_quantity        = max(1, $priceItem->getQuantity());
+        $price->from_quantity        = \max(1, $priceItem->getQuantity());
         $price->id_shop              = $this->getPrestaContextShopId();
         $price->id_currency          = 0;
         $price->id_country           = 0;
