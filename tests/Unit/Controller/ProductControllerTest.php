@@ -39,33 +39,13 @@ final class ProductControllerTest extends TestCase
         $mapperProp->setValue($this->controller, $this->mapper);
     }
 
-    public function testDeleteReturnsEmptyArrayForNoModels(): void
-    {
-        $result = $this->controller->delete();
-
-        self::assertSame([], $result);
-    }
-
-    public function testDeleteReturnsAllPassedModels(): void
+    public function testDeleteReturnsPassedModel(): void
     {
         $model = $this->createModelWithEndpoint('');
 
         $result = $this->controller->delete($model);
 
-        self::assertCount(1, $result);
-        self::assertSame($model, $result[0]);
-    }
-
-    public function testDeleteHandlesMultipleModels(): void
-    {
-        $model1 = $this->createModelWithEndpoint('');
-        $model2 = $this->createModelWithEndpoint('');
-
-        $result = $this->controller->delete($model1, $model2);
-
-        self::assertCount(2, $result);
-        self::assertSame($model1, $result[0]);
-        self::assertSame($model2, $result[1]);
+        self::assertSame($model, $result);
     }
 
     private function createModelWithEndpoint(string $endpoint): JtlProduct

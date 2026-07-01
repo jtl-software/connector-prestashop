@@ -4,37 +4,32 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta\Controller;
 
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Product as JtlProduct;
 use jtl\Connector\Presta\Utils\Utils;
 
-class ProductStockLevelController extends AbstractController implements PushInterface
+class ProductStockLevelController extends AbstractPushController
 {
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
+     * @param AbstractModel $model
+     * @return AbstractModel
      */
-    public function push(AbstractModel ...$models): array
+    protected function doPush(AbstractModel $model): AbstractModel
     {
-        $result = [];
-        foreach ($models as $model) {
-            /** @var JtlProduct $model */
-            $endpoint = $model->getId()->getEndpoint();
+        /** @var JtlProduct $model */
+        $endpoint = $model->getId()->getEndpoint();
 
-            if (!empty($endpoint)) {
-                [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint);
-                if (empty($combiId)) {
-                    $combiId = 0;
-                }
-                if (!empty($productId)) {
-                    \StockAvailable::setQuantity((int) $productId, (int) $combiId, (int) $model->getStockLevel());
-                }
+        if (!empty($endpoint)) {
+            [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint);
+            if (empty($combiId)) {
+                $combiId = 0;
             }
-
-            $result[] = $model;
+            if (!empty($productId)) {
+                \StockAvailable::setQuantity((int) $productId, (int) $combiId, (int) $model->getStockLevel());
+            }
         }
-        return $result;
+
+        return $model;
     }
 
     /**

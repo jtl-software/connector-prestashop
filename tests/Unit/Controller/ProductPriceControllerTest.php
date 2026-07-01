@@ -39,25 +39,13 @@ final class ProductPriceControllerTest extends TestCase
         $mapperProp->setValue($this->controller, $this->mapper);
     }
 
-    public function testPushReturnsEmptyArrayForNoModels(): void
+    public function testPushReturnsPassedModel(): void
     {
-        $this->db->expects(self::never())->method('delete');
+        $model = $this->createModelWithEndpoint('');
 
-        $result = $this->controller->push();
+        $result = $this->controller->push($model);
 
-        self::assertSame([], $result);
-    }
-
-    public function testPushReturnsAllPassedModels(): void
-    {
-        $model1 = $this->createModelWithEndpoint('');
-        $model2 = $this->createModelWithEndpoint('');
-
-        $result = $this->controller->push($model1, $model2);
-
-        self::assertCount(2, $result);
-        self::assertSame($model1, $result[0]);
-        self::assertSame($model2, $result[1]);
+        self::assertSame($model, $result);
     }
 
     public function testPushSkipsDbOperationsWhenEndpointIsEmpty(): void
@@ -79,7 +67,7 @@ final class ProductPriceControllerTest extends TestCase
             ->method('delete')
             ->with(
                 'specific_price',
-                'id_product = 42 AND id_product_attribute = 0 AND id_group > 0'
+                'id_product = 42 AND id_product_attribute = 0 AND id_group > 0 AND id_shop = 1'
             );
 
         $this->controller->push($model);
@@ -92,7 +80,7 @@ final class ProductPriceControllerTest extends TestCase
             ->method('delete')
             ->with(
                 'specific_price',
-                'id_product = 42 AND id_product_attribute = 7 AND id_group > 0'
+                'id_product = 42 AND id_product_attribute = 7 AND id_group > 0 AND id_shop = 1'
             );
 
         $method = new \ReflectionMethod(ProductPriceController::class, 'deleteGroupSpecificPrices');

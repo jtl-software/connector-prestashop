@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
@@ -17,7 +16,7 @@ use jtl\Connector\Presta\Utils\QueryBuilder;
 use Manufacturer as PrestaManufacturer;
 use Jtl\Connector\Core\Model\ManufacturerI18n as JtlManufacturerI18n;
 
-class ManufacturerController extends AbstractController implements PushInterface, PullInterface, DeleteInterface
+class ManufacturerController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -85,27 +84,12 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function push(AbstractModel ...$models): array
-    {
-        $result = [];
-        foreach ($models as $model) {
-            $result[] = $this->pushSingle($model);
-        }
-        return $result;
-    }
-
-    /**
      * @param AbstractModel $jtlManufacturer
      * @return JtlManufacturer
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    private function pushSingle(AbstractModel $jtlManufacturer): AbstractModel
+    protected function doPush(AbstractModel $jtlManufacturer): AbstractModel
     {
         /** @var JtlManufacturer $jtlManufacturer */
         $endpoint = $jtlManufacturer->getId()->getEndpoint();
@@ -182,22 +166,18 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
+     * @param AbstractModel $model
+     * @return JtlManufacturer
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel ...$models): array
+    public function delete(AbstractModel $model): AbstractModel
     {
-        $result = [];
-        foreach ($models as $model) {
-            /** @var JtlManufacturer $model */
-            $manufacturer = new \Manufacturer((int)$model->getId()->getEndpoint());
+        /** @var JtlManufacturer $model */
+        $manufacturer = new \Manufacturer((int)$model->getId()->getEndpoint());
 
-            $manufacturer->delete();
+        $manufacturer->delete();
 
-            $result[] = $model;
-        }
-        return $result;
+        return $model;
     }
 
     /**

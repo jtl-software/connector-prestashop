@@ -4,35 +4,19 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta\Controller;
 
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\CustomerOrder;
 use Jtl\Connector\Core\Model\StatusChange;
 
-class StatusChangeController extends AbstractController implements PushInterface
+class StatusChangeController extends AbstractPushController
 {
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function push(AbstractModel ...$models): array
-    {
-        $result = [];
-        foreach ($models as $model) {
-            $result[] = $this->pushSingle($model);
-        }
-        return $result;
-    }
-
-    /**
      * @param AbstractModel $model
-     * @return AbstractModel
+     * @return StatusChange
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    private function pushSingle(AbstractModel $model): AbstractModel
+    protected function doPush(AbstractModel $model): AbstractModel
     {
         /** @var StatusChange $model */
         $orderId = $model->getCustomerOrderId()?->getEndpoint();

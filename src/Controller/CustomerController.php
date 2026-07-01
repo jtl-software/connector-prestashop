@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -17,7 +16,7 @@ use Customer as PrestaCustomer;
 use Address as PrestaAddress;
 use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
 
-class CustomerController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
+class CustomerController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -145,29 +144,13 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException|Exception
-     * @throws \Exception
-     */
-    public function push(AbstractModel ...$models): array
-    {
-        $result = [];
-        foreach ($models as $model) {
-            $result[] = $this->pushSingle($model);
-        }
-        return $result;
-    }
-
-    /**
      * @param AbstractModel $jtlCustomer
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException|Exception
      * @throws \Exception
      */
-    private function pushSingle(AbstractModel $jtlCustomer): AbstractModel
+    protected function doPush(AbstractModel $jtlCustomer): AbstractModel
     {
         /** @var JtlCustomer $jtlCustomer */
         $endpoint = $jtlCustomer->getId()->getEndpoint();
@@ -276,22 +259,18 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
+     * @param AbstractModel $model
+     * @return AbstractModel
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel ...$models): array
+    public function delete(AbstractModel $model): AbstractModel
     {
-        $result = [];
-        foreach ($models as $model) {
-            /** @var JtlCustomer $model */
-            $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
+        /** @var JtlCustomer $model */
+        $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
 
-            $customer->delete();
+        $customer->delete();
 
-            $result[] = $model;
-        }
-        return $result;
+        return $model;
     }
 
     /**

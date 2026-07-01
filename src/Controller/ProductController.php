@@ -8,7 +8,6 @@ use AttributeGroup;
 use Combination;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Exception\TranslatableAttributeException;
 use Jtl\Connector\Core\Model\AbstractModel;
@@ -38,7 +37,7 @@ use Feature as PrestaSpecific;
 use FeatureValue as PrestaSpecificValue;
 use Product as PrestaProduct;
 
-class ProductController extends ProductPriceController implements PullInterface, PushInterface, DeleteInterface
+class ProductController extends ProductPriceController implements PullInterface, DeleteInterface
 {
     public const
         JTL_ATTRIBUTE_ACTIVE           = 'active',
@@ -721,27 +720,12 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function push(AbstractModel ...$models): array
-    {
-        $result = [];
-        foreach ($models as $model) {
-            $result[] = $this->pushSingle($model);
-        }
-        return $result;
-    }
-
-    /**
      * @param AbstractModel $jtlProduct
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    private function pushSingle(AbstractModel $jtlProduct): AbstractModel
+    protected function doPush(AbstractModel $jtlProduct): AbstractModel
     {
         /** @var JtlProduct $jtlProduct */
         $endpoint        = $jtlProduct->getId()->getEndpoint();
@@ -839,7 +823,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             // update categories
             $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
             // update price
-            parent::push($jtlProduct);
+            parent::doPush($jtlProduct);
             // update stock
             $stockLevelController->push($jtlProduct);
 
@@ -995,7 +979,10 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->reference           = $jtlProduct->getSku();
         $prestaProduct->upc                 = $jtlProduct->getUpc();
         $prestaProduct->isbn                = $jtlProduct->getIsbn();
-        $prestaProduct->id_tax_rules_group  = $this->findTaxClassId(...$jtlProduct->getTaxRates());
+        $taxRulesGroupId = $this->findTaxClassId(...$jtlProduct->getTaxRates());
+        if ($taxRulesGroupId !== null) {
+            $prestaProduct->id_tax_rules_group = $taxRulesGroupId;
+        }
         $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
         $prestaProduct->unit_price          = $this->calculateUnitPrice($jtlProduct);
         $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
@@ -1080,6 +1067,13 @@ class ProductController extends ProductPriceController implements PullInterface,
             $group->group_type = $groupType;
         }
 
+        $fallbackTranslation = \reset($groupTranslations);
+        foreach (\Language::getLanguages(true) as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($groupTranslations[$langId])) {
+                $groupTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         foreach ($groupTranslations as $key => $translation) {
             $group->name[$key]        = $translation['name'];
@@ -1131,6 +1125,14 @@ class ProductController extends ProductPriceController implements PullInterface,
         $attributeId = $this->db->getValue($sql);
 
         $attributeTranslations = $this->createPrestaAttributeTranslations($jtlValue);
+
+        $fallbackTranslation = \reset($attributeTranslations);
+        foreach (\Language::getLanguages(true) as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($attributeTranslations[$langId])) {
+                $attributeTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         $attribute                     = new \ProductAttribute($attributeId > 0 ? (int)$attributeId : null);
         $attribute->id_attribute_group = $prestaAttributeGroupId;
@@ -1228,7 +1230,8 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         if (empty($jtlTaxes)) {
-            throw new \RuntimeException('No active country found for submitted tax rates');
+            $this->logger->warning('No active country found for submitted tax rates — tax rule group will not be updated');
+            return null;
         }
 
         foreach (\Tax::getTaxes() as $tax) {
@@ -1353,7 +1356,10 @@ class ProductController extends ProductPriceController implements PullInterface,
                         }
                     }
                     if (!\is_int($value)) {
-                        throw new \RuntimeException('Main_category_id Attribute value must be an integer');
+                        $this->logger->warning(
+                            \sprintf('main_category_id "%s" has no synced PrestaShop endpoint — skipping', $value)
+                        );
+                        break;
                     }
                     $prestaProduct->id_category_default = $value;
                     break;
@@ -1415,30 +1421,27 @@ class ProductController extends ProductPriceController implements PullInterface,
 
 
     /**
-     * @param AbstractModel ...$models
-     * @return AbstractModel[]
+     * @param AbstractModel $model
+     * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel ...$models): array
+    public function delete(AbstractModel $model): AbstractModel
     {
-        $result = [];
-        foreach ($models as $model) {
-            /** @var JtlProduct $model */
-            $endpoint = $model->getId()->getEndpoint();
-            if ($endpoint !== '') {
-                [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
-                if (!empty($combiId)) {
-                    $obj = new \Product((int)$art);
-                } else {
-                    $obj = new Combination((int)$combiId);
-                }
-
-                $obj->delete();
+        /** @var JtlProduct $model */
+        $endpoint = $model->getId()->getEndpoint();
+        if ($endpoint !== '') {
+            [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
+            if (!empty($combiId)) {
+                $obj = new \Product((int)$art);
+            } else {
+                $obj = new Combination((int)$combiId);
             }
-            $result[] = $model;
+
+            $obj->delete();
         }
-        return $result;
+
+        return $model;
     }
 
     /**
