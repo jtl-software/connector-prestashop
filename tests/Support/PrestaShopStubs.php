@@ -330,6 +330,16 @@ if (!class_exists('Db')) {
         {
             return $string;
         }
+
+        public function delete(
+            string $table,
+            string $where = '',
+            int $limit = 0,
+            bool $useCache = true,
+            bool $addPrefix = true
+        ): bool {
+            return true;
+        }
     }
 }
 

@@ -62,7 +62,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "jtl\\Connector\\Presta\\Tests\\": "tests/"
+      "Tests\\": "tests/"
     }
   },
   "require-dev": {

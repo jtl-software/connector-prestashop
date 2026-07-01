@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace jtl\Connector\Presta\Tests\Unit\Controller;
+namespace Tests\Unit\Controller;
 
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\Product as JtlProduct;
