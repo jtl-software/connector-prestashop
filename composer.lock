@@ -2277,7 +2277,7 @@
         },
         {
             "name": "symfony/http-foundation",
-            "version": "v4.4.49",
+            "version": "4.4.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-foundation.git",
@@ -2325,7 +2325,7 @@
             "description": "Defines an object-oriented layer for the HTTP specification",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/http-foundation/tree/v4.4.49"
+                "source": "https://github.com/symfony/http-foundation/tree/4.4"
             },
             "funding": [
                 {
@@ -3192,7 +3192,7 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.4.47",
+            "version": "3.4.x-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
@@ -3243,7 +3243,7 @@
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v3.4.47"
+                "source": "https://github.com/symfony/yaml/tree/3.4"
             },
             "funding": [
                 {
@@ -5376,5 +5376,5 @@
     "platform-overrides": {
         "php": "8.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
