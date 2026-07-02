@@ -69,8 +69,8 @@ final class ConnectorTest extends TestCase
     {
         $connector = new Connector();
 
-        // build-config.yaml in the project root defines version: 2.0.2
-        self::assertSame('2.0.2', $connector->getEndpointVersion());
+        // build-config.yaml in the project root defines version: 2.0.3
+        self::assertSame('2.0.3', $connector->getEndpointVersion());
     }
 
     // -------------------------------------------------------------------------
