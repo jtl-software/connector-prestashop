@@ -19,3 +19,7 @@ viewer
 jtl_connector_*.zip
 tmp/**
 var
+.phpunit.result.cache
+phpcs-report.xml
+coverage
+.claude/

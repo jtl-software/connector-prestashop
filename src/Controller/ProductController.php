@@ -983,6 +983,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->isbn                = $jtlProduct->getIsbn();
         $prestaProduct->id_tax_rules_group  = $this->findTaxClassId(...$jtlProduct->getTaxRates());
         $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
+        $prestaProduct->unit_price          = $this->calculateUnitPrice($jtlProduct);
         $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
         $prestaProduct->active              = $jtlProduct->getIsActive();
         $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
@@ -1248,6 +1249,31 @@ class ProductController extends ProductPriceController implements PullInterface,
             : $return = null;
 
         return $return;
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
+     * @return float
+     */
+    protected function calculateUnitPrice(JtlProduct $jtlProduct): float
+    {
+        if ($jtlProduct->getConsiderBasePrice() && $jtlProduct->getBasePriceDivisor() > 0) {
+            $netPrice = 0.0;
+            foreach ($jtlProduct->getPrices() as $price) {
+                if ($price->getCustomerGroupId()->getEndpoint() === '') {
+                    foreach ($price->getItems() as $item) {
+                        if ($item->getQuantity() === 0) {
+                            $netPrice = $item->getNetPrice();
+                            break 2;
+                        }
+                    }
+                }
+            }
+            if ($netPrice > 0) {
+                return \round($netPrice / $jtlProduct->getBasePriceDivisor(), 6);
+            }
+        }
+        return .0;
     }
 
     /**
