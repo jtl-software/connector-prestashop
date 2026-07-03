@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta;
 
-use Composer\InstalledVersions;
 use DI\Container;
 use Jtl\Connector\Core\Authentication\TokenValidatorInterface;
 use Jtl\Connector\Core\Connector\ConnectorInterface;

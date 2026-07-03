@@ -55,7 +55,7 @@ class JTLConnector extends Module
 
         $this->displayName            = 'JTL-Connector';
         $this->description            = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
-        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '9.0', 'max' => _PS_VERSION_];
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
@@ -173,11 +173,13 @@ class JTLConnector extends Module
         $this->convertLinkingTables();
 
 
-        // remove old tab if exists
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // remove old tab if exists (check both old and new class names for migration)
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $tab            = new \Tab();
@@ -192,7 +194,7 @@ class JTLConnector extends Module
         $tab->active     = true;
         $tab->position   = 0;
         $tab->module     = $this->name;
-        $tab->class_name = "jtlconnector";
+        $tab->class_name = "AdminJtlconnector";
         $tab->save();
 
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
@@ -309,10 +311,13 @@ class JTLConnector extends Module
     public function uninstall(): bool
     {
 
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // remove tab (check both old and new class names for migration)
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);

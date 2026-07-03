@@ -722,148 +722,154 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
-     * @param AbstractModel $jtlProduct
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlProduct): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var JtlProduct $jtlProduct */
-        $endpoint        = $jtlProduct->getId()->getEndpoint();
-        $masterProductId = $jtlProduct->getMasterProductId()->getEndpoint();
+        $result = [];
 
-        $stockLevelController = new ProductStockLevelController($this->mapper);
-        $stockLevelController->setLogger($this->logger);
+        foreach ($models as $jtlProduct) {
+            /** @var JtlProduct $jtlProduct */
+            $endpoint        = $jtlProduct->getId()->getEndpoint();
+            $masterProductId = $jtlProduct->getMasterProductId()->getEndpoint();
 
-        // 1. check if product exists
-        // 2. if not, create minimal product if has variation, create minimal variants
-        // 3. update product if has variation, update variants
-        // 4. update categories
-        // 5. update price
-        // 6. update stock
+            $stockLevelController = new ProductStockLevelController($this->mapper);
+            $stockLevelController->setLogger($this->logger);
+
+            // 1. check if product exists
+            // 2. if not, create minimal product if has variation, create minimal variants
+            // 3. update product if has variation, update variants
+            // 4. update categories
+            // 5. update price
+            // 6. update stock
 
 
-        $isNew = empty($endpoint);
+            $isNew = empty($endpoint);
 
-        if (!$isNew) {
-            if (empty($masterProductId)) {
-                list($checkEndpoint, $_) = Utils::explodeProductEndpoint($endpoint, 0);
-                // sanity check, does the product *really* exist?
-                $prestaProduct = new PrestaProduct((int)$checkEndpoint);
-                if ($prestaProduct->id === null) {
-                    // product does not exist, we need to recreate it
-                    $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
-                    $isNew = true;
-                }
-            } else {
-                list($checkEndpoint, $combiId) = Utils::explodeProductEndpoint($endpoint, 0);
-                // sanity check, does the variant *really* exist?
-                $combination = new Combination((int)$combiId);
-                if ($combination->id != $combiId) { // loose comparison on purpose
-                    // variant does not exist, we need to recreate it
-                    $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
-                    $isNew = true;
+            if (!$isNew) {
+                if (empty($masterProductId)) {
+                    list($checkEndpoint, $_) = Utils::explodeProductEndpoint($endpoint, 0);
+                    // sanity check, does the product *really* exist?
+                    $prestaProduct = new PrestaProduct((int)$checkEndpoint);
+                    if ($prestaProduct->id === null) {
+                        // product does not exist, we need to recreate it
+                        $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
+                        $isNew = true;
+                    }
+                } else {
+                    list($checkEndpoint, $combiId) = Utils::explodeProductEndpoint($endpoint, 0);
+                    // sanity check, does the variant *really* exist?
+                    $combination = new Combination((int)$combiId);
+                    if ($combination->id != $combiId) { // loose comparison on purpose
+                        // variant does not exist, we need to recreate it
+                        $this->mapper->delete(IdentityType::PRODUCT, $endpoint);
+                        $isNew = true;
+                    }
                 }
             }
-        }
 
-        if (!empty($masterProductId)) {
-            // sanity check, does the master product exist?
-            $masterProduct = new PrestaProduct((int)$masterProductId);
-            if ($masterProduct->id === null) {
-                // FATAL we can not create a new master from a variant
+            if (!empty($masterProductId)) {
+                // sanity check, does the master product exist?
+                $masterProduct = new PrestaProduct((int)$masterProductId);
+                if ($masterProduct->id === null) {
+                    // FATAL we can not create a new master from a variant
+                    throw new \RuntimeException(
+                        \sprintf(
+                            'Master product (Host: %s, Endpoint: %s) does not exist',
+                            $jtlProduct->getMasterProductId()->getHost(),
+                            $jtlProduct->getMasterProductId()->getEndpoint()
+                        )
+                    );
+                }
+            }
+
+            try {
+                // create minimal product
+                if ($isNew) {
+                    if (empty($masterProductId)) {
+                        // create empty normal product
+                        $prestaProduct = new PrestaProduct();
+                        $prestaProduct->save();
+
+                        $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
+                    } else {
+                        $this->createMinPrestaVariant($jtlProduct, new PrestaProduct((int)$masterProductId));
+                    }
+
+                    $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+                    $this->mapper->save(
+                        IdentityType::PRODUCT,
+                        $jtlProduct->getId()->getEndpoint(),
+                        $jtlProduct->getId()->getHost()
+                    );
+                }
+
+                // update product
+                if (empty($masterProductId)) {
+                    // update normal product
+                    $prestaProduct = $this->updatePrestaProduct($jtlProduct, new PrestaProduct((int)$endpoint));
+                    if (!$prestaProduct->update()) {
+                        throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
+                    }
+                } else {
+                    // update var combination
+                    [$endpoint, $combiId] = Utils::explodeProductEndpoint($jtlProduct->getId()->getEndpoint(), 0);
+
+                    $prestaProduct = new PrestaProduct((int)$endpoint);
+                    $prestaProduct = $this->updatePrestaVariant($jtlProduct, $prestaProduct, (int)$combiId);
+
+                    if (!$prestaProduct->update()) {
+                        throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
+                    }
+                }
+                // update categories
+                $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
+                // update price
+                parent::push($jtlProduct);
+                // update stock
+                $stockLevelController->push($jtlProduct);
+
+                $result[] = $jtlProduct;
+                // done
+            } catch (\Exception $e) {
+                if ($isNew) {
+                    if (empty($masterProductId)) {
+                        // delete partial product
+                        try {
+                            $prestaProduct = new PrestaProduct((int)$jtlProduct->getId()->getEndpoint());
+                            $prestaProduct->delete();
+                            $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+                        } catch (\PrestaShopException $e) {
+                            // ignore
+                        }
+                    } else {
+                        [$endpoint, $combiId] = Utils::explodeProductEndpoint($jtlProduct->getId()->getEndpoint(), 0);
+                        if ($combiId !== null) {
+                            // delete partial var combination
+                            try {
+                                $prestaProduct = new PrestaProduct((int)$endpoint);
+                                $prestaProduct->deleteAttributeCombination((int)$combiId);
+                                $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+                            } catch (\PrestaShopException $e) {
+                                // ignore
+                            }
+                        }
+                    }
+                }
                 throw new \RuntimeException(
                     \sprintf(
-                        'Master product (Host: %s, Endpoint: %s) does not exist',
-                        $jtlProduct->getMasterProductId()->getHost(),
-                        $jtlProduct->getMasterProductId()->getEndpoint()
+                        'Error saving product %s | Message from PrestaShop: %s',
+                        $jtlProduct->getI18ns()[0]->getName(),
+                        $e->getMessage()
                     )
                 );
             }
         }
 
-        try {
-            // create minimal product
-            if ($isNew) {
-                if (empty($masterProductId)) {
-                    // create empty normal product
-                    $prestaProduct = new PrestaProduct();
-                    $prestaProduct->save();
-
-                    $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
-                } else {
-                    $this->createMinPrestaVariant($jtlProduct, new PrestaProduct((int)$masterProductId));
-                }
-
-                $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-                $this->mapper->save(
-                    IdentityType::PRODUCT,
-                    $jtlProduct->getId()->getEndpoint(),
-                    $jtlProduct->getId()->getHost()
-                );
-            }
-
-            // update product
-            if (empty($masterProductId)) {
-                // update normal product
-                $prestaProduct = $this->updatePrestaProduct($jtlProduct, new PrestaProduct((int)$endpoint));
-                if (!$prestaProduct->update()) {
-                    throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
-                }
-            } else {
-                // update var combination
-                [$endpoint, $combiId] = Utils::explodeProductEndpoint($jtlProduct->getId()->getEndpoint(), 0);
-
-                $prestaProduct = new PrestaProduct((int)$endpoint);
-                $prestaProduct = $this->updatePrestaVariant($jtlProduct, $prestaProduct, (int)$combiId);
-
-                if (!$prestaProduct->update()) {
-                    throw new \RuntimeException('Error updating product ' . $jtlProduct->getI18ns()[0]->getName());
-                }
-            }
-            // update categories
-            $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
-            // update price
-            parent::push($jtlProduct);
-            // update stock
-            $stockLevelController->push($jtlProduct);
-
-            return $jtlProduct;
-            // done
-        } catch (\Exception $e) {
-            if ($isNew) {
-                if (empty($masterProductId)) {
-                    // delete partial product
-                    try {
-                        $prestaProduct = new PrestaProduct((int)$jtlProduct->getId()->getEndpoint());
-                        $prestaProduct->delete();
-                        $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-                    } catch (\PrestaShopException $e) {
-                        // ignore
-                    }
-                } else {
-                    [$endpoint, $combiId] = Utils::explodeProductEndpoint($jtlProduct->getId()->getEndpoint(), 0);
-                    if ($combiId !== null) {
-                        // delete partial var combination
-                        try {
-                            $prestaProduct = new PrestaProduct((int)$endpoint);
-                            $prestaProduct->deleteAttributeCombination((int)$combiId);
-                            $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-                        } catch (\PrestaShopException $e) {
-                            // ignore
-                        }
-                    }
-                }
-            }
-            throw new \RuntimeException(
-                \sprintf(
-                    'Error saving product %s | Message from PrestaShop: %s',
-                    $jtlProduct->getI18ns()[0]->getName(),
-                    $e->getMessage()
-                )
-            );
-        }
+        return $result;
     }
 
     /**
@@ -1166,7 +1172,6 @@ class ProductController extends ProductPriceController implements PullInterface,
             $translations[$langId]['description']       = $jtlProductI18n->getDescription();
             $translations[$langId]['description_short'] = $jtlProductI18n->getShortDescription();
             $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
-            $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
             $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
             $translations[$langId]['link_rewrite']      = \Tools::str2url(
                 empty($jtlProductI18n->getUrlPath())
@@ -1449,27 +1454,33 @@ class ProductController extends ProductPriceController implements PullInterface,
 
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var JtlProduct $model */
-        $endpoint = $model->getId()->getEndpoint();
-        if ($endpoint !== '') {
-            [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
-            if (!empty($combiId)) {
-                $obj = new \Product((int)$art);
-            } else {
-                $obj = new Combination((int)$combiId);
+        $result = [];
+
+        foreach ($models as $model) {
+            /** @var JtlProduct $model */
+            $endpoint = $model->getId()->getEndpoint();
+            if ($endpoint !== '') {
+                [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
+                if (!empty($combiId)) {
+                    $obj = new Combination((int)$combiId);
+                } else {
+                    $obj = new \Product((int)$art);
+                }
+
+                $obj->delete();
             }
 
-            $obj->delete();
+            $result[] = $model;
         }
 
-        return $model;
+        return $result;
     }
 
     /**

@@ -145,38 +145,45 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel $jtlCustomer
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException|Exception
      * @throws \Exception
      */
-    public function push(AbstractModel $jtlCustomer): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var JtlCustomer $jtlCustomer */
-        $endpoint = $jtlCustomer->getId()->getEndpoint();
-        $isNew    = $endpoint === '';
+        $result = [];
 
-        if (!$isNew) {
-            $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer((int)$endpoint));
-            if (!$prestaCustomer->update()) {
-                throw new \Exception('Error updating Customer' . $jtlCustomer->getCustomerNumber());
-            }
-            $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, empty($jtlCustomer->getId()->getEndpoint()));
-            if (!$prestaCustomer->update()) {
-                throw new \Exception('Error updating address on Customer' . $jtlCustomer->getCustomerNumber());
+        foreach ($models as $jtlCustomer) {
+            /** @var JtlCustomer $jtlCustomer */
+            $endpoint = $jtlCustomer->getId()->getEndpoint();
+            $isNew    = $endpoint === '';
+
+            if (!$isNew) {
+                $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer((int)$endpoint));
+                if (!$prestaCustomer->update()) {
+                    throw new \Exception('Error updating Customer' . $jtlCustomer->getCustomerNumber());
+                }
+                $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, empty($jtlCustomer->getId()->getEndpoint()));
+                if (!$prestaCustomer->update()) {
+                    throw new \Exception('Error updating address on Customer' . $jtlCustomer->getCustomerNumber());
+                }
+
+                $result[] = $jtlCustomer;
+                continue;
             }
 
-            return $jtlCustomer;
+            $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer());
+            $prestaCustomer->add();
+            $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, $jtlCustomer->getId()->getEndpoint() === '');
+            $prestaAddress = $this->createPrestaAddress($jtlCustomer, new PrestaAddress(), $prestaCustomer);
+            $prestaAddress->add();
+
+            $result[] = $jtlCustomer;
         }
 
-        $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer());
-        $prestaCustomer->add();
-        $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, $jtlCustomer->getId()->getEndpoint() === '');
-        $prestaAddress = $this->createPrestaAddress($jtlCustomer, new PrestaAddress(), $prestaCustomer);
-        $prestaAddress->add();
-
-        return $jtlCustomer;
+        return $result;
     }
 
     /**
@@ -260,18 +267,24 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var JtlCustomer $model */
-        $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
+        $result = [];
 
-        $customer->delete();
+        foreach ($models as $model) {
+            /** @var JtlCustomer $model */
+            $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
 
-        return $model;
+            $customer->delete();
+
+            $result[] = $model;
+        }
+
+        return $result;
     }
 
     /**
