@@ -228,8 +228,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
     {
         $queryBuilder = new QueryBuilder();
         $id           = \is_numeric(\substr($image->getId()->getEndpoint(), 0, 1))
-            ? $image->getId()->getEndpoint()
-            : \substr($image->getId()->getEndpoint(), 1);
+            ? (int)$image->getId()->getEndpoint()
+            : (int)\substr($image->getId()->getEndpoint(), 1);
 
         $sql = $queryBuilder
             ->select('il.id_lang, il.legend as altText')
@@ -247,47 +247,57 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
-     * @param AbstractModel $jtlImage
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws DefinitionException
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlImage): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var AbstractImage $jtlImage */
-        $id = $jtlImage->getForeignKey()->getEndpoint();
+        $result = [];
 
-        if (!empty($id)) {
-            if (\in_array($jtlImage->getRelationType(), ['category', 'manufacturer'])) {
-                $this->delete($jtlImage);
+        foreach ($models as $jtlImage) {
+            /** @var AbstractImage $jtlImage */
+            $id = $jtlImage->getForeignKey()->getEndpoint();
+
+            if (!empty($id)) {
+                if (\in_array($jtlImage->getRelationType(), ['category', 'manufacturer'])) {
+                    $this->deleteImage($jtlImage);
+                }
+
+                $generate_hight_dpi_images = (bool)\Configuration::get('PS_HIGHT_DPI');
+
+                $identityType = null;
+
+                switch ($jtlImage->getRelationType()) {
+                    case 'category':
+                        $this->createPrestaCategoryImage($jtlImage, $generate_hight_dpi_images, $id);
+                        $identityType = IdentityType::CATEGORY_IMAGE;
+                        break;
+                    case 'manufacturer':
+                        $this->createPrestaManufacturerImage($jtlImage, $generate_hight_dpi_images, $id);
+                        $identityType = IdentityType::MANUFACTURER_IMAGE;
+                        break;
+                    case 'product':
+                        $this->createPrestaProductImage($jtlImage, $id);
+                        $identityType = IdentityType::PRODUCT_IMAGE;
+                        break;
+                }
+
+                if (!\is_null($identityType)) {
+                    $this->mapper->save(
+                        $identityType,
+                        $jtlImage->getId()->getEndpoint(),
+                        $jtlImage->getId()->getHost()
+                    );
+                }
             }
 
-            $generate_hight_dpi_images = (bool)\Configuration::get('PS_HIGHT_DPI');
-
-            $identityType = null;
-
-            switch ($jtlImage->getRelationType()) {
-                case 'category':
-                    $this->createPrestaCategoryImage($jtlImage, $generate_hight_dpi_images, $id);
-                    $identityType = IdentityType::CATEGORY_IMAGE;
-                    break;
-                case 'manufacturer':
-                    $this->createPrestaManufacturerImage($jtlImage, $generate_hight_dpi_images, $id);
-                    $identityType = IdentityType::MANUFACTURER_IMAGE;
-                    break;
-                case 'product':
-                    $this->createPrestaProductImage($jtlImage, $id);
-                    $identityType = IdentityType::PRODUCT_IMAGE;
-                    break;
-            }
-
-            if (!\is_null($identityType)) {
-                $this->mapper->save($identityType, $jtlImage->getId()->getEndpoint(), $jtlImage->getId()->getHost());
-            }
+            $result[] = $jtlImage;
         }
 
-        return $jtlImage;
+        return $result;
     }
 
     /**
@@ -457,13 +467,32 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
-     * @param AbstractModel $jtlImage
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \Jtl\Connector\Core\Exception\DefinitionException
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $jtlImage): AbstractModel
+    public function delete(AbstractModel ...$models): array
+    {
+        $result = [];
+
+        foreach ($models as $jtlImage) {
+            $this->deleteImage($jtlImage);
+            $result[] = $jtlImage;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param AbstractModel $jtlImage
+     * @return void
+     * @throws \Jtl\Connector\Core\Exception\DefinitionException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    protected function deleteImage(AbstractModel $jtlImage): void
     {
         /** @var AbstractImage $jtlImage */
         $fId = $jtlImage->getForeignKey()->getEndpoint();
@@ -489,8 +518,6 @@ class ImageController extends AbstractController implements PushInterface, PullI
                     break;
             }
         }
-
-        return $jtlImage;
     }
 
     /**
