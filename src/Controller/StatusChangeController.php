@@ -12,41 +12,48 @@ use Jtl\Connector\Core\Model\StatusChange;
 class StatusChangeController extends AbstractController implements PushInterface
 {
     /**
-     * @param AbstractModel $model
-     * @return StatusChange
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $model): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var StatusChange $model */
-        $orderId = $model->getCustomerOrderId()?->getEndpoint();
-        if ($orderId === null) {
-            throw new \RuntimeException('Order id is missing');
-        }
+        $result = [];
 
-        if (!empty($orderId)) {
-            $newStatus = match (true) {
-                $model->getOrderStatus() === CustomerOrder::STATUS_CANCELLED => 6,
-                $model->getPaymentStatus() === CustomerOrder::PAYMENT_STATUS_COMPLETED
-                && $model->getOrderStatus() === CustomerOrder::STATUS_SHIPPED => 4,
-                $model->getOrderStatus() === CustomerOrder::STATUS_SHIPPED => 4,
-                $model->getPaymentStatus() === CustomerOrder::PAYMENT_STATUS_COMPLETED => 2,
-                default => null
-            };
+        foreach ($models as $model) {
+            /** @var StatusChange $model */
+            $orderId = $model->getCustomerOrderId()?->getEndpoint();
+            if ($orderId === null) {
+                throw new \RuntimeException('Order id is missing');
+            }
 
-            if (!\is_null($newStatus)) {
-                $order = new \Order((int)$orderId);
-                if (!$order->id) {
-                    $this->logger->warning(\sprintf('Order with id %s not found', $orderId));
-                    return $model;
-                }
-                if ($order->getCurrentState() != $newStatus) {
-                    $order->setCurrentState($newStatus);
+            if (!empty($orderId)) {
+                $newStatus = match (true) {
+                    $model->getOrderStatus() === CustomerOrder::STATUS_CANCELLED => 6,
+                    $model->getPaymentStatus() === CustomerOrder::PAYMENT_STATUS_COMPLETED
+                    && $model->getOrderStatus() === CustomerOrder::STATUS_SHIPPED => 4,
+                    $model->getOrderStatus() === CustomerOrder::STATUS_SHIPPED => 4,
+                    $model->getPaymentStatus() === CustomerOrder::PAYMENT_STATUS_COMPLETED => 2,
+                    default => null
+                };
+
+                if (!\is_null($newStatus)) {
+                    $order = new \Order((int)$orderId);
+                    if (!$order->id) {
+                        $this->logger->warning(\sprintf('Order with id %s not found', $orderId));
+                        $result[] = $model;
+                        continue;
+                    }
+                    if ($order->getCurrentState() != $newStatus) {
+                        $order->setCurrentState($newStatus);
+                    }
                 }
             }
+
+            $result[] = $model;
         }
 
-        return $model;
+        return $result;
     }
 }

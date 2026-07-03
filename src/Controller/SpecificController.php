@@ -197,40 +197,47 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param AbstractModel $jtlSpecific
-     * @return Specific
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlSpecific): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var JtlSpecific $jtlSpecific */
-        $endpoint = $jtlSpecific->getId()->getEndpoint();
-        $isNew    = $endpoint === '';
+        $result = [];
 
-        if (!$isNew) {
-            $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific((int)$endpoint));
-            if (!$prestaSpecific->update()) {
-                throw new \RuntimeException('Error updating specific: ' . $jtlSpecific->getI18ns()[0]->getName());
+        foreach ($models as $jtlSpecific) {
+            /** @var JtlSpecific $jtlSpecific */
+            $endpoint = $jtlSpecific->getId()->getEndpoint();
+            $isNew    = $endpoint === '';
+
+            if (!$isNew) {
+                $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific((int)$endpoint));
+                if (!$prestaSpecific->update()) {
+                    throw new \RuntimeException('Error updating specific: ' . $jtlSpecific->getI18ns()[0]->getName());
+                }
+
+                foreach ($jtlSpecific->getValues() as $value) {
+                    $this->createPrestaSpecificValues(new PrestaSpecificValue(), $value, (string)$prestaSpecific->id);
+                }
+
+                $result[] = $jtlSpecific;
+                continue;
+            }
+
+            $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific());
+            if (!$prestaSpecific->add()) {
+                throw new \RuntimeException('Error uploading specific ' . $jtlSpecific->getI18ns()[0]->getName());
             }
 
             foreach ($jtlSpecific->getValues() as $value) {
                 $this->createPrestaSpecificValues(new PrestaSpecificValue(), $value, (string)$prestaSpecific->id);
             }
 
-            return $jtlSpecific;
+            $result[] = $jtlSpecific;
         }
 
-        $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific());
-        if (!$prestaSpecific->add()) {
-            throw new \RuntimeException('Error uploading specific ' . $jtlSpecific->getI18ns()[0]->getName());
-        }
-
-        foreach ($jtlSpecific->getValues() as $value) {
-            $this->createPrestaSpecificValues(new PrestaSpecificValue(), $value, (string)$prestaSpecific->id);
-        }
-
-        return $jtlSpecific;
+        return $result;
     }
 
     /**
@@ -325,19 +332,25 @@ class SpecificController extends AbstractController implements PushInterface, Pu
     }
 
     /**
-     * @param AbstractModel $model
-     * @return Specific
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var Specific $model */
-        $specific = new PrestaSpecific((int)$model->getId()->getEndpoint());
+        $result = [];
 
-        $specific->delete();
+        foreach ($models as $model) {
+            /** @var Specific $model */
+            $specific = new PrestaSpecific((int)$model->getId()->getEndpoint());
 
-        return $model;
+            $specific->delete();
+
+            $result[] = $model;
+        }
+
+        return $result;
     }
 
     /**

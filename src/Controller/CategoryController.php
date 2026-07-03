@@ -16,7 +16,6 @@ use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
-use PrestaShopBundle\Form\Admin\Catalog\Category\CategoryType;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
@@ -157,58 +156,65 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel $jtlCategory
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws PrestaShopException
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
      */
-    public function push(AbstractModel $jtlCategory): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var JtlCategory $jtlCategory */
-        $parentEndpoint = $this->mapper->getEndpointId(
-            IdentityType::CATEGORY,
-            $jtlCategory->getParentCategoryId()->getHost()
-        );
-        if ($parentEndpoint !== null && $parentEndpoint !== $jtlCategory->getParentCategoryId()->getEndpoint()) {
-            $jtlCategory->setParentCategoryId(
-                new Identity($parentEndpoint, $jtlCategory->getParentCategoryId()->getHost())
+        $result = [];
+
+        foreach ($models as $jtlCategory) {
+            /** @var JtlCategory $jtlCategory */
+            $parentEndpoint = $this->mapper->getEndpointId(
+                IdentityType::CATEGORY,
+                $jtlCategory->getParentCategoryId()->getHost()
             );
-        }
-
-        $endpoint = $jtlCategory->getId()->getEndpoint();
-        $isNew    = $endpoint === '';
-
-        if (!$isNew) {
-            $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory((int)$endpoint));
-            if ($prestaCategory->id !== null) {
-                if (!$prestaCategory->update()) {
-                    throw new \RuntimeException('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
-                }
-
-                return $jtlCategory;
+            if ($parentEndpoint !== null && $parentEndpoint !== $jtlCategory->getParentCategoryId()->getEndpoint()) {
+                $jtlCategory->setParentCategoryId(
+                    new Identity($parentEndpoint, $jtlCategory->getParentCategoryId()->getHost())
+                );
             }
-        }
 
-        $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
-        if (!$prestaCategory->add()) {
-            if ($prestaCategory->id) {
-                try {
-                    // explicitly delete category to prevent broken category
-                    $prestaCategory->delete();
-                } catch (\Exception) {
-                    // ignore
+            $endpoint = $jtlCategory->getId()->getEndpoint();
+            $isNew    = $endpoint === '';
+
+            if (!$isNew) {
+                $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory((int)$endpoint));
+                if ($prestaCategory->id !== null) {
+                    if (!$prestaCategory->update()) {
+                        throw new \RuntimeException('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
+                    }
+
+                    $result[] = $jtlCategory;
+                    continue;
                 }
             }
-            throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
+
+            $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
+            if (!$prestaCategory->add()) {
+                if ($prestaCategory->id) {
+                    try {
+                        // explicitly delete category to prevent broken category
+                        $prestaCategory->delete();
+                    } catch (\Exception) {
+                        // ignore
+                    }
+                }
+                throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
+            }
+
+            if ($this->mapper->getEndpointId(IdentityType::CATEGORY, $jtlCategory->getId()->getHost())) {
+                $this->mapper->delete(IdentityType::CATEGORY, null, $jtlCategory->getId()->getHost());
+            }
+            $this->mapper->save(IdentityType::CATEGORY, (string)$prestaCategory->id, $jtlCategory->getId()->getHost());
+
+            $result[] = $jtlCategory;
         }
 
-        if ($this->mapper->getEndpointId(IdentityType::CATEGORY, $jtlCategory->getId()->getHost())) {
-            $this->mapper->delete(IdentityType::CATEGORY, null, $jtlCategory->getId()->getHost());
-        }
-        $this->mapper->save(IdentityType::CATEGORY, (string)$prestaCategory->id, $jtlCategory->getId()->getHost());
-
-        return $jtlCategory;
+        return $result;
     }
 
     /**
@@ -296,18 +302,24 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var JtlCategory $model */
-        $category = new PrestaCategory((int)$model->getId()->getEndpoint());
+        $result = [];
 
-        $category->delete();
+        foreach ($models as $model) {
+            /** @var JtlCategory $model */
+            $category = new PrestaCategory((int)$model->getId()->getEndpoint());
 
-        return $model;
+            $category->delete();
+
+            $result[] = $model;
+        }
+
+        return $result;
     }
 
 

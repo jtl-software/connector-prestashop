@@ -85,40 +85,47 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param AbstractModel $jtlManufacturer
-     * @return JtlManufacturer
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlManufacturer): AbstractModel
+    public function push(AbstractModel ...$models): array
     {
-        /** @var JtlManufacturer $jtlManufacturer */
-        $endpoint = $jtlManufacturer->getId()->getEndpoint();
-        $isNew    = $endpoint === '';
+        $result = [];
 
-        if (!$isNew) {
-            $prestaManufacturer = $this->createPrestaManufacturer(
-                $jtlManufacturer,
-                new PrestaManufacturer((int)$endpoint)
-            );
-            if (!$prestaManufacturer->update()) {
-                throw new \RuntimeException('Error updating manufacturer' . $jtlManufacturer->getName());
+        foreach ($models as $jtlManufacturer) {
+            /** @var JtlManufacturer $jtlManufacturer */
+            $endpoint = $jtlManufacturer->getId()->getEndpoint();
+            $isNew    = $endpoint === '';
+
+            if (!$isNew) {
+                $prestaManufacturer = $this->createPrestaManufacturer(
+                    $jtlManufacturer,
+                    new PrestaManufacturer((int)$endpoint)
+                );
+                if (!$prestaManufacturer->update()) {
+                    throw new \RuntimeException('Error updating manufacturer' . $jtlManufacturer->getName());
+                }
+
+                $result[] = $jtlManufacturer;
+                continue;
             }
 
-            return $jtlManufacturer;
+            $prestaManufacturer = $this->createPrestaManufacturer($jtlManufacturer, new PrestaManufacturer());
+            if (!$prestaManufacturer->add()) {
+                throw new \RuntimeException('Error uploading manufacturer' . $jtlManufacturer->getName());
+            }
+            $this->mapper->save(
+                IdentityType::MANUFACTURER,
+                $jtlManufacturer->getId()->getEndpoint(),
+                (int)$prestaManufacturer->id
+            );
+
+            $result[] = $jtlManufacturer;
         }
 
-        $prestaManufacturer = $this->createPrestaManufacturer($jtlManufacturer, new PrestaManufacturer());
-        if (!$prestaManufacturer->add()) {
-            throw new \RuntimeException('Error uploading manufacturer' . $jtlManufacturer->getName());
-        }
-        $this->mapper->save(
-            IdentityType::MANUFACTURER,
-            $jtlManufacturer->getId()->getEndpoint(),
-            (int)$prestaManufacturer->id
-        );
-
-        return $jtlManufacturer;
+        return $result;
     }
 
     /**
@@ -167,18 +174,24 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param AbstractModel $model
-     * @return JtlManufacturer
+     * @param AbstractModel ...$models
+     * @return AbstractModel[]
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel ...$models): array
     {
-        /** @var JtlManufacturer $model */
-        $manufacturer = new \Manufacturer((int)$model->getId()->getEndpoint());
+        $result = [];
 
-        $manufacturer->delete();
+        foreach ($models as $model) {
+            /** @var JtlManufacturer $model */
+            $manufacturer = new \Manufacturer((int)$model->getId()->getEndpoint());
 
-        return $model;
+            $manufacturer->delete();
+
+            $result[] = $model;
+        }
+
+        return $result;
     }
 
     /**
