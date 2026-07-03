@@ -151,14 +151,12 @@ class ProductController extends ProductPriceController implements PullInterface,
     protected function createJtlProduct(PrestaProduct $prestaProduct): JtlProduct
     {
         $prestaAttributes = $prestaProduct->getAttributesGroups($this->getPrestaContextLanguageId());
-        $prestaStock      = new \StockAvailable($prestaProduct->id);
         $prestaProductId  = \is_int($prestaProduct->id)
             ? $prestaProduct->id
             : throw new \RuntimeException('Product ID is not an integer');
 
-        //we ignore this line as prestashop hasn't updated their PHPDoc yet
-        //@phpstan-ignore-next-line
-        \is_numeric($prestaStock->quantity) ? $prestaQuantity = (float)$prestaStock->quantity : $prestaQuantity = 0.0;
+        $prestaQuantity   = (float)\StockAvailable::getQuantityAvailableByProduct($prestaProductId);
+        $prestaOutOfStock = (int)\StockAvailable::outOfStock($prestaProductId);
 
         $jtlProduct = (new JtlProduct())
             ->setId(new Identity((string)$prestaProduct->id))
@@ -183,8 +181,8 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setI18ns(...$this->createJtlProductTranslations($prestaProductId))
             ->setAvailableFrom($this->createDateTime($prestaProduct->available_date))
             ->setBasePriceUnitName($prestaProduct->unity ?? '') //phpcs:ignore @phpstan-ignore-line
-            ->setConsiderStock($prestaStock->out_of_stock === 0 || $prestaStock->out_of_stock === 2)
-            ->setPermitNegativeStock($prestaStock->out_of_stock === 0)
+            ->setConsiderStock($prestaOutOfStock === 0 || $prestaOutOfStock === 2)
+            ->setPermitNegativeStock($prestaOutOfStock === 0)
             ->setIsActive(true)
             ->setIsTopProduct((bool)$prestaProduct->on_sale)
             ->setPurchasePrice((float)$prestaProduct->wholesale_price)
