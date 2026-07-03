@@ -7,6 +7,8 @@ dist/**
 zip/**
 db/connector.s3db*
 .idea/**
+.code
+.DS_Store
 config_de.xml
 config.xml
 logs/**
@@ -17,3 +19,7 @@ viewer
 jtl_connector_*.zip
 tmp/**
 var
+.phpunit.result.cache
+phpcs-report.xml
+coverage
+.claude/

@@ -13,6 +13,7 @@ use jtl\Connector\Presta\Controller\CustomerController;
 use jtl\Connector\Presta\Controller\ImageController;
 use jtl\Connector\Presta\Controller\ManufacturerController;
 use jtl\Connector\Presta\Controller\ProductController;
+use jtl\Connector\Presta\Controller\ProductStockLevelController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Auth\TokenValidator;
 use Noodlehaus\ConfigInterface;
@@ -64,6 +65,10 @@ class Connector implements ConnectorInterface
         $this->container->set(
             'Manufacturer',
             \DI\autowire(ManufacturerController::class)
+        );
+        $this->container->set(
+            'ProductStockLevel',
+            \DI\autowire(ProductStockLevelController::class)
         );
     }
 

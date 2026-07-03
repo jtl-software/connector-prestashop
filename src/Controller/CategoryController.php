@@ -107,12 +107,12 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      *     id_shop: numeric-string,
      *     id_lang: numeric-string,
      *     name: string,
-     *     description: string,
-     *     additional_description: string,
-     *     link_rewrite: string,
-     *     meta_title: string,
-     *     meta_keywords: string,
-     *     meta_description: string
+     *     description?: string|null,
+     *     additional_description?: string|null,
+     *     link_rewrite?: string|null,
+     *     meta_title?: string|null,
+     *     meta_keywords?: string|null,
+     *     meta_description?: string|null
      * } $prestaCategoryI18n
      * @return JtlCategoryI18n
      * @throws PrestaShopDatabaseException
@@ -121,9 +121,10 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     {
         return (new JtlCategoryI18n())
             ->setName($prestaCategoryI18n['name'])
-            ->setTitleTag($prestaCategoryI18n['meta_title'])
-            ->setDescription($prestaCategoryI18n['description'])
-            ->setMetaDescription($prestaCategoryI18n['meta_description'])
+            ->setTitleTag($prestaCategoryI18n['meta_title'] ?? '')
+            ->setDescription($prestaCategoryI18n['description'] ?? '')
+            ->setMetaDescription($prestaCategoryI18n['meta_description'] ?? '')
+            ->setMetaKeywords($prestaCategoryI18n['meta_keywords'] ?? '')
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCategoryI18n['id_lang']));
     }
 

@@ -450,6 +450,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setDescription((string)$prestaProductI18n['description'])
             ->setShortDescription((string)$prestaProductI18n['description_short'])
             ->setMetaDescription((string)$prestaProductI18n['meta_description'])
+            ->setDeliveryStatus((string)$prestaProductI18n['delivery_in_stock'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaProductI18n['id_lang']));
     }
 
@@ -988,6 +989,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->isbn                = $jtlProduct->getIsbn();
         $prestaProduct->id_tax_rules_group  = $this->findTaxClassId(...$jtlProduct->getTaxRates());
         $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
+        $prestaProduct->unit_price          = $this->calculateUnitPrice($jtlProduct);
         $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
         $prestaProduct->active              = $jtlProduct->getIsActive();
         $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
@@ -1005,6 +1007,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             $prestaProduct->meta_title[$key]        = $translation['meta_title'];
         }
 
+        $this->pushDeliveryTimes($jtlProduct, $prestaProduct, $translations);
         $this->pushSpecialAttributes($jtlProduct, $prestaProduct);
 
         return $prestaProduct;
@@ -1255,6 +1258,31 @@ class ProductController extends ProductPriceController implements PullInterface,
 
     /**
      * @param JtlProduct $jtlProduct
+     * @return float
+     */
+    protected function calculateUnitPrice(JtlProduct $jtlProduct): float
+    {
+        if ($jtlProduct->getConsiderBasePrice() && $jtlProduct->getBasePriceDivisor() > 0) {
+            $netPrice = 0.0;
+            foreach ($jtlProduct->getPrices() as $price) {
+                if ($price->getCustomerGroupId()->getEndpoint() === '') {
+                    foreach ($price->getItems() as $item) {
+                        if ($item->getQuantity() === 0) {
+                            $netPrice = $item->getNetPrice();
+                            break 2;
+                        }
+                    }
+                }
+            }
+            if ($netPrice > 0) {
+                return \round($netPrice / $jtlProduct->getBasePriceDivisor(), 6);
+            }
+        }
+        return .0;
+    }
+
+    /**
+     * @param JtlProduct $jtlProduct
      * @return string
      */
     protected function createPrestaBasePrice(JtlProduct $jtlProduct): string
@@ -1266,6 +1294,56 @@ class ProductController extends ProductPriceController implements PullInterface,
             $unit              = \sprintf('%s%s', $basePriceQuantity, $jtlProduct->getBasePriceUnitCode());
         }
         return $unit;
+    }
+
+    /**
+     * @param JtlProduct                        $jtlProduct
+     * @param PrestaProduct                     $prestaProduct
+     * @param array<int, array<string, string>> $translations
+     * @return void
+     */
+    private function pushDeliveryTimes(
+        JtlProduct $jtlProduct,
+        PrestaProduct $prestaProduct,
+        array $translations
+    ): void {
+        $hasDeliveryStatus = false;
+
+        foreach ($jtlProduct->getI18ns() as $i18n) {
+            $deliveryStatus = $i18n->getDeliveryStatus();
+            if ($deliveryStatus !== '') {
+                $hasDeliveryStatus = true;
+                break;
+            }
+        }
+
+        if ($hasDeliveryStatus) {
+            foreach ($jtlProduct->getI18ns() as $i18n) {
+                $langId         = $this->getPrestaLanguageIdFromIso(
+                    $i18n->getLanguageIso()
+                );
+                $deliveryStatus = $i18n->getDeliveryStatus();
+
+                $prestaProduct->delivery_in_stock[$langId]  = $deliveryStatus;
+                $prestaProduct->delivery_out_stock[$langId] = $deliveryStatus;
+            }
+            $prestaProduct->additional_delivery_times = 2;
+        } else {
+            $inStock  = $jtlProduct->getAdditionalHandlingTime();
+            $outStock = $jtlProduct->getSupplierDeliveryTime();
+
+            if ($inStock > 0 || $outStock > 0) {
+                foreach (\array_keys($translations) as $langId) {
+                    $prestaProduct->delivery_in_stock[$langId]  = $inStock > 0
+                        ? \sprintf('%d', $inStock)
+                        : '';
+                    $prestaProduct->delivery_out_stock[$langId] = $outStock > 0
+                        ? \sprintf('%d', $outStock)
+                        : '';
+                }
+                $prestaProduct->additional_delivery_times = 2;
+            }
+        }
     }
 
     /**
