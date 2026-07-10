@@ -1,0 +1,14 @@
+name: Test update changelog (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  call:
+    uses: jtl-software/changelog-extractor/.github/workflows/update-changelog.yaml@CO-3490-changelog-extractor-not-working
+    with:
+      system-name: presta
+      changelog-file: changelog.md
+      app-id: ${{ vars.GH_APP_ID }}
+    secrets:
+      APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
