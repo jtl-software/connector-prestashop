@@ -1,11 +1,13 @@
 name: Check
 
 on:
+  workflow_call:
   push:
+    branches: [main, master, develop]
     tags:
       - '*'
-    branches-ignore:
-      - '**/gh-readonly-queue/**'
+  pull_request:
+    branches: [main, master, develop]
 
 permissions:
   contents: read
@@ -14,7 +16,6 @@ permissions:
   packages: read
 
 jobs:
-  # Stage 1: Fast-fail lints (Actionlint, Shellcheck)
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -23,18 +24,18 @@ jobs:
       checks: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           sparse-checkout: |
             .github
-            
+
       - name: Lint GitHub Actions
         uses: reviewdog/action-actionlint@6fb7acc99f4a1008869fa8a0f09cfca740837d9d # v1.72.0
         with:
           reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
           fail_level: error
-          
+
       - name: Lint shell scripts
         uses: reviewdog/action-shellcheck@4c07458293ac342d477251099501a718ae5ef86e # v1.32.0
         with:
@@ -43,7 +44,6 @@ jobs:
           pattern: '*.sh'
           fail_level: error
 
-  # Stage 2: PHP static analysis (parallel)
   php-static-analysis:
     name: PHP Static Analysis (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-latest
@@ -55,12 +55,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+        php-version: ['8.1']
     container:
       image: ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:${{ matrix.php-version }}
       options: --user root
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -79,30 +79,28 @@ jobs:
         run: bash .github/scripts/setup-check.sh
 
       - name: PHPCS
-        if: always()
         run: bash .github/scripts/run-phpcs.sh
 
       - name: PHPStan
-        if: always()
         run: composer run phpstan -- --error-format=github
 
-  # Stage 2b: PHP tests (parallel with static analysis)
   php-tests:
     name: PHP Tests (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-latest
     needs: lint
     permissions:
       contents: read
+      checks: write
       packages: read
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+        php-version: ['8.1']
     container:
       image: ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:${{ matrix.php-version }}
       options: --user root
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
@@ -121,9 +119,16 @@ jobs:
         run: bash .github/scripts/setup-check.sh
 
       - name: PHPUnit
-        run: composer run test
+        run: composer run test -- --log-junit junit-results.xml
 
-  # Stage 3: Final status check (gates merging)
+      - name: Report test results
+        if: always()
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        with:
+          name: PHPUnit Results (PHP ${{ matrix.php-version }})
+          path: junit-results.xml
+          reporter: java-junit
+
   check:
     name: Check status
     if: always()
@@ -134,9 +139,9 @@ jobs:
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         run: |
-          if [[ "${{ needs.lint.result }}" == "failure" ]] || \
-             [[ "${{ needs.php-static-analysis.result }}" == "failure" ]] || \
-             [[ "${{ needs.php-tests.result }}" == "failure" ]]; then
+          if [[ "${{ needs.lint.result }}" != "success" ]] || \
+             [[ "${{ needs.php-static-analysis.result }}" != "success" ]] || \
+             [[ "${{ needs.php-tests.result }}" != "success" ]]; then
             echo "❌ One or more checks failed"
             exit 1
           fi
@@ -151,17 +156,17 @@ jobs:
       contents: read
       packages: read
     container:
-      image: ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:8.3
+      image: ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:8.1
       options: --user root
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
       - name: Build ZIP
         run: bash .github/scripts/build-zip.sh "${{ github.ref_name }}"
 
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: jtl_connector_prestashop_${{ github.ref_name }}
           path: jtl_connector_prestashop_${{ github.ref_name }}.zip
