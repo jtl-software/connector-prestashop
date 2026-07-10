@@ -13,6 +13,7 @@ jobs:
     with:
       system-name: presta
       changelog-file: changelog.md
+      jira-release-prefix: PRC
       app-id: ${{ vars.GH_APP_ID }}
     secrets:
       APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
