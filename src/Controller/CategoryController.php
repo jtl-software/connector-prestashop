@@ -310,17 +310,19 @@ class CategoryController extends AbstractPushController implements PullInterface
 
         // PS validiert alle aktiven Sprachen beim Speichern. Fehlende Sprachen mit
         // dem ersten verfügbaren Eintrag auffüllen, damit der name-Array nicht leer bleibt.
-        if (!empty($translations)) {
-            $fallback        = \reset($translations);
-            $activeLanguages = \Language::getLanguages(true, $this->getPrestaContextShopId());
-            /** @var array<int, array<string, int|string>> $activeLanguages */
-            foreach ($activeLanguages as $lang) {
-                $psLangId = (int)$lang['id_lang'];
-                if (!isset($translations[$psLangId])) {
-                    $url                            = \Tools::str2url($fallback['name']);
-                    $translations[$psLangId]        = $fallback;
-                    $translations[$psLangId]['url'] = \is_string($url) ? $url : $fallback['url'];
-                }
+        if (empty($translations)) {
+            throw new \RuntimeException('No category translations found for any active PrestaShop language');
+        }
+
+        $fallback        = \reset($translations);
+        $activeLanguages = \Language::getLanguages(true, $this->getPrestaContextShopId());
+        /** @var array<int, array<string, int|string>> $activeLanguages */
+        foreach ($activeLanguages as $lang) {
+            $psLangId = (int)$lang['id_lang'];
+            if (!isset($translations[$psLangId])) {
+                $url                            = \Tools::str2url($fallback['name']);
+                $translations[$psLangId]        = $fallback;
+                $translations[$psLangId]['url'] = \is_string($url) ? $url : $fallback['url'];
             }
         }
 
