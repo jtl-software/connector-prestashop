@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -17,7 +16,7 @@ use Customer as PrestaCustomer;
 use Address as PrestaAddress;
 use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
 
-class CustomerController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
+class CustomerController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -151,7 +150,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      * @throws \PrestaShopException|Exception
      * @throws \Exception
      */
-    public function push(AbstractModel $jtlCustomer): AbstractModel
+    protected function doPush(AbstractModel $jtlCustomer): AbstractModel
     {
         /** @var JtlCustomer $jtlCustomer */
         $endpoint = $jtlCustomer->getId()->getEndpoint();

@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Exception\DefinitionException;
 use Jtl\Connector\Core\Model\AbstractImage;
@@ -20,7 +19,7 @@ use Jtl\Connector\Core\Model\ImageI18n;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 
-class ImageController extends AbstractController implements PushInterface, PullInterface, DeleteInterface
+class ImageController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -253,7 +252,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlImage): AbstractModel
+    protected function doPush(AbstractModel $jtlImage): AbstractModel
     {
         /** @var AbstractImage $jtlImage */
         $id = $jtlImage->getForeignKey()->getEndpoint();
