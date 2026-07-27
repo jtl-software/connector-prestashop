@@ -311,6 +311,9 @@ class CategoryController extends AbstractPushController implements PullInterface
         // PS validiert alle aktiven Sprachen beim Speichern. Fehlende Sprachen mit
         // dem ersten verfügbaren Eintrag auffüllen, damit der name-Array nicht leer bleibt.
         if (empty($translations)) {
+            if (empty($jtlCategoryI18ns)) {
+                return [];
+            }
             throw new \RuntimeException('No category translations found for any active PrestaShop language');
         }
 
