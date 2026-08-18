@@ -15,6 +15,10 @@ use ReturnTypeWillChange;
  * controllers/front/api.php once jtl/connector core hashes session ids
  * natively (tracked as CO-3585) and composer.json requires that core
  * version.
+ *
+ * Parameters are left untyped to stay contravariant with
+ * Jtl\Connector\Core\Session\SqliteSessionHandler, which does not declare
+ * scalar parameter types itself.
  */
 class HashedSqliteSessionHandler extends SqliteSessionHandler
 {
@@ -23,9 +27,9 @@ class HashedSqliteSessionHandler extends SqliteSessionHandler
      * @return bool|string
      */
     #[ReturnTypeWillChange]
-    public function read(string $sessionId): bool|string
+    public function read($sessionId): bool|string
     {
-        return parent::read($this->hash($sessionId));
+        return parent::read($this->hash((string)$sessionId));
     }
 
     /**
@@ -34,27 +38,27 @@ class HashedSqliteSessionHandler extends SqliteSessionHandler
      * @return bool
      */
     #[ReturnTypeWillChange]
-    public function write(string $sessionId, string $sessionData): bool
+    public function write($sessionId, $sessionData): bool
     {
-        return parent::write($this->hash($sessionId), $sessionData);
+        return parent::write($this->hash((string)$sessionId), $sessionData);
     }
 
     /**
      * @param string $sessionId
      * @return bool
      */
-    public function destroy(string $sessionId): bool
+    public function destroy($sessionId): bool
     {
-        return parent::destroy($this->hash($sessionId));
+        return parent::destroy($this->hash((string)$sessionId));
     }
 
     /**
      * @param string $sessionId
      * @return bool
      */
-    public function validateId(string $sessionId): bool
+    public function validateId($sessionId): bool
     {
-        return parent::validateId($this->hash($sessionId));
+        return parent::validateId($this->hash((string)$sessionId));
     }
 
     /**
@@ -62,9 +66,9 @@ class HashedSqliteSessionHandler extends SqliteSessionHandler
      * @param string $sessionData
      * @return bool
      */
-    public function updateTimestamp(string $sessionId, string $sessionData): bool
+    public function updateTimestamp($sessionId, $sessionData): bool
     {
-        return parent::updateTimestamp($this->hash($sessionId), $sessionData);
+        return parent::updateTimestamp($this->hash((string)$sessionId), $sessionData);
     }
 
     /**
