@@ -148,8 +148,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      * @param AbstractModel ...$jtlCustomer
      * @return AbstractModel[]
      * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException|Exception
-     * @throws \Exception
+     * @throws \PrestaShopException|Exception|\Exception
      */
     public function push(AbstractModel ...$jtlCustomer): array
     {
