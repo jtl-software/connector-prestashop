@@ -85,12 +85,23 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
+     * @param AbstractModel ...$jtlManufacturer
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$jtlManufacturer): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlManufacturer);
+    }
+
+    /**
      * @param AbstractModel $jtlManufacturer
      * @return JtlManufacturer
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlManufacturer): AbstractModel
+    private function pushOne(AbstractModel $jtlManufacturer): AbstractModel
     {
         /** @var JtlManufacturer $jtlManufacturer */
         $endpoint = $jtlManufacturer->getId()->getEndpoint();
@@ -167,11 +178,21 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     * @throws \PrestaShopException
+     */
+    public function delete(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return JtlManufacturer
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    private function deleteOne(AbstractModel $model): AbstractModel
     {
         /** @var JtlManufacturer $model */
         $manufacturer = new \Manufacturer((int)$model->getId()->getEndpoint());

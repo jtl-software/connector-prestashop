@@ -22,11 +22,14 @@
     "vendor-dir": "lib",
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "platform": {
+      "php": "8.1.34"
     }
   },
   "require": {
     "php": ">= 8.1",
-    "jtl/connector": "^5.2.10",
+    "jtl/connector": "5.3.2",
     "symfony/yaml": "^3.4",
     "ext-json": "*",
     "phing/phing": "^2.16",
