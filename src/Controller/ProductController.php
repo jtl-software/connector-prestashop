@@ -721,12 +721,23 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
+     * @param AbstractModel ...$jtlProduct
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$jtlProduct): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushProduct($model), $jtlProduct);
+    }
+
+    /**
      * @param AbstractModel $jtlProduct
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlProduct): AbstractModel
+    private function pushProduct(AbstractModel $jtlProduct): AbstractModel
     {
         /** @var JtlProduct $jtlProduct */
         $endpoint        = $jtlProduct->getId()->getEndpoint();
@@ -1397,12 +1408,23 @@ class ProductController extends ProductPriceController implements PullInterface,
 
 
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function delete(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    private function deleteOne(AbstractModel $model): AbstractModel
     {
         /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();

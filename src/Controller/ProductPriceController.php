@@ -15,12 +15,23 @@ use Jtl\Connector\Core\Model\ProductPriceItem as JtlProductPriceItem;
 class ProductPriceController extends AbstractController implements PushInterface
 {
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return JtlProduct
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $model): AbstractModel
+    protected function pushOne(AbstractModel $model): AbstractModel
     {
         /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();
