@@ -1,7 +1,10 @@
 ## unreleased
+
+## 2.0.3 _2026-08-18_
 - CO-2904 - fix broken linkings for categories
 - CO-3043 - fix taxrate not found
 - CO-2793 - fix base price not set
+- CO-3585 - hash session tokens (SHA-256) instead of storing them in plaintext (fixes CO-3583); temporary local fix until jtl/connector core supports this natively
 
 ## 2.0.2 _2025-11-02_
 - CO-2508 - Use wawi tracking lists

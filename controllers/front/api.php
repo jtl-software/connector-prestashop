@@ -9,6 +9,7 @@ use Jtl\Connector\Core\Exception\ApplicationException;
 use Jtl\Connector\Core\Exception\ConfigException;
 use Jtl\Connector\Core\Exception\LoggerException;
 use jtl\Connector\Presta\Connector;
+use jtl\Connector\Presta\Session\HashedSqliteSessionHandler;
 use jtl\Connector\Presta\Utils\Config;
 use Psr\Log\LogLevel;
 
@@ -39,6 +40,9 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
             $config->set(ConfigSchema::LOG_LEVEL, LogLevel::DEBUG);
         }
         $application = new Application(CONNECTOR_DIR, $config, $configSchema);
+        // TODO: CO-3583 workaround, remove once jtl/connector core hashes session ids
+        // natively (CO-3585) and composer.json requires that core version.
+        $application->setSessionHandler(new HashedSqliteSessionHandler(\sprintf('%s/var', CONNECTOR_DIR)));
         try {
             $application->run($connector);
         } catch (\Exception $e) {
