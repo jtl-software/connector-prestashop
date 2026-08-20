@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Exception\DefinitionException;
 use Jtl\Connector\Core\Model\AbstractImage;
@@ -20,7 +19,7 @@ use Jtl\Connector\Core\Model\ImageI18n;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 
-class ImageController extends AbstractController implements PushInterface, PullInterface, DeleteInterface
+class ImageController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -247,32 +246,20 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
-     * @param AbstractModel ...$jtlImage
-     * @return AbstractModel[]
-     * @throws DefinitionException
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function push(AbstractModel ...$jtlImage): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlImage);
-    }
-
-    /**
      * @param AbstractModel $jtlImage
      * @return AbstractModel
      * @throws DefinitionException
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    private function pushOne(AbstractModel $jtlImage): AbstractModel
+    protected function doPush(AbstractModel $jtlImage): AbstractModel
     {
         /** @var AbstractImage $jtlImage */
         $id = $jtlImage->getForeignKey()->getEndpoint();
 
         if (!empty($id)) {
             if (\in_array($jtlImage->getRelationType(), ['category', 'manufacturer'])) {
-                $this->deleteOne($jtlImage);
+                $this->delete($jtlImage);
             }
 
             $generate_hight_dpi_images = (bool)\Configuration::get('PS_HIGHT_DPI');
@@ -469,25 +456,13 @@ class ImageController extends AbstractController implements PushInterface, PullI
     }
 
     /**
-     * @param AbstractModel ...$jtlImage
-     * @return AbstractModel[]
-     * @throws \Jtl\Connector\Core\Exception\DefinitionException
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function delete(AbstractModel ...$jtlImage): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $jtlImage);
-    }
-
-    /**
      * @param AbstractModel $jtlImage
      * @return AbstractModel
      * @throws \Jtl\Connector\Core\Exception\DefinitionException
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    private function deleteOne(AbstractModel $jtlImage): AbstractModel
+    public function delete(AbstractModel $jtlImage): AbstractModel
     {
         /** @var AbstractImage $jtlImage */
         $fId = $jtlImage->getForeignKey()->getEndpoint();
