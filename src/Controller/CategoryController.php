@@ -7,7 +7,6 @@ namespace jtl\Connector\Presta\Controller;
 use Category as PrestaCategory;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\Category as JtlCategory;
 use Jtl\Connector\Core\Model\CategoryI18n as JtlCategoryI18n;
@@ -16,11 +15,10 @@ use Jtl\Connector\Core\Model\QueryFilter;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Statistic;
 use jtl\Connector\Presta\Utils\QueryBuilder;
-use PrestaShopBundle\Form\Admin\Catalog\Category\CategoryType;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
-class CategoryController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
+class CategoryController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -164,7 +162,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
      */
-    public function push(AbstractModel $jtlCategory): AbstractModel
+    protected function doPush(AbstractModel $jtlCategory): AbstractModel
     {
         /** @var JtlCategory $jtlCategory */
         $parentEndpoint = $this->mapper->getEndpointId(
@@ -181,7 +179,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $isNew    = $endpoint === '';
 
         if (!$isNew) {
-            $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory((int)$endpoint));
+            $existingCategory = new PrestaCategory((int)$endpoint);
+            if ($existingCategory->is_root_category) {
+                $jtlCategory->setParentCategoryId(new Identity((string)$existingCategory->id_parent));
+            }
+            $prestaCategory = $this->createPrestaCategory($jtlCategory, $existingCategory);
             if ($prestaCategory->id !== null) {
                 if (!$prestaCategory->update()) {
                     throw new \RuntimeException('Error updating category' . $jtlCategory->getI18ns()[0]->getName());
@@ -233,13 +235,13 @@ class CategoryController extends AbstractController implements PullInterface, Pu
                 ? $prestaRootCategoryId
                 : (int)$jtlCategory->getParentCategoryId()->getEndpoint();
 
-        foreach ($translations as $key => $translation) {
-            $prestaCategory->name             = [];
-            $prestaCategory->description      = [];
-            $prestaCategory->meta_description = [];
-            $prestaCategory->meta_keywords    = [];
-            $prestaCategory->link_rewrite     = [];
+        $prestaCategory->name             = $this->ensureArray($prestaCategory->name);
+        $prestaCategory->description      = $this->ensureArray($prestaCategory->description);
+        $prestaCategory->meta_description = $this->ensureArray($prestaCategory->meta_description);
+        $prestaCategory->meta_keywords    = $this->ensureArray($prestaCategory->meta_keywords);
+        $prestaCategory->link_rewrite     = $this->ensureArray($prestaCategory->link_rewrite);
 
+        foreach ($translations as $key => $translation) {
             $prestaCategory->name[$key]             = $translation['name'];
             $prestaCategory->description[$key]      = $translation['description'];
             $prestaCategory->meta_description[$key] = $translation['metaDescription'];
@@ -248,6 +250,15 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         }
 
         return $prestaCategory;
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<mixed>
+     */
+    private function ensureArray(mixed $value): array
+    {
+        return \is_array($value) ? $value : [];
     }
 
     /**
@@ -268,13 +279,17 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     {
         $translations = [];
         foreach ($jtlCategoryI18ns as $jtlCategoryI18n) {
-            $languageIso = $this->getPrestaLanguageIdFromIso($jtlCategoryI18n->getLanguageIso());
-            $name        = \preg_replace('/[<>;=#{}]/', '_', $jtlCategoryI18n->getName());
-            $url         = \Tools::str2url(empty($jtlCategoryI18n->getUrlPath())
-                                               ? $jtlCategoryI18n->getName()
-                                               : $jtlCategoryI18n->getUrlPath());
+            try {
+                $langId = $this->getPrestaLanguageIdFromIso($jtlCategoryI18n->getLanguageIso());
+            } catch (\RuntimeException $e) {
+                // Sprache nicht in PS vorhanden — überspringen
+                continue;
+            }
+            $name = \preg_replace('/[<>;=#{}]/', '_', $jtlCategoryI18n->getName());
+            $url  = \Tools::str2url(empty($jtlCategoryI18n->getUrlPath())
+                                        ? $jtlCategoryI18n->getName()
+                                        : $jtlCategoryI18n->getUrlPath());
 
-            $langId                                   = $languageIso;
             $translations[$langId]['name']            = \is_string($name)
                 ? $name
                 : throw new \RuntimeException('Name must be a string');
@@ -290,6 +305,22 @@ class CategoryController extends AbstractController implements PullInterface, Pu
                     \mb_substr($translations[$langId]['description'], 0, 21844);
                 $translations[$langId]['metaDescription'] =
                     \mb_substr($translations[$langId]['metaDescription'], 0, 512);
+            }
+        }
+
+        // PS validiert alle aktiven Sprachen beim Speichern. Fehlende Sprachen mit
+        // dem ersten verfügbaren Eintrag auffüllen, damit der name-Array nicht leer bleibt.
+        if (!empty($translations)) {
+            $fallback        = \reset($translations);
+            $activeLanguages = \Language::getLanguages(true, $this->getPrestaContextShopId());
+            /** @var array<int, array<string, int|string>> $activeLanguages */
+            foreach ($activeLanguages as $lang) {
+                $psLangId = (int)$lang['id_lang'];
+                if (!isset($translations[$psLangId])) {
+                    $url                            = \Tools::str2url($fallback['name']);
+                    $translations[$psLangId]        = $fallback;
+                    $translations[$psLangId]['url'] = \is_string($url) ? $url : $fallback['url'];
+                }
             }
         }
 

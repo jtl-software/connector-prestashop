@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta\Controller;
 
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Product as JtlProduct;
 use jtl\Connector\Presta\Utils\Utils;
 
-class ProductStockLevelController extends AbstractController implements PushInterface
+class ProductStockLevelController extends AbstractPushController
 {
     /**
      * @param AbstractModel $model
      * @return AbstractModel
      */
-    public function push(AbstractModel $model): AbstractModel
+    protected function doPush(AbstractModel $model): AbstractModel
     {
         /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();

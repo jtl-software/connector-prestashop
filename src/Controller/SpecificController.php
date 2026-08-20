@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -20,7 +19,7 @@ use Jtl\Connector\Core\Model\Specific as JtlSpecific;
 use Jtl\Connector\Core\Model\SpecificValue as JtlSpecificValue;
 use Jtl\Connector\Core\Model\SpecificValueI18n as JtlSpecificValueI18n;
 
-class SpecificController extends AbstractController implements PushInterface, PullInterface, DeleteInterface
+class SpecificController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -202,7 +201,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlSpecific): AbstractModel
+    protected function doPush(AbstractModel $jtlSpecific): AbstractModel
     {
         /** @var JtlSpecific $jtlSpecific */
         $endpoint = $jtlSpecific->getId()->getEndpoint();

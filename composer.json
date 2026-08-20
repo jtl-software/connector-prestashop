@@ -20,16 +20,26 @@
   "prefer-stable": true,
   "config": {
     "vendor-dir": "lib",
+    "prepend-autoloader": false,
     "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "cweagans/composer-patches": true
     },
     "platform": {
       "php": "8.1"
     }
   },
+  "extra": {
+    "patches": {
+      "jtl/connector": {
+        "Fix empty languageISO string causing exception in LanguageIsoSubscriber": "patches/jtl-connector-language-iso-subscriber-empty-string.patch"
+      }
+    }
+  },
   "require": {
     "php": ">= 8.1",
-    "jtl/connector": "<5.3.1",
+    "jtl/connector": "5.2.12",
+    "cweagans/composer-patches": "^1.7",
     "symfony/yaml": "^3.4",
     "ext-json": "*",
     "phing/phing": "^2.16",
@@ -40,15 +50,19 @@
     "jms/serializer": ">=3.3 <=3.24",
     "doctrine/lexer": "^1",
     "symfony/service-contracts": "^2.5",
-    "symfony/event-dispatcher-contracts": "^1.2"
+    "symfony/event-dispatcher-contracts": "^2.3"
   },
   "autoload": {
     "psr-4": {
-      "jtl\\Connector\\Presta\\": "src/",
-      "Tests\\": "tests/"
+      "jtl\\Connector\\Presta\\": "src/"
     },
     "psr-0": {
       "": "plugins/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
     }
   },
   "require-dev": {

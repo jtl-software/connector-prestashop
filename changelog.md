@@ -3,6 +3,7 @@
 - CO-3043 - fix taxrate not found
 - CO-2117 - fix delivery time not set
 - CO-2793 - fix base price not set
+- CO-3382 - fix customer group prices not saved as specific prices
 
 ## 2.0.2 _2025-11-02_
 - CO-2508 - Use wawi tracking lists
