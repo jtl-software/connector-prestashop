@@ -140,8 +140,6 @@ final class TestableCustomerOrderController extends CustomerOrderController
     }
 
     /** @var JtlCustomerOrder[]|null */
-    private ?JtlCustomerOrder $mockCreatedOrdersContainer = null;
-    /** @var JtlCustomerOrder[]|null */
     private ?array $mockCreatedOrders = null;
     private int $mockCreatedOrdersIndex = 0;
 
