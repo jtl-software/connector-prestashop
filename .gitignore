@@ -23,3 +23,4 @@ var
 phpcs-report.xml
 coverage
 .claude/
+.phpunit.cache
