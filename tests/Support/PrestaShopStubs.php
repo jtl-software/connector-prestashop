@@ -1107,6 +1107,9 @@ if (!class_exists('Product')) {
         /** @var array<string, mixed>|null */
         public static ?array $mockCoverData = null;
 
+        /** @var array<int, int|null> ids passed to delete(), captured for assertions */
+        public static array $deletedIds = [];
+
         public float $price = 0.0;
         public float $wholesale_price = 0.0;
         public float $unit_price = 0.0;
@@ -1206,9 +1209,16 @@ if (!class_exists('Product')) {
             return static::$mockCoverData ?? [];
         }
 
+        public function delete(): bool
+        {
+            static::$deletedIds[] = $this->id;
+            return true;
+        }
+
         public static function resetMock(): void
         {
             static::$mockCoverData = null;
+            static::$deletedIds    = [];
         }
     }
 }
@@ -1231,6 +1241,9 @@ if (!class_exists('Combination')) {
         /** @var array<int> captured by setAttributes() */
         public array $capturedAttributeIds = [];
 
+        /** @var array<int, int|null> ids passed to delete(), captured for assertions */
+        public static array $deletedIds = [];
+
         public function __construct(?int $id = null)
         {
             $this->id = $id;
@@ -1240,6 +1253,17 @@ if (!class_exists('Combination')) {
         {
             $this->capturedAttributeIds = $ids;
             return true;
+        }
+
+        public function delete(): bool
+        {
+            static::$deletedIds[] = $this->id;
+            return true;
+        }
+
+        public static function resetMock(): void
+        {
+            static::$deletedIds = [];
         }
     }
 }
