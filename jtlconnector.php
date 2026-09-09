@@ -44,7 +44,10 @@ class JTLConnector extends Module
             } else {
                 $this->version = 'Unknown';
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Symfony\Component\Yaml\Yaml is provided by the PrestaShop 9 host at
+            // runtime (composer "replace"s it, see composer.json) rather than being
+            // vendored — if it can't be autoloaded this throws \Error, not \Exception.
             $this->version = 'Unknown';
         }
         $this->author        = 'JTL Software GmbH';
@@ -77,7 +80,7 @@ class JTLConnector extends Module
      */
     public function install(): bool
     {
-        $minimumPhpversion = '8.0';
+        $minimumPhpversion = '8.1';
         if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
             $this->_errors[] =
                 sprintf(

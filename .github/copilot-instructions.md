@@ -1,6 +1,6 @@
 ## What this project is
 
-A PrestaShop module (`jtlconnector`) that synchronises shop data with JTL-Wawi ERP via the `jtl/connector` core framework. Distributed as a ZIP for manual install in PrestaShop 1.7+.
+A PrestaShop module (`jtlconnector`) that synchronises shop data with JTL-Wawi ERP via the `jtl/connector` core framework. Distributed as a ZIP for manual install in PrestaShop 9.0+ (composer "replace"s its symfony/* dependencies to rely on the Symfony 6.4 PrestaShop 9 itself ships — this only works on PS9's own Symfony version, see composer.json).
 
 **Critical detail:** Composer's `vendor-dir` is `./lib/`, not `./vendor/`. Anything that normally lives at `vendor/bin/<tool>` is at `lib/bin/<tool>` here — most importantly `phing` (`lib/bin/phing`).
 
@@ -23,6 +23,9 @@ composer phpstan
 composer analyse
 
 # Build the distribution ZIP for a given version
+# (phing reads zipname from build-config.properties, not build-config.yaml —
+# generate it first, e.g. `sed 's/: /=/' build-config.yaml > build-config.properties`,
+# or it silently produces a wrongly-named zip. build.sh and the CI script do this already.)
 php ./lib/bin/phing release -Dversion=<version>
 
 # Local one-shot build (production deps, ZIP, then restore dev deps)
