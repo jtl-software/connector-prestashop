@@ -228,8 +228,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
     {
         $queryBuilder = new QueryBuilder();
         $id           = \is_numeric(\substr($image->getId()->getEndpoint(), 0, 1))
-            ? $image->getId()->getEndpoint()
-            : \substr($image->getId()->getEndpoint(), 1);
+            ? (int)$image->getId()->getEndpoint()
+            : (int)\substr($image->getId()->getEndpoint(), 1);
 
         $sql = $queryBuilder
             ->select('il.id_lang, il.legend as altText')
