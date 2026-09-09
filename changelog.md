@@ -1,4 +1,5 @@
 ## unreleased
+- CO-3113 - PrestaShop 9 compatibility: stop bundling symfony/* (they collide with PrestaShop 9's own, newer copies and crash the admin), add the admin tab controller PS9's LegacyRouterChecker requires, drop support for PrestaShop < 9.0
 - CO-2904 - fix broken linkings for categories
 - CO-3043 - fix taxrate not found
 - CO-2117 - fix delivery time not set
