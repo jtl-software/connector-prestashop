@@ -469,6 +469,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         if (!empty($prestaProduct->id_category_default)) {
             $jtlAttributes[] = (new JtlProductAttribute())
                 ->setId(new Identity(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID))
+                ->setType(JtlProductAttribute::TYPE_INT)
                 ->addI18n(
                     (new JtlTranslatableAttributeI18n())
                         ->setName(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID)
