@@ -27,18 +27,16 @@ PrestaShop module `jtlconnector` that syncs shop data with JTL-Wawi via the `jtl
 
 ## Commands
 
-Run PHP tooling through the Docker wrapper, not on the host:
-
 ```bash
-bin/dphp composer install
-bin/dphp composer phpcs        # style (src controllers index.php jtlconnector.php)
-bin/dphp composer phpcs:fix
-bin/dphp composer phpstan      # max level
-bin/dphp composer test         # PHPUnit (phpunit.xml)
-bin/dphp lib/bin/phpunit -c phpunit.xml --filter <TestName>
+composer install
+composer phpcs        # style (src controllers index.php jtlconnector.php)
+composer phpcs:fix
+composer phpstan      # max level
+composer test         # PHPUnit (phpunit.xml)
+lib/bin/phpunit -c phpunit.xml --filter <TestName>
 ```
 
-Binaries are in `lib/bin/`, not `vendor/bin/`. Harmless noise in the output: Xdebug connection warnings, `session.sid_*` deprecations, git "dubious ownership" warning from composer. PHPCS does not cover `tests/`.
+Binaries are in `lib/bin/`, not `vendor/bin/`. PHPCS does not cover `tests/`.
 
 ## Conventions
 
