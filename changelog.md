@@ -1,6 +1,6 @@
 ## unreleased
-- fix inverted delete condition in ProductController that deleted the whole base product when deleting a single variant, and silently did nothing when deleting a plain product
-- fix possible SQL injection in ImageController::getPrestaImageI18n()
+- CO-3664 - fix inverted delete condition in ProductController that deleted the whole base product when deleting a single variant, and silently did nothing when deleting a plain product
+- CO-3664 - fix possible SQL injection in ImageController::getPrestaImageI18n()
 - CO-2904 - fix broken linkings for categories
 - CO-3043 - fix taxrate not found
 - CO-2117 - fix delivery time not set
