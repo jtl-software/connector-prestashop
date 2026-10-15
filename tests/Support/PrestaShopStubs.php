@@ -381,6 +381,9 @@ if (!class_exists('Tab')) {
         /** @var array<int, int> */
         public static array $initAccessCalls = [];
 
+        /** @var array<int, int> */
+        public static array $deletedIds = [];
+
         public int $id = 0;
         public int $id_parent = 0;
         public string $class_name = '';
@@ -415,6 +418,7 @@ if (!class_exists('Tab')) {
         public function delete(): bool
         {
             $this->deleted = true;
+            static::$deletedIds[] = $this->id;
 
             return true;
         }
@@ -432,6 +436,7 @@ if (!class_exists('Tab')) {
             static::$saved          = [];
             static::$saveResult     = true;
             static::$initAccessCalls = [];
+            static::$deletedIds      = [];
         }
     }
 }

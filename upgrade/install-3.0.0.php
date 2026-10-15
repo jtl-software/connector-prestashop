@@ -29,11 +29,18 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_3_0_0(object $object): bool
 {
+    $legacyTabId = (int)Tab::getIdFromClassName('jtlconnector');
+
     if ((int)Tab::getIdFromClassName('AdminJtlconnector') > 0) {
+        // already migrated; drop a leftover legacy tab (e.g. from an interrupted earlier attempt),
+        // PS9 rejects tabs without a matching controller file
+        if ($legacyTabId > 0) {
+            (new Tab($legacyTabId))->delete();
+        }
+
         return true;
     }
 
-    $legacyTabId = (int)Tab::getIdFromClassName('jtlconnector');
     if ($legacyTabId > 0) {
         $tab             = new Tab($legacyTabId);
         $tab->class_name = 'AdminJtlconnector';

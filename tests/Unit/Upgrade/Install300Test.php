@@ -37,10 +37,20 @@ final class Install300Test extends TestCase
 
     public function testAlreadyMigratedTabIsLeftUntouched(): void
     {
+        \Tab::$classNames = ['AdminJtlconnector' => 12];
+
+        self::assertTrue(\upgrade_module_3_0_0($this->module()));
+        self::assertSame([], \Tab::$saved);
+        self::assertSame([], \Tab::$deletedIds);
+    }
+
+    public function testLeftoverLegacyTabIsDeletedWhenTheNewTabAlreadyExists(): void
+    {
         \Tab::$classNames = ['AdminJtlconnector' => 12, 'jtlconnector' => 7];
 
         self::assertTrue(\upgrade_module_3_0_0($this->module()));
         self::assertSame([], \Tab::$saved);
+        self::assertSame([7], \Tab::$deletedIds);
     }
 
     public function testLegacyTabIsRenamedInPlaceKeepingItsId(): void
