@@ -1502,9 +1502,9 @@ class ProductController extends ProductPriceController implements PullInterface,
         if ($endpoint !== '') {
             [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
             if (!empty($combiId)) {
-                $obj = new \Product((int)$art);
-            } else {
                 $obj = new Combination((int)$combiId);
+            } else {
+                $obj = new \Product((int)$art);
             }
 
             $obj->delete();
