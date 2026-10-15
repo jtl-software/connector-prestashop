@@ -36,7 +36,7 @@ final class StatisticAndDeleteTest extends TestCase
         $jtlCustomer = (new JtlCustomer())
             ->setId(new Identity('5'));
 
-        $result = $this->controller->delete($jtlCustomer);
+        [$result] = $this->controller->delete($jtlCustomer);
         self::assertSame($jtlCustomer, $result);
     }
 }

@@ -25,7 +25,7 @@ final class DeleteTest extends TestCase
         $jtlSpecific = (new Specific())
             ->setId(new Identity('7'));
 
-        $result = $this->controller->delete($jtlSpecific);
+        [$result] = $this->controller->delete($jtlSpecific);
 
         self::assertSame($jtlSpecific, $result);
     }
