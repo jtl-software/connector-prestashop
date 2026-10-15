@@ -37,6 +37,17 @@ final class ProductControllerTest extends TestCase
 
         $mapperProp = new \ReflectionProperty(AbstractController::class, 'mapper');
         $mapperProp->setValue($this->controller, $this->mapper);
+
+        \Product::resetMock();
+        \Combination::resetMock();
+    }
+
+    protected function tearDown(): void
+    {
+        \Product::resetMock();
+        \Combination::resetMock();
+
+        parent::tearDown();
     }
 
     public function testDeleteReturnsPassedModel(): void
@@ -46,6 +57,31 @@ final class ProductControllerTest extends TestCase
         $result = $this->controller->delete($model);
 
         self::assertSame($model, $result);
+    }
+
+    /**
+     * Regression test for an inverted condition that deleted the whole base
+     * product when a variant/combination endpoint was passed, and silently
+     * did nothing when a plain product endpoint was passed.
+     */
+    public function testDeleteRemovesCombinationWhenEndpointReferencesAVariant(): void
+    {
+        $model = $this->createModelWithEndpoint('42_7');
+
+        $this->controller->delete($model);
+
+        self::assertSame([7], \Combination::$deletedIds, 'the variant must be deleted');
+        self::assertSame([], \Product::$deletedIds, 'the base product must not be touched');
+    }
+
+    public function testDeleteRemovesProductWhenEndpointHasNoVariant(): void
+    {
+        $model = $this->createModelWithEndpoint('42');
+
+        $this->controller->delete($model);
+
+        self::assertSame([42], \Product::$deletedIds, 'the base product must be deleted');
+        self::assertSame([], \Combination::$deletedIds, 'no combination must be touched');
     }
 
     private function createModelWithEndpoint(string $endpoint): JtlProduct
