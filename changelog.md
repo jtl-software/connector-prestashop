@@ -6,6 +6,7 @@
 - CO-3498 - fix main_category_id attribute imported as free text instead of integer
 - CO-3385 - fix send stock
 - raise minimum PHP version to 8.3 (required by jtl/connector 5.3.x)
+- CO-3113 - PrestaShop 9 compatibility: stop bundling symfony/* (they collide with PrestaShop 9's own, newer copies and crash the admin), add the admin tab controller PS9's LegacyRouterChecker requires, drop support for PrestaShop < 9.0
 
 ## 2.0.3 _2026-08-18_
 - CO-2904 - fix broken linkings for categories

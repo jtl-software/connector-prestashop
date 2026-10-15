@@ -110,7 +110,14 @@ class Connector implements ConnectorInterface
      */
     public function getEndpointVersion(): string
     {
-        $yaml = Yaml::parseFile(__DIR__ . '/../build-config.yaml');
+        try {
+            // Symfony\Component\Yaml\Yaml is provided by the PrestaShop 9 host at
+            // runtime (composer "replace"s it, see composer.json) rather than being
+            // vendored — if it can't be autoloaded this throws \Error, not \Exception.
+            $yaml = Yaml::parseFile(__DIR__ . '/../build-config.yaml');
+        } catch (\Throwable $e) {
+            return 'dev-master';
+        }
         if (\is_array($yaml) && isset($yaml['version']) && \is_string($yaml['version'])) {
             return $yaml['version'];
         }

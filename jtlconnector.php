@@ -44,7 +44,10 @@ class JTLConnector extends Module
             } else {
                 $this->version = 'Unknown';
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Symfony\Component\Yaml\Yaml is provided by the PrestaShop 9 host at
+            // runtime (composer "replace"s it, see composer.json) rather than being
+            // vendored — if it can't be autoloaded this throws \Error, not \Exception.
             $this->version = 'Unknown';
         }
         $this->author        = 'JTL Software GmbH';
@@ -55,7 +58,7 @@ class JTLConnector extends Module
 
         $this->displayName            = 'JTL-Connector';
         $this->description            = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
-        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '9.0', 'max' => _PS_VERSION_];
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
@@ -173,11 +176,13 @@ class JTLConnector extends Module
         $this->convertLinkingTables();
 
 
-        // remove old tab if exists
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // remove old tab if exists (check both the legacy and current class name for migration)
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $tab            = new \Tab();
@@ -189,10 +194,13 @@ class JTLConnector extends Module
                 $tab->name[(int)$lang['id_lang']] = $name;
             }
         }
-        $tab->active     = true;
-        $tab->position   = 0;
-        $tab->module     = $this->name;
-        $tab->class_name = "jtlconnector";
+        $tab->active   = true;
+        $tab->position = 0;
+        $tab->module   = $this->name;
+        // Must match the controllers/admin/AdminJtlconnectorController.php class name
+        // (minus the "Controller" suffix) — PrestaShop 9's LegacyRouterChecker requires
+        // a matching admin controller file for any tab registered with a module reference.
+        $tab->class_name = "AdminJtlconnector";
         $tab->save();
 
         return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
@@ -309,10 +317,13 @@ class JTLConnector extends Module
     public function uninstall(): bool
     {
 
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // check both the legacy and current class name for migration
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
