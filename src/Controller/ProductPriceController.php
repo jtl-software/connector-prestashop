@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta\Controller;
 
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 use jtl\Connector\Presta\Utils\Utils;
@@ -12,26 +11,15 @@ use Jtl\Connector\Core\Model\Product as JtlProduct;
 use Product as PrestaProduct;
 use Jtl\Connector\Core\Model\ProductPriceItem as JtlProductPriceItem;
 
-class ProductPriceController extends AbstractController implements PushInterface
+class ProductPriceController extends AbstractPushController
 {
-    /**
-     * @param AbstractModel ...$model
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function push(AbstractModel ...$model): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $model);
-    }
-
     /**
      * @param AbstractModel $model
      * @return JtlProduct
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    protected function pushOne(AbstractModel $model): AbstractModel
+    protected function doPush(AbstractModel $model): AbstractModel
     {
         /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();

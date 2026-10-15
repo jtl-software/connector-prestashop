@@ -7,7 +7,6 @@ namespace jtl\Connector\Presta\Controller;
 use Category as PrestaCategory;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\Category as JtlCategory;
 use Jtl\Connector\Core\Model\CategoryI18n as JtlCategoryI18n;
@@ -19,7 +18,7 @@ use jtl\Connector\Presta\Utils\QueryBuilder;
 use PrestaShopDatabaseException;
 use PrestaShopException;
 
-class CategoryController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
+class CategoryController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -157,25 +156,13 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel ...$jtlCategory
-     * @return AbstractModel[]
-     * @throws PrestaShopException
-     * @throws PrestaShopDatabaseException
-     * @throws \RuntimeException
-     */
-    public function push(AbstractModel ...$jtlCategory): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlCategory);
-    }
-
-    /**
      * @param AbstractModel $jtlCategory
      * @return AbstractModel
      * @throws PrestaShopException
      * @throws PrestaShopDatabaseException
      * @throws \RuntimeException
      */
-    private function pushOne(AbstractModel $jtlCategory): AbstractModel
+    protected function doPush(AbstractModel $jtlCategory): AbstractModel
     {
         /** @var JtlCategory $jtlCategory */
         $parentEndpoint = $this->mapper->getEndpointId(
@@ -341,21 +328,11 @@ class CategoryController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel ...$model
-     * @return AbstractModel[]
-     * @throws PrestaShopException
-     */
-    public function delete(AbstractModel ...$model): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
-    }
-
-    /**
      * @param AbstractModel $model
      * @return AbstractModel
      * @throws PrestaShopException
      */
-    private function deleteOne(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel $model): AbstractModel
     {
         /** @var JtlCategory $model */
         $category = new PrestaCategory((int)$model->getId()->getEndpoint());

@@ -38,7 +38,7 @@
   },
   "require": {
     "php": ">= 8.1",
-    "jtl/connector": "5.3.2",
+    "jtl/connector": "5.2.12",
     "cweagans/composer-patches": "^1.7",
     "symfony/yaml": "^5.4",
     "ext-json": "*",

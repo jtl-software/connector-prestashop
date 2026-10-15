@@ -90,7 +90,7 @@ final class PushTest extends TestCase
     public function testPushWithEmptyForeignKeyReturnsModelUnchanged(): void
     {
         $image  = $this->makeProductImage('', '', 1); // fId empty
-        [$result] = $this->controller->push($image);
+        $result = $this->controller->push($image);
 
         self::assertSame($image, $result);
     }
@@ -105,7 +105,7 @@ final class PushTest extends TestCase
         $this->controller->injectDb($this->makeDbMock());
 
         $image  = $this->makeCategoryImage('', '5');
-        [$result] = $this->controller->push($image);
+        $result = $this->controller->push($image);
 
         self::assertSame($image, $result);
     }
@@ -120,7 +120,7 @@ final class PushTest extends TestCase
         $this->controller->injectDb($this->makeDbMock());
 
         $image  = $this->makeManufacturerImage('', '7');
-        [$result] = $this->controller->push($image);
+        $result = $this->controller->push($image);
 
         self::assertSame($image, $result);
     }
@@ -136,7 +136,7 @@ final class PushTest extends TestCase
         $this->controller->injectDb($this->makeDbMock());
 
         $image  = $this->makeProductImage('', '10', 2);
-        [$result] = $this->controller->push($image);
+        $result = $this->controller->push($image);
 
         self::assertSame($image, $result);
     }

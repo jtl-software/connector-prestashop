@@ -43,7 +43,7 @@ final class ProductPriceControllerTest extends TestCase
     {
         $model = $this->createModelWithEndpoint('');
 
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }

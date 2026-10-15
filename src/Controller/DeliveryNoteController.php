@@ -4,25 +4,12 @@ declare(strict_types=1);
 
 namespace jtl\Connector\Presta\Controller;
 
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\DeliveryNote;
 use jtl\Connector\Presta\Utils\QueryBuilder;
 
-class DeliveryNoteController extends AbstractController implements PushInterface
+class DeliveryNoteController extends AbstractPushController
 {
-    /**
-     * @param AbstractModel ...$deliveryNote
-     *
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function push(AbstractModel ...$deliveryNote): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $deliveryNote);
-    }
-
     /**
      * @param AbstractModel $deliveryNote
      *
@@ -30,7 +17,7 @@ class DeliveryNoteController extends AbstractController implements PushInterface
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    private function pushOne(AbstractModel $deliveryNote): AbstractModel
+    protected function doPush(AbstractModel $deliveryNote): AbstractModel
     {
 
         /** @var DeliveryNote $deliveryNote */

@@ -87,7 +87,7 @@ final class PushTest extends TestCase
             ->setI18ns($i18n)
             ->setValues($value);
 
-        [$result] = $this->controller->push($jtlSpecific);
+        $result = $this->controller->push($jtlSpecific);
 
         self::assertSame($jtlSpecific, $result);
     }
@@ -103,7 +103,7 @@ final class PushTest extends TestCase
             ->setI18ns($i18n);
 
         // ObjectModel::update() returns true in stub
-        [$result] = $this->controller->push($jtlSpecific);
+        $result = $this->controller->push($jtlSpecific);
 
         self::assertSame($jtlSpecific, $result);
     }
@@ -127,7 +127,7 @@ final class PushTest extends TestCase
             ->setI18ns($i18n)
             ->setValues($value);
 
-        [$result] = $this->controller->push($jtlSpecific);
+        $result = $this->controller->push($jtlSpecific);
 
         self::assertSame($jtlSpecific, $result);
     }
@@ -143,7 +143,7 @@ final class PushTest extends TestCase
             ->setI18ns($i18n);
 
         // ObjectModel::add() returns true in stub
-        [$result] = $this->controller->push($jtlSpecific);
+        $result = $this->controller->push($jtlSpecific);
 
         self::assertSame($jtlSpecific, $result);
     }

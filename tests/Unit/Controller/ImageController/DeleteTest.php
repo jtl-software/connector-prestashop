@@ -80,7 +80,7 @@ final class DeleteTest extends TestCase
     public function testDeleteWithEmptyForeignKeyReturnsModelUnchanged(): void
     {
         $image  = $this->makeProductImage('', ''); // fId empty
-        [$result] = $this->controller->delete($image);
+        $result = $this->controller->delete($image);
 
         self::assertSame($image, $result);
     }
@@ -88,7 +88,7 @@ final class DeleteTest extends TestCase
     public function testDeleteCategoryImageCallsCategoryDeleteImage(): void
     {
         $image  = $this->makeCategoryImage('', '5');
-        [$result] = $this->controller->delete($image);
+        $result = $this->controller->delete($image);
 
         self::assertSame($image, $result);
     }
@@ -96,7 +96,7 @@ final class DeleteTest extends TestCase
     public function testDeleteManufacturerImageCallsManufacturerDeleteImage(): void
     {
         $image  = $this->makeManufacturerImage('', '7');
-        [$result] = $this->controller->delete($image);
+        $result = $this->controller->delete($image);
 
         self::assertSame($image, $result);
     }
@@ -104,7 +104,7 @@ final class DeleteTest extends TestCase
     public function testDeleteProductImageWithNonEmptyEndpointDeletesImage(): void
     {
         $image  = $this->makeProductImage('42', '10');
-        [$result] = $this->controller->delete($image);
+        $result = $this->controller->delete($image);
 
         self::assertSame($image, $result);
     }
@@ -112,7 +112,7 @@ final class DeleteTest extends TestCase
     public function testDeleteProductImageWithEmptyEndpointSkipsDeletion(): void
     {
         $image  = $this->makeProductImage('', '10'); // empty id → no Image::delete
-        [$result] = $this->controller->delete($image);
+        $result = $this->controller->delete($image);
 
         self::assertSame($image, $result);
     }

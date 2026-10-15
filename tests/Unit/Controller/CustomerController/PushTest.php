@@ -55,7 +55,7 @@ final class PushTest extends TestCase
     {
         $jtlCustomer = $this->makeJtlCustomer('42');
 
-        [$result] = $this->controller->push($jtlCustomer);
+        $result = $this->controller->push($jtlCustomer);
 
         self::assertSame($jtlCustomer, $result);
     }
@@ -63,7 +63,7 @@ final class PushTest extends TestCase
     public function testPushExistingCustomerWithDifferentEndpointReturnsModel(): void
     {
         $jtlCustomer = $this->makeJtlCustomer('7');
-        [$result] = $this->controller->push($jtlCustomer);
+        $result      = $this->controller->push($jtlCustomer);
 
         self::assertSame($jtlCustomer, $result);
         self::assertSame('7', $result->getId()->getEndpoint());
@@ -72,7 +72,7 @@ final class PushTest extends TestCase
     public function testPushNewCustomerReturnsModel(): void
     {
         $jtlCustomer = $this->makeJtlCustomer('');
-        [$result] = $this->controller->push($jtlCustomer);
+        $result      = $this->controller->push($jtlCustomer);
 
         self::assertSame($jtlCustomer, $result);
     }
@@ -80,7 +80,7 @@ final class PushTest extends TestCase
     public function testPushNewCustomerCallsAddNotUpdate(): void
     {
         $jtlCustomer = $this->makeJtlCustomer('');
-        [$result] = $this->controller->push($jtlCustomer);
+        $result      = $this->controller->push($jtlCustomer);
 
         self::assertSame($jtlCustomer, $result);
         self::assertSame('', $result->getId()->getEndpoint());

@@ -174,7 +174,7 @@ final class GlobalDataControllerTest extends TestCase
     public function testPushReturnsSameModel(): void
     {
         $model  = new JtlGlobalData();
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
         self::assertSame($model, $result);
     }
 

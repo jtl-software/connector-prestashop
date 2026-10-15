@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
@@ -17,7 +16,7 @@ use jtl\Connector\Presta\Utils\QueryBuilder;
 use Manufacturer as PrestaManufacturer;
 use Jtl\Connector\Core\Model\ManufacturerI18n as JtlManufacturerI18n;
 
-class ManufacturerController extends AbstractController implements PushInterface, PullInterface, DeleteInterface
+class ManufacturerController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -85,23 +84,12 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param AbstractModel ...$jtlManufacturer
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
-     */
-    public function push(AbstractModel ...$jtlManufacturer): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlManufacturer);
-    }
-
-    /**
      * @param AbstractModel $jtlManufacturer
      * @return JtlManufacturer
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    private function pushOne(AbstractModel $jtlManufacturer): AbstractModel
+    protected function doPush(AbstractModel $jtlManufacturer): AbstractModel
     {
         /** @var JtlManufacturer $jtlManufacturer */
         $endpoint = $jtlManufacturer->getId()->getEndpoint();
@@ -178,21 +166,11 @@ class ManufacturerController extends AbstractController implements PushInterface
     }
 
     /**
-     * @param AbstractModel ...$model
-     * @return AbstractModel[]
-     * @throws \PrestaShopException
-     */
-    public function delete(AbstractModel ...$model): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
-    }
-
-    /**
      * @param AbstractModel $model
      * @return JtlManufacturer
      * @throws \PrestaShopException
      */
-    private function deleteOne(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel $model): AbstractModel
     {
         /** @var JtlManufacturer $model */
         $manufacturer = new \Manufacturer((int)$model->getId()->getEndpoint());

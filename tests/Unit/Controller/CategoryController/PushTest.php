@@ -65,7 +65,7 @@ final class PushTest extends TestCase
 
         $jtlCategory = $this->jtlCategory('', $this->engI18n('New Category', 'new-category'));
 
-        self::assertSame([$jtlCategory], $this->controller->push($jtlCategory));
+        self::assertSame($jtlCategory, $this->controller->push($jtlCategory));
     }
 
     public function testNewCategoryDeletesExistingMappingBeforeSave(): void
@@ -77,7 +77,7 @@ final class PushTest extends TestCase
         $mapper->expects(self::once())->method('save');
         $this->controller->injectMapper($mapper);
 
-        [$result] = $this->controller->push(
+        $result = $this->controller->push(
             $this->jtlCategory('', $this->engI18n('New Category With Existing Mapping', 'new-category-existing-mapping'))
         );
 
@@ -126,7 +126,7 @@ final class PushTest extends TestCase
         $mapper->expects(self::never())->method('save');
         $this->controller->injectMapper($mapper);
 
-        [$result] = $this->controller->push(
+        $result = $this->controller->push(
             $this->jtlCategory('5', $this->engI18n('Existing Category', 'existing-category'))
         );
 
@@ -155,7 +155,7 @@ final class PushTest extends TestCase
         $mapper->method('getEndpointId')->willReturn('99');
         $this->controller->injectMapper($mapper);
 
-        [$result] = $this->controller->push(
+        $result = $this->controller->push(
             $this->jtlCategory('5', $this->engI18n('Category With Remapped Parent', 'remapped-parent'))
         );
 

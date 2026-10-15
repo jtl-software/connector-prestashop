@@ -91,7 +91,7 @@ final class StatusChangeControllerTest extends TestCase
     public function testPushReturnsModelUnchangedWhenOrderIdIsEmpty(): void
     {
         $model  = $this->makeStatusChange('');
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -107,7 +107,7 @@ final class StatusChangeControllerTest extends TestCase
         // Status that leads to a non-null newStatus → code enters the order-lookup branch
         // Order stub: new \Order(0) → id = null → early return
         $model  = $this->makeStatusChange('0', CustomerOrder::STATUS_CANCELLED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -122,7 +122,7 @@ final class StatusChangeControllerTest extends TestCase
     {
         Order::$mockNotFoundIds = [55];
         $model  = $this->makeStatusChange('55', CustomerOrder::STATUS_CANCELLED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
         self::assertSame($model, $result);
     }
 
@@ -134,7 +134,7 @@ final class StatusChangeControllerTest extends TestCase
     public function testPushReturnsModelForStatusCancelled(): void
     {
         $model  = $this->makeStatusChange('0', CustomerOrder::STATUS_CANCELLED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -146,7 +146,7 @@ final class StatusChangeControllerTest extends TestCase
             CustomerOrder::STATUS_SHIPPED,
             CustomerOrder::PAYMENT_STATUS_COMPLETED
         );
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -154,7 +154,7 @@ final class StatusChangeControllerTest extends TestCase
     public function testPushReturnsModelForStatusShippedAlone(): void
     {
         $model  = $this->makeStatusChange('0', CustomerOrder::STATUS_SHIPPED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -162,7 +162,7 @@ final class StatusChangeControllerTest extends TestCase
     public function testPushReturnsModelForPaymentCompletedAlone(): void
     {
         $model  = $this->makeStatusChange('0', '', CustomerOrder::PAYMENT_STATUS_COMPLETED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -175,7 +175,7 @@ final class StatusChangeControllerTest extends TestCase
     public function testPushReturnsModelWhenNoStatusMatchesDefault(): void
     {
         $model  = $this->makeStatusChange('99', CustomerOrder::STATUS_NEW);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -191,7 +191,7 @@ final class StatusChangeControllerTest extends TestCase
     {
         // new \Order(42) in the stub → id = 42 (non-zero), getCurrentState() = 0
         $model  = $this->makeStatusChange('42', CustomerOrder::STATUS_CANCELLED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
 
         self::assertSame($model, $result);
     }
@@ -199,7 +199,7 @@ final class StatusChangeControllerTest extends TestCase
     public function testPushWithStatusShippedAndNonZeroOrderIdCoversShippedArm(): void
     {
         $model = $this->makeStatusChange('99', CustomerOrder::STATUS_SHIPPED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
         self::assertSame($model, $result);
     }
 
@@ -210,7 +210,7 @@ final class StatusChangeControllerTest extends TestCase
             CustomerOrder::STATUS_SHIPPED,
             CustomerOrder::PAYMENT_STATUS_COMPLETED
         );
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
         self::assertSame($model, $result);
     }
 
@@ -221,7 +221,7 @@ final class StatusChangeControllerTest extends TestCase
             '',
             CustomerOrder::PAYMENT_STATUS_COMPLETED
         );
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
         self::assertSame($model, $result);
     }
 
@@ -232,7 +232,7 @@ final class StatusChangeControllerTest extends TestCase
         // new Order(42) → id=42 (truthy) → getCurrentState()=0 != 6 → setCurrentState(6) called
         // Stub setCurrentState() returns true → no exception
         $model  = $this->makeStatusChange('42', CustomerOrder::STATUS_CANCELLED);
-        [$result] = $this->controller->push($model);
+        $result = $this->controller->push($model);
         self::assertSame($model, $result);
     }
 }

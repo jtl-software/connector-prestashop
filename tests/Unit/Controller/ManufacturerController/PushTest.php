@@ -47,7 +47,7 @@ final class PushTest extends TestCase
         $jtlManufacturer = $this->buildJtlManufacturerWithI18n('5', 'Existing Brand');
 
         // ObjectModel::update() returns true in the stub
-        [$result] = $this->controller->push($jtlManufacturer);
+        $result = $this->controller->push($jtlManufacturer);
 
         self::assertSame($jtlManufacturer, $result);
     }
@@ -60,7 +60,7 @@ final class PushTest extends TestCase
 
         $jtlManufacturer = $this->buildJtlManufacturerWithI18n('', 'New Brand');
 
-        [$result] = $this->controller->push($jtlManufacturer);
+        $result = $this->controller->push($jtlManufacturer);
 
         self::assertSame($jtlManufacturer, $result);
     }

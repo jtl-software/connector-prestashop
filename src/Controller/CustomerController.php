@@ -6,7 +6,6 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
-use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -17,7 +16,7 @@ use Customer as PrestaCustomer;
 use Address as PrestaAddress;
 use PrestaShop\PrestaShop\Core\Foundation\IoC\Exception;
 
-class CustomerController extends AbstractController implements PullInterface, PushInterface, DeleteInterface
+class CustomerController extends AbstractPushController implements PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -145,24 +144,13 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel ...$jtlCustomer
-     * @return AbstractModel[]
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException|Exception|\Exception
-     */
-    public function push(AbstractModel ...$jtlCustomer): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlCustomer);
-    }
-
-    /**
      * @param AbstractModel $jtlCustomer
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException|Exception
      * @throws \Exception
      */
-    private function pushOne(AbstractModel $jtlCustomer): AbstractModel
+    protected function doPush(AbstractModel $jtlCustomer): AbstractModel
     {
         /** @var JtlCustomer $jtlCustomer */
         $endpoint = $jtlCustomer->getId()->getEndpoint();
@@ -271,21 +259,11 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
-     * @param AbstractModel ...$model
-     * @return AbstractModel[]
-     * @throws \PrestaShopException
-     */
-    public function delete(AbstractModel ...$model): array
-    {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
-    }
-
-    /**
      * @param AbstractModel $model
      * @return AbstractModel
      * @throws \PrestaShopException
      */
-    private function deleteOne(AbstractModel $model): AbstractModel
+    public function delete(AbstractModel $model): AbstractModel
     {
         /** @var JtlCustomer $model */
         $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());
