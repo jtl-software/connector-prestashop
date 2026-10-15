@@ -77,7 +77,7 @@ class JTLConnector extends Module
      */
     public function install(): bool
     {
-        $minimumPhpversion = '8.0';
+        $minimumPhpversion = '8.3';
         if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
             $this->_errors[] =
                 sprintf(

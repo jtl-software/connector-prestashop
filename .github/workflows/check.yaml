@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+        php-version: ['8.3']
     container:
       image: ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:${{ matrix.php-version }}
       options: --user root
@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.1', '8.2', '8.3']
+        php-version: ['8.3']
     container:
       image: ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:${{ matrix.php-version }}
       options: --user root
