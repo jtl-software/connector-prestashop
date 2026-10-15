@@ -4,7 +4,7 @@ Orientation for AI agents working in this repository. Details live in the files 
 
 ## What this is
 
-PrestaShop module `jtlconnector` that syncs shop data with JTL-Wawi via the `jtl/connector` core framework (PHP >= 8.1). Full architecture, request flow and CI overview: [.github/copilot-instructions.md](.github/copilot-instructions.md).
+PrestaShop module `jtlconnector` that syncs shop data with JTL-Wawi via the `jtl/connector` core framework (**PHP >= 8.3**). Full architecture, request flow and CI overview: [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
 ## Read first
 
@@ -40,6 +40,7 @@ Binaries are in `lib/bin/`, not `vendor/bin/`. PHPCS does not cover `tests/`.
 
 ## Conventions
 
+- **Minimum PHP is 8.3** (`composer.json`, install check in `jtlconnector.php`, CI matrix). `jtl/connector` 5.3.x uses typed class constants, which are a parse error on PHP 8.1/8.2. Do not add code or dependencies that need a lower version, and do not reintroduce PHP 8.1/8.2 compatibility workarounds.
 - `declare(strict_types=1)` everywhere; PHPStan must stay at level max with no errors.
 - Match the surrounding code style; run `phpcs` before finishing.
 - Add or update a unit test for behaviour changes. A regression test should fail without the fix.
@@ -48,7 +49,7 @@ Binaries are in `lib/bin/`, not `vendor/bin/`. PHPCS does not cover `tests/`.
 
 ## Git
 
-- Branches: `bugfix/CO-XXXX_short_description`; PRs target `develop`.
+- Branches: `ticket/CO-XXXX_short_description`; PRs target `develop`.
 - Commit messages: `fix: CO-XXXX ...` / `docs: ...`.
 - Pushing a feature branch triggers an auto-created draft PR (`auto-draft-pr.yaml`); check `gh pr list --head <branch>` before creating one manually.
 - Do not commit the `*.zip` build artifacts in the repo root or `config/config.json`.
