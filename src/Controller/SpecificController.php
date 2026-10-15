@@ -6,6 +6,7 @@ namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
+use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -19,7 +20,7 @@ use Jtl\Connector\Core\Model\Specific as JtlSpecific;
 use Jtl\Connector\Core\Model\SpecificValue as JtlSpecificValue;
 use Jtl\Connector\Core\Model\SpecificValueI18n as JtlSpecificValueI18n;
 
-class SpecificController extends AbstractPushController implements PullInterface, DeleteInterface
+class SpecificController extends AbstractController implements PushInterface, PullInterface, DeleteInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -196,12 +197,23 @@ class SpecificController extends AbstractPushController implements PullInterface
     }
 
     /**
+     * @param AbstractModel ...$jtlSpecific
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$jtlSpecific): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlSpecific);
+    }
+
+    /**
      * @param AbstractModel $jtlSpecific
      * @return Specific
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    protected function doPush(AbstractModel $jtlSpecific): AbstractModel
+    private function pushOne(AbstractModel $jtlSpecific): AbstractModel
     {
         /** @var JtlSpecific $jtlSpecific */
         $endpoint = $jtlSpecific->getId()->getEndpoint();
@@ -324,12 +336,23 @@ class SpecificController extends AbstractPushController implements PullInterface
     }
 
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function delete(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return Specific
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    private function deleteOne(AbstractModel $model): AbstractModel
     {
         /** @var Specific $model */
         $specific = new PrestaSpecific((int)$model->getId()->getEndpoint());
