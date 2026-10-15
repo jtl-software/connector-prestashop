@@ -55,7 +55,7 @@ final class ProductControllerTest extends TestCase
     {
         $model = $this->createModelWithEndpoint('');
 
-        $result = $this->controller->delete($model);
+        [$result] = $this->controller->delete($model);
 
         self::assertSame($model, $result);
     }

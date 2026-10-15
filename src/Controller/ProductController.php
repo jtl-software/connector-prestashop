@@ -8,6 +8,7 @@ use AttributeGroup;
 use Combination;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
+use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Exception\TranslatableAttributeException;
 use Jtl\Connector\Core\Model\AbstractModel;
@@ -37,7 +38,7 @@ use Feature as PrestaSpecific;
 use FeatureValue as PrestaSpecificValue;
 use Product as PrestaProduct;
 
-class ProductController extends ProductPriceController implements PullInterface, DeleteInterface
+class ProductController extends ProductPriceController implements PullInterface, PushInterface, DeleteInterface
 {
     public const
         JTL_ATTRIBUTE_ACTIVE           = 'active',
@@ -722,12 +723,23 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
+     * @param AbstractModel ...$jtlProduct
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$jtlProduct): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushProduct($model), $jtlProduct);
+    }
+
+    /**
      * @param AbstractModel $jtlProduct
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    protected function doPush(AbstractModel $jtlProduct): AbstractModel
+    private function pushProduct(AbstractModel $jtlProduct): AbstractModel
     {
         /** @var JtlProduct $jtlProduct */
         $endpoint        = $jtlProduct->getId()->getEndpoint();
@@ -825,7 +837,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             // update categories
             $this->updatePrestaProductCategories($jtlProduct, $prestaProduct);
             // update price
-            parent::doPush($jtlProduct);
+            parent::push($jtlProduct);
             // update stock
             $stockLevelController->push($jtlProduct);
 
@@ -1490,12 +1502,23 @@ class ProductController extends ProductPriceController implements PullInterface,
 
 
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function delete(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    private function deleteOne(AbstractModel $model): AbstractModel
     {
         /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();

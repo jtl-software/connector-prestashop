@@ -48,7 +48,7 @@ final class ProductStockLevelControllerTest extends TestCase
     public function testPushWithEmptyEndpointReturnsModelUnchanged(): void
     {
         $product = $this->makeProduct('', 10.0);
-        $result  = $this->controller->push($product);
+        [$result] = $this->controller->push($product);
 
         self::assertSame($product, $result);
         self::assertSame(10.0, $result->getStockLevel());
@@ -57,7 +57,7 @@ final class ProductStockLevelControllerTest extends TestCase
     public function testPushWithSimpleProductEndpointReturnsModel(): void
     {
         $product = $this->makeProduct('123', 5.0);
-        $result  = $this->controller->push($product);
+        [$result] = $this->controller->push($product);
 
         self::assertSame($product, $result);
     }
@@ -65,7 +65,7 @@ final class ProductStockLevelControllerTest extends TestCase
     public function testPushWithVariantEndpointReturnsModel(): void
     {
         $product = $this->makeProduct('123_456', 3.0);
-        $result  = $this->controller->push($product);
+        [$result] = $this->controller->push($product);
 
         self::assertSame($product, $result);
     }
@@ -74,7 +74,7 @@ final class ProductStockLevelControllerTest extends TestCase
     {
         // endpoint "123_0" → combiId = '0' which is empty-ish but cast to 0
         $product = $this->makeProduct('123_0', 7.0);
-        $result  = $this->controller->push($product);
+        [$result] = $this->controller->push($product);
 
         self::assertSame($product, $result);
     }
@@ -82,7 +82,7 @@ final class ProductStockLevelControllerTest extends TestCase
     public function testPushWithZeroStockLevelReturnsModel(): void
     {
         $product = $this->makeProduct('99', 0.0);
-        $result  = $this->controller->push($product);
+        [$result] = $this->controller->push($product);
 
         self::assertSame($product, $result);
     }

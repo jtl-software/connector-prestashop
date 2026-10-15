@@ -18,7 +18,7 @@ final class DeleteTest extends TestCase
     {
         $jtlCategory = (new JtlCategory())->setId(new Identity('3'));
 
-        $result = (new TestableCategoryController())->delete($jtlCategory);
+        [$result] = (new TestableCategoryController())->delete($jtlCategory);
 
         self::assertSame($jtlCategory, $result);
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace jtl\Connector\Presta\Controller;
 
 use Jtl\Connector\Core\Controller\PullInterface;
+use Jtl\Connector\Core\Controller\PushInterface;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -16,7 +17,7 @@ use Jtl\Connector\Core\Model\TaxRate as JtlTaxRate;
 use Jtl\Connector\Core\Model\Language as JtlLanguage;
 use Jtl\Connector\Core\Model\ShippingMethod as JtlShippingMethod;
 
-class GlobalDataController extends AbstractPushController implements PullInterface
+class GlobalDataController extends AbstractController implements PullInterface, PushInterface
 {
     /**
      * @param QueryFilter $queryFilter
@@ -35,10 +36,10 @@ class GlobalDataController extends AbstractPushController implements PullInterfa
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
      */
-    protected function doPush(AbstractModel $model): AbstractModel
+    public function push(AbstractModel ...$model): array
     {
         return $model;
     }

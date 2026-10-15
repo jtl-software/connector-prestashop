@@ -42,7 +42,7 @@ final class StatisticAndDeleteTest extends TestCase
         $jtlManufacturer = (new JtlManufacturer())
             ->setId(new Identity('42'));
 
-        $result = $this->controller->delete($jtlManufacturer);
+        [$result] = $this->controller->delete($jtlManufacturer);
 
         self::assertSame($jtlManufacturer, $result);
     }
