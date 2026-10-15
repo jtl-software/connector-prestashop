@@ -55,6 +55,21 @@ final class Install300Test extends TestCase
         self::assertSame([7], \Tab::$deletedIds);
     }
 
+    public function testRolesAreRenamedBeforeALeftoverLegacyTabIsDeleted(): void
+    {
+        \Tab::$classNames = ['AdminJtlconnector' => 12, 'jtlconnector' => 7];
+        $this->useDb([]);
+
+        self::assertTrue(\upgrade_module_3_0_0($this->module()));
+
+        // Tab::delete() removes the roles named after the deleted tab, so they have to be renamed first
+        $updates = \array_keys(\array_filter(\Tab::$events, static fn(string $e): bool => \str_starts_with($e, 'UPDATE')));
+        $delete  = \array_search('delete:7', \Tab::$events, true);
+        self::assertCount(4, $updates);
+        self::assertNotFalse($delete);
+        self::assertLessThan($delete, \max($updates));
+    }
+
     public function testInterruptedEarlierRunStillGetsItsRolesRenamed(): void
     {
         \Tab::$classNames = ['AdminJtlconnector' => 12];
@@ -194,6 +209,7 @@ final class Install300Test extends TestCase
             public function execute(mixed $sql, bool $useCache = true): bool
             {
                 $this->log->append((string)$sql);
+                \Tab::$events[] = (string)$sql;
 
                 return $this->executeResult;
             }

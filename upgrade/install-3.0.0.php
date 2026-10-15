@@ -33,14 +33,15 @@ function upgrade_module_3_0_0(object $object): bool
 
     $migratedTabId = (int)Tab::getIdFromClassName('AdminJtlconnector');
     if ($migratedTabId > 0) {
-        // Already migrated, possibly by an interrupted earlier run: drop a leftover legacy tab (PS9
-        // rejects tabs without a matching controller file) and finish the permission roles. Both
-        // steps are safe to repeat.
-        if ($legacyTabId > 0) {
-            (new Tab($legacyTabId))->delete();
+        // Already migrated, possibly by an interrupted earlier run: finish the permission roles and drop a
+        // leftover legacy tab (PS9 rejects tabs without a matching controller file). The roles must be
+        // renamed first because Tab::delete() removes the roles named after the deleted tab. All steps are
+        // safe to repeat.
+        if (!upgrade_module_3_0_0_rename_roles()) {
+            return false;
         }
 
-        if (!upgrade_module_3_0_0_rename_roles()) {
+        if ($legacyTabId > 0 && !(new Tab($legacyTabId))->delete()) {
             return false;
         }
 
