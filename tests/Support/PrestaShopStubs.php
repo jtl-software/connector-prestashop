@@ -378,6 +378,9 @@ if (!class_exists('Tab')) {
 
         public static bool $saveResult = true;
 
+        /** @var array<int, int> */
+        public static array $initAccessCalls = [];
+
         public int $id = 0;
         public int $id_parent = 0;
         public string $class_name = '';
@@ -416,11 +419,19 @@ if (!class_exists('Tab')) {
             return true;
         }
 
+        public static function initAccess(int $idTab): bool
+        {
+            static::$initAccessCalls[] = $idTab;
+
+            return true;
+        }
+
         public static function resetMock(): void
         {
-            static::$classNames = [];
-            static::$saved      = [];
-            static::$saveResult = true;
+            static::$classNames     = [];
+            static::$saved          = [];
+            static::$saveResult     = true;
+            static::$initAccessCalls = [];
         }
     }
 }

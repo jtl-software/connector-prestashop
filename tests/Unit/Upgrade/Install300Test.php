@@ -23,12 +23,14 @@ final class Install300Test extends TestCase
 
         \Tab::resetMock();
         \Language::resetMock();
+        \Db::resetInstance();
     }
 
     protected function tearDown(): void
     {
         \Tab::resetMock();
         \Language::resetMock();
+        \Db::resetInstance();
 
         parent::tearDown();
     }
@@ -44,6 +46,7 @@ final class Install300Test extends TestCase
     public function testLegacyTabIsRenamedInPlaceKeepingItsId(): void
     {
         \Tab::$classNames = ['jtlconnector' => 7, 'IMPROVE' => 3];
+        $this->useDb([]);
 
         self::assertTrue(\upgrade_module_3_0_0($this->module()));
 
@@ -51,6 +54,48 @@ final class Install300Test extends TestCase
         self::assertSame(7, \Tab::$saved[0]->id);
         self::assertSame('AdminJtlconnector', \Tab::$saved[0]->class_name);
         self::assertFalse(\Tab::$saved[0]->deleted);
+        self::assertSame([7], \Tab::$initAccessCalls);
+    }
+
+    public function testPermissionRolesOfTheLegacyTabAreRenamed(): void
+    {
+        \Tab::$classNames = ['jtlconnector' => 7];
+        $statements       = $this->useDb([]);
+
+        self::assertTrue(\upgrade_module_3_0_0($this->module()));
+
+        $updates = \array_values(\array_filter($statements(), static fn(string $sql): bool => \str_starts_with($sql, 'UPDATE')));
+        self::assertCount(4, $updates);
+        foreach (['CREATE', 'READ', 'UPDATE', 'DELETE'] as $i => $action) {
+            self::assertStringContainsString('SET `slug` = "ROLE_MOD_TAB_ADMINJTLCONNECTOR_' . $action . '"', $updates[$i]);
+            self::assertStringContainsString('WHERE `slug` = "ROLE_MOD_TAB_JTLCONNECTOR_' . $action . '"', $updates[$i]);
+            self::assertStringContainsString('`ps_authorization_role`', $updates[$i]);
+        }
+    }
+
+    public function testExistingNewPermissionRoleIsNotOverwritten(): void
+    {
+        \Tab::$classNames = ['jtlconnector' => 7];
+        $statements       = $this->useDb(['ROLE_MOD_TAB_ADMINJTLCONNECTOR_READ']);
+
+        self::assertTrue(\upgrade_module_3_0_0($this->module()));
+
+        $updates = \array_values(\array_filter($statements(), static fn(string $sql): bool => \str_starts_with($sql, 'UPDATE')));
+        self::assertCount(3, $updates);
+        foreach ($updates as $sql) {
+            self::assertStringNotContainsString('ADMINJTLCONNECTOR_READ"', $sql);
+        }
+    }
+
+    public function testRolesAreNotTouchedWhenSavingTheRenamedTabFails(): void
+    {
+        \Tab::$classNames = ['jtlconnector' => 7];
+        \Tab::$saveResult = false;
+        $statements       = $this->useDb([]);
+
+        self::assertFalse(\upgrade_module_3_0_0($this->module()));
+        self::assertSame([], $statements());
+        self::assertSame([], \Tab::$initAccessCalls);
     }
 
     public function testMissingTabIsCreatedUnderImprove(): void
@@ -87,5 +132,48 @@ final class Install300Test extends TestCase
     private function module(): object
     {
         return (object)['name' => 'jtlconnector'];
+    }
+
+    /**
+     * Installs a Db double that records every executed statement and reports the given
+     * authorization_role slugs as existing.
+     *
+     * @param array<int, string> $existingSlugs
+     * @return callable(): array<int, string> returns the recorded statements
+     */
+    private function useDb(array $existingSlugs): callable
+    {
+        $log = new \ArrayObject();
+
+        $db = new class ($log, $existingSlugs) extends \Db {
+            /**
+             * @param \ArrayObject<int, string> $log
+             * @param array<int, string> $existing
+             */
+            public function __construct(private \ArrayObject $log, private array $existing)
+            {
+            }
+
+            public function execute(mixed $sql, bool $useCache = true): bool
+            {
+                $this->log->append((string)$sql);
+
+                return true;
+            }
+
+            public function getValue(mixed $sql, bool $useCache = true): mixed
+            {
+                foreach ($this->existing as $slug) {
+                    if (\str_contains((string)$sql, '"' . $slug . '"')) {
+                        return $slug;
+                    }
+                }
+
+                return null;
+            }
+        };
+        \Db::setInstance($db);
+
+        return static fn(): array => $log->getArrayCopy();
     }
 }

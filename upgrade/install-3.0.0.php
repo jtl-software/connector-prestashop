@@ -18,10 +18,13 @@ if (!defined('_PS_VERSION_')) {
  * class_name and get rejected by PS9's admin.
  *
  * An existing tab is renamed in place instead of deleted and recreated, so its
- * id, position and the access rights the merchant granted to admin profiles
- * are kept.
+ * id and position are kept. PrestaShop stores the profile permissions of a tab
+ * in authorization_role rows named after the tab's class name
+ * (ROLE_MOD_TAB_<CLASSNAME>_<ACTION>) and Tab::update() does not touch them, so
+ * those rows are renamed as well: the existing grants (ps_access) then carry
+ * over to the new class name.
  *
- * @param object $object the module instance
+ * @param object $object the module instance (a \Module)
  * @return bool
  */
 function upgrade_module_3_0_0(object $object): bool
@@ -35,7 +38,15 @@ function upgrade_module_3_0_0(object $object): bool
         $tab             = new Tab($legacyTabId);
         $tab->class_name = 'AdminJtlconnector';
 
-        return (bool)$tab->save();
+        if (!$tab->save()) {
+            return false;
+        }
+
+        upgrade_module_3_0_0_rename_roles();
+        // creates any role that is still missing and grants the current profile
+        Tab::initAccess($legacyTabId);
+
+        return true;
     }
 
     // No tab at all (e.g. removed manually): register it like install() does.
@@ -57,4 +68,31 @@ function upgrade_module_3_0_0(object $object): bool
     $tab->class_name = 'AdminJtlconnector';
 
     return (bool)$tab->save();
+}
+
+/**
+ * Renames ROLE_MOD_TAB_JTLCONNECTOR_<ACTION> to ROLE_MOD_TAB_ADMINJTLCONNECTOR_<ACTION>
+ * so the profile permissions of the legacy tab are kept. A role that already exists
+ * under the new name is left alone (the slug column is unique).
+ *
+ * @return void
+ */
+function upgrade_module_3_0_0_rename_roles(): void
+{
+    $db    = Db::getInstance();
+    $table = _DB_PREFIX_ . 'authorization_role';
+
+    foreach (['CREATE', 'READ', 'UPDATE', 'DELETE'] as $action) {
+        $old = 'ROLE_MOD_TAB_JTLCONNECTOR_' . $action;
+        $new = 'ROLE_MOD_TAB_ADMINJTLCONNECTOR_' . $action;
+
+        $exists = $db->getValue('SELECT `slug` FROM `' . $table . '` WHERE `slug` = "' . pSQL($new) . '"');
+        if (!empty($exists)) {
+            continue;
+        }
+
+        $db->execute(
+            'UPDATE `' . $table . '` SET `slug` = "' . pSQL($new) . '" WHERE `slug` = "' . pSQL($old) . '"'
+        );
+    }
 }
