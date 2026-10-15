@@ -115,6 +115,47 @@ final class GetPrestaImageI18nTest extends TestCase
         self::assertSame('Manu alt', $result[0]['altText']);
     }
 
+    public function testGetPrestaImageI18nCastsEndpointToIntToPreventSqlInjection(): void
+    {
+        $capturedSql = null;
+        $db          = $this->createMock(Db::class);
+        $db->method('executeS')->willReturnCallback(
+            function ($sql) use (&$capturedSql) {
+                $capturedSql = (string)$sql;
+                return [['id_lang' => 1, 'altText' => 'Alt text']];
+            }
+        );
+        $this->controller->injectDb($db);
+
+        // A numeric-first endpoint used to be interpolated into the SQL verbatim,
+        // so a value like "1 OR 1=1" was appended unescaped.
+        $this->controller->exposeGetPrestaImageI18n($this->makeProductImage('1 OR 1=1'));
+
+        self::assertNotNull($capturedSql);
+        self::assertMatchesRegularExpression('/il\.id_image = 1$/', \trim($capturedSql));
+    }
+
+    public function testGetPrestaImageI18nCastsPrefixedEndpointToIntToPreventSqlInjection(): void
+    {
+        $capturedSql = null;
+        $db          = $this->createMock(Db::class);
+        $db->method('executeS')->willReturnCallback(
+            function ($sql) use (&$capturedSql) {
+                $capturedSql = (string)$sql;
+                return [['id_lang' => 1, 'altText' => 'Cat alt']];
+            }
+        );
+        $this->controller->injectDb($db);
+
+        // Same as above, but for the "non-numeric-first" (category/manufacturer
+        // prefixed) branch, which stripped the first character and interpolated
+        // the remainder unescaped.
+        $this->controller->exposeGetPrestaImageI18n($this->makeCategoryImage('c5 OR 1=1'));
+
+        self::assertNotNull($capturedSql);
+        self::assertMatchesRegularExpression('/il\.id_image = 5$/', \trim($capturedSql));
+    }
+
     public function testGetPrestaImageI18nThrowsWhenDbReturnsFalse(): void
     {
         $db = $this->createMock(Db::class);

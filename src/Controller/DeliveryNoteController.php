@@ -12,13 +12,25 @@ use jtl\Connector\Presta\Utils\QueryBuilder;
 class DeliveryNoteController extends AbstractController implements PushInterface
 {
     /**
+     * @param AbstractModel ...$deliveryNote
+     *
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$deliveryNote): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $deliveryNote);
+    }
+
+    /**
      * @param AbstractModel $deliveryNote
      *
      * @return DeliveryNote
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $deliveryNote): AbstractModel
+    private function pushOne(AbstractModel $deliveryNote): AbstractModel
     {
 
         /** @var DeliveryNote $deliveryNote */

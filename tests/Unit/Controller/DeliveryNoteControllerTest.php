@@ -165,7 +165,7 @@ final class DeliveryNoteControllerTest extends TestCase
         $controller = new TestableDeliveryNoteController();
         $note       = $this->makeDeliveryNote('42');
 
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
 
         self::assertSame($note, $result);
     }
@@ -179,7 +179,7 @@ final class DeliveryNoteControllerTest extends TestCase
         // empty tracking list (no codes, no URLs) → trackingCodes stays empty
         $note->addTrackingList(new DeliveryNoteTrackingList());
 
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
 
         self::assertSame($note, $result);
     }
@@ -200,7 +200,7 @@ final class DeliveryNoteControllerTest extends TestCase
         $note = $this->makeDeliveryNote('42');
         $note->addTrackingList($trackingList);
 
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
 
         self::assertSame($note, $result);
     }
@@ -221,7 +221,7 @@ final class DeliveryNoteControllerTest extends TestCase
         $note = $this->makeDeliveryNote('42');
         $note->addTrackingList($trackingList);
 
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
 
         self::assertSame($note, $result);
     }
@@ -245,7 +245,7 @@ final class DeliveryNoteControllerTest extends TestCase
         $note->addTrackingList($trackingList);
 
         // Should not throw; array_unique will deduplicate
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
 
         self::assertSame($note, $result);
     }
@@ -267,7 +267,7 @@ final class DeliveryNoteControllerTest extends TestCase
         $note->addTrackingList($trackingList);
 
         // OrderCarrier tracking_number is '' by default → merge branch skipped
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
 
         self::assertSame($note, $result);
     }
@@ -287,7 +287,7 @@ final class DeliveryNoteControllerTest extends TestCase
         $note->addTrackingList($trackingList);
 
         // With existing tracking number and new code, both are merged
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
         self::assertSame($note, $result);
     }
 
@@ -306,7 +306,7 @@ final class DeliveryNoteControllerTest extends TestCase
         $note = $this->makeDeliveryNote('42');
         $note->addTrackingList($trackingList);
 
-        $result = $controller->push($note);
+        [$result] = $controller->push($note);
         self::assertSame($note, $result);
     }
 

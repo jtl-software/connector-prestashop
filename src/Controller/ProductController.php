@@ -468,6 +468,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         if (!empty($prestaProduct->id_category_default)) {
             $jtlAttributes[] = (new JtlProductAttribute())
                 ->setId(new Identity(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID))
+                ->setType(JtlProductAttribute::TYPE_INT)
                 ->addI18n(
                     (new JtlTranslatableAttributeI18n())
                         ->setName(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID)
@@ -720,12 +721,23 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
+     * @param AbstractModel ...$jtlProduct
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function push(AbstractModel ...$jtlProduct): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushProduct($model), $jtlProduct);
+    }
+
+    /**
      * @param AbstractModel $jtlProduct
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function push(AbstractModel $jtlProduct): AbstractModel
+    private function pushProduct(AbstractModel $jtlProduct): AbstractModel
     {
         /** @var JtlProduct $jtlProduct */
         $endpoint        = $jtlProduct->getId()->getEndpoint();
@@ -979,15 +991,18 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->reference           = $jtlProduct->getSku();
         $prestaProduct->upc                 = $jtlProduct->getUpc();
         $prestaProduct->isbn                = $jtlProduct->getIsbn();
-        $prestaProduct->id_tax_rules_group  = $this->findTaxClassId(...$jtlProduct->getTaxRates());
-        $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
-        $prestaProduct->unit_price          = $this->calculateUnitPrice($jtlProduct);
-        $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
-        $prestaProduct->active              = $jtlProduct->getIsActive();
-        $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
-        $prestaProduct->minimal_quantity    = (int)$jtlProduct->getMinimumOrderQuantity();
-        $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
-        $prestaProduct->wholesale_price     = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
+        $taxRulesGroupId                    = $this->findTaxClassId(...$jtlProduct->getTaxRates());
+        if ($taxRulesGroupId !== null) {
+            $prestaProduct->id_tax_rules_group = $taxRulesGroupId;
+        }
+        $prestaProduct->unity            = $this->createPrestaBasePrice($jtlProduct);
+        $prestaProduct->unit_price       = $this->calculateUnitPrice($jtlProduct);
+        $prestaProduct->available_date   = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
+        $prestaProduct->active           = $jtlProduct->getIsActive();
+        $prestaProduct->on_sale          = $jtlProduct->getIsTopProduct();
+        $prestaProduct->minimal_quantity = (int)$jtlProduct->getMinimumOrderQuantity();
+        $prestaProduct->mpn              = $jtlProduct->getManufacturerNumber();
+        $prestaProduct->wholesale_price  = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
 
         foreach ($translations as $key => $translation) {
             $prestaProduct->name[$key]              = $translation['name'];
@@ -1036,6 +1051,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @return int
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttributeGroup(JtlProductVariation $jtlVariation): int
     {
@@ -1065,6 +1081,19 @@ class ProductController extends ProductPriceController implements PullInterface,
             $group->group_type = $groupType;
         }
 
+        $fallbackTranslation = \reset($groupTranslations);
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute group translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($groupTranslations[$langId])) {
+                $groupTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         foreach ($groupTranslations as $key => $translation) {
             $group->name[$key]        = $translation['name'];
@@ -1102,6 +1131,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param int                      $prestaAttributeGroupId
      * @return int
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttribute(JtlProductVariationValue $jtlValue, int $prestaAttributeGroupId): int
     {
@@ -1116,6 +1146,20 @@ class ProductController extends ProductPriceController implements PullInterface,
         $attributeId = $this->db->getValue($sql);
 
         $attributeTranslations = $this->createPrestaAttributeTranslations($jtlValue);
+
+        $fallbackTranslation = \reset($attributeTranslations);
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($attributeTranslations[$langId])) {
+                $attributeTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         $attribute                     = new \ProductAttribute($attributeId > 0 ? (int)$attributeId : null);
         $attribute->id_attribute_group = $prestaAttributeGroupId;
@@ -1213,7 +1257,10 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         if (empty($jtlTaxes)) {
-            throw new \RuntimeException('No active country found for submitted tax rates');
+            $this->logger->warning(
+                'No active country found for submitted tax rates — tax rule group will not be updated'
+            );
+            return null;
         }
 
         foreach (\Tax::getTaxes() as $tax) {
@@ -1388,7 +1435,10 @@ class ProductController extends ProductPriceController implements PullInterface,
                         }
                     }
                     if (!\is_int($value)) {
-                        throw new \RuntimeException('Main_category_id Attribute value must be an integer');
+                        $this->logger->warning(
+                            \sprintf('main_category_id "%s" has no synced PrestaShop endpoint — skipping', $value)
+                        );
+                        break;
                     }
                     $prestaProduct->id_category_default = $value;
                     break;
@@ -1409,11 +1459,14 @@ class ProductController extends ProductPriceController implements PullInterface,
             }
         }
 
-        $prices         = $jtlProduct->getPrices();
-        $lastPriceEntry = \end($prices);
-
-        if ($lastPriceEntry !== false) {
-            $prestaProduct->price = \round($lastPriceEntry->getItems()[0]->getNetPrice(), 6);
+        foreach ($jtlProduct->getPrices() as $priceEntry) {
+            if ($priceEntry->getCustomerGroupId()->getEndpoint() === '') {
+                $items = $priceEntry->getItems();
+                if (!empty($items)) {
+                    $prestaProduct->price = \round($items[0]->getNetPrice(), 6);
+                }
+                break;
+            }
         }
 
         $rrp = $jtlProduct->getRecommendedRetailPrice();
@@ -1447,21 +1500,32 @@ class ProductController extends ProductPriceController implements PullInterface,
 
 
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    public function delete(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    private function deleteOne(AbstractModel $model): AbstractModel
     {
         /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();
         if ($endpoint !== '') {
             [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
             if (!empty($combiId)) {
-                $obj = new \Product((int)$art);
-            } else {
                 $obj = new Combination((int)$combiId);
+            } else {
+                $obj = new \Product((int)$art);
             }
 
             $obj->delete();

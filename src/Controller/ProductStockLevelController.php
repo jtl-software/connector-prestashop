@@ -12,10 +12,19 @@ use jtl\Connector\Presta\Utils\Utils;
 class ProductStockLevelController extends AbstractController implements PushInterface
 {
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     */
+    public function push(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return AbstractModel
      */
-    public function push(AbstractModel $model): AbstractModel
+    private function pushOne(AbstractModel $model): AbstractModel
     {
         /** @var JtlProduct $model */
         $endpoint = $model->getId()->getEndpoint();

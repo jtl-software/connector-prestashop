@@ -29,9 +29,9 @@ php ./lib/bin/phing release -Dversion=<version>
 ./build.sh
 ```
 
-There is no PHPUnit setup in this repo — no `composer tests`, no `phpunit/phpunit` in require-dev.
+PHPUnit tests live in `tests/` (`composer test`, config `phpunit.xml`); PrestaShop classes are stubbed in `tests/Support/PrestaShopStubs.php`.
 
-CI uses `ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:<8.1|8.2|8.3>` containers (matrix in `check.yaml`).
+CI uses `ghcr.io/jtl-software/connector-utils-ci-docker/php/cli:8.3` containers (matrix in `check.yaml`).
 
 ## Architecture
 
@@ -82,7 +82,7 @@ CI does this in `.github/workflows/build-zip.yaml` (on tag push) via `.github/sc
 - `declare(strict_types=1)` everywhere
 - PHPStan at **max level**, config in `./phpstan.neon`
 - PHPCS standard `JtlConnector` (from `jtl/connector-cq` via Slevomat rules)
-- PHP `>= 8.1` per `composer.json`; CI matrices `8.1`, `8.2`, `8.3`
+- PHP `>= 8.3` per `composer.json` (required by jtl/connector 5.3.x, which uses typed class constants); CI runs on `8.3`
 
 ## CI/CD
 
@@ -90,7 +90,7 @@ Workflows in `.github/workflows/`:
 
 | File | Trigger | Purpose |
 |---|---|---|
-| `check.yaml` | push master/main, PR | PHPCS + PHPStan in PHP 8.1/8.2/8.3 matrix |
+| `check.yaml` | push master/main, PR | PHPCS + PHPStan + PHPUnit on PHP 8.3 |
 | `build-zip.yaml` | tag push | Phing ZIP build |
 | `auto-draft-pr.yaml` | push to feature branch | Auto-creates draft PR |
 | `lint-actions.yaml` | workflow file changes | actionlint |

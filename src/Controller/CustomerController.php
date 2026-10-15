@@ -145,13 +145,24 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
+     * @param AbstractModel ...$jtlCustomer
+     * @return AbstractModel[]
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException|Exception|\Exception
+     */
+    public function push(AbstractModel ...$jtlCustomer): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlCustomer);
+    }
+
+    /**
      * @param AbstractModel $jtlCustomer
      * @return AbstractModel
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException|Exception
      * @throws \Exception
      */
-    public function push(AbstractModel $jtlCustomer): AbstractModel
+    private function pushOne(AbstractModel $jtlCustomer): AbstractModel
     {
         /** @var JtlCustomer $jtlCustomer */
         $endpoint = $jtlCustomer->getId()->getEndpoint();
@@ -260,11 +271,21 @@ class CustomerController extends AbstractController implements PullInterface, Pu
     }
 
     /**
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
+     * @throws \PrestaShopException
+     */
+    public function delete(AbstractModel ...$model): array
+    {
+        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+    }
+
+    /**
      * @param AbstractModel $model
      * @return AbstractModel
      * @throws \PrestaShopException
      */
-    public function delete(AbstractModel $model): AbstractModel
+    private function deleteOne(AbstractModel $model): AbstractModel
     {
         /** @var JtlCustomer $model */
         $customer = new PrestaCustomer((int)$model->getId()->getEndpoint());

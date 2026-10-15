@@ -36,10 +36,10 @@ class GlobalDataController extends AbstractController implements PullInterface, 
     }
 
     /**
-     * @param AbstractModel $model
-     * @return AbstractModel
+     * @param AbstractModel ...$model
+     * @return AbstractModel[]
      */
-    public function push(AbstractModel $model): AbstractModel
+    public function push(AbstractModel ...$model): array
     {
         return $model;
     }

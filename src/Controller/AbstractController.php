@@ -65,23 +65,43 @@ abstract class AbstractController implements LoggerAwareInterface
      * @param numeric-string|int $langId
      * @return string
      * @throws PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function getJtlLanguageIsoFromLanguageId(string|int $langId): string
     {
         $sql = (new QueryBuilder())
-            ->select('language_code')
+            ->select('language_code, iso_code')
             ->from('lang')
             ->where("id_lang = $langId");
 
-        /** @var array{0: array{language_code: string}} $result */
+        /** @var array<int, array{language_code: string, iso_code: string}> $result */
         $result = $this->db->executeS($sql->build());
 
-        $code = $result[0]['language_code'];
+        if (empty($result)) {
+            throw new \RuntimeException(
+                \sprintf('Language with id "%s" not found in PrestaShop', $langId)
+            );
+        }
+
+        $code = $result[0]['language_code'] ?: $result[0]['iso_code'];
         $code = \explode('-', $code)[0];
 
-        $linguaConverter = Service::createFromISO_639_1($code);
+        if (\trim($code) === '') {
+            throw new \RuntimeException(
+                \sprintf('Language with id "%s" has no language code configured in PrestaShop', $langId)
+            );
+        }
 
-        return $linguaConverter->toISO_639_2b();
+        try {
+            $linguaConverter = Service::createFromISO_639_1($code);
+            return $linguaConverter->toISO_639_2b();
+        } catch (\Exception $e) {
+            throw new \RuntimeException(
+                \sprintf('Unsupported ISO 639-1 language code "%s" for lang id "%s"', $code, $langId),
+                0,
+                $e
+            );
+        }
     }
 
     /**
@@ -93,9 +113,21 @@ abstract class AbstractController implements LoggerAwareInterface
      */
     protected function getPrestaLanguageIdFromIso(string $languageIso): int
     {
+        $languageIso = \trim($languageIso);
+        if ($languageIso === '') {
+            throw new \RuntimeException('Empty language ISO code provided');
+        }
         if (\strlen($languageIso) === 3) {
-            $linguaConverter = Service::createFromISO_639_2b($languageIso);
-            $languageIso     = $linguaConverter->toISO_639_1();
+            try {
+                $linguaConverter = Service::createFromISO_639_2b($languageIso);
+                $languageIso     = $linguaConverter->toISO_639_1();
+            } catch (\Exception $e) {
+                throw new \RuntimeException(
+                    \sprintf('Unsupported ISO 639-2b language code: "%s"', $languageIso),
+                    0,
+                    $e
+                );
+            }
         }
 
         $sql = (new QueryBuilder())
