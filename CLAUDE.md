@@ -5,9 +5,9 @@ When working on code in a project, the following review process is MANDATORY bef
 
 1.**Solve the issue 100%** - Implementation must be fully complete
 
-2. **Codex Review Agent (x2):**
-    - Spawn a codex review agent to review the current uncommitted changes. Let it provde a honest review. NEVER pipe output to a file - instead, TELL it with the prompt to output its FINDINGS in a file. It will create that file itself. Do NOT ignore its output. If it has findings, fix them All, even if they seems unrelated to your changes. Only re-run once fixes are applied. Only passes when there are zero findings.
-    - Spawn a second codex review agent to verify the issue itself is solved (if a GitHub issue was given). The codex review agent CAN access GitHub.
+2. **Copilot Review Agent (x2):**
+    - Spawn a copilot review agent to review the current uncommitted changes. Let it provde a honest review. NEVER pipe output to a file - instead, TELL it with the prompt to output its FINDINGS in a file. It will create that file itself. Do NOT ignore its output. If it has findings, fix them All, even if they seems unrelated to your changes. Only re-run once fixes are applied. Only passes when there are zero findings.
+    - Spawn a second copilot review agent to verify the issue itself is solved (if a GitHub issue was given). The copilot review agent CAN access GitHub.
 
 3. **Claude Review Agent (x2):**
     - Spawn a claude review agent to review the uncommitted code. Same rules as above . it must have zero complaints.
