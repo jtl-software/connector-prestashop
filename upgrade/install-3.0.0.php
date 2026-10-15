@@ -31,14 +31,20 @@ function upgrade_module_3_0_0(object $object): bool
 {
     $legacyTabId = (int)Tab::getIdFromClassName('jtlconnector');
 
-    if ((int)Tab::getIdFromClassName('AdminJtlconnector') > 0) {
-        // already migrated; drop a leftover legacy tab (e.g. from an interrupted earlier attempt),
-        // PS9 rejects tabs without a matching controller file
+    $migratedTabId = (int)Tab::getIdFromClassName('AdminJtlconnector');
+    if ($migratedTabId > 0) {
+        // Already migrated, possibly by an interrupted earlier run: drop a leftover legacy tab (PS9
+        // rejects tabs without a matching controller file) and finish the permission roles. Both
+        // steps are safe to repeat.
         if ($legacyTabId > 0) {
             (new Tab($legacyTabId))->delete();
         }
 
-        return true;
+        if (!upgrade_module_3_0_0_rename_roles()) {
+            return false;
+        }
+
+        return Tab::initAccess($migratedTabId) !== false;
     }
 
     if ($legacyTabId > 0) {
@@ -49,11 +55,12 @@ function upgrade_module_3_0_0(object $object): bool
             return false;
         }
 
-        upgrade_module_3_0_0_rename_roles();
-        // creates any role that is still missing and grants the current profile
-        Tab::initAccess($legacyTabId);
+        if (!upgrade_module_3_0_0_rename_roles()) {
+            return false;
+        }
 
-        return true;
+        // creates any role that is still missing and grants the current profile
+        return Tab::initAccess($legacyTabId) !== false;
     }
 
     // No tab at all (e.g. removed manually): register it like install() does.
@@ -82,12 +89,13 @@ function upgrade_module_3_0_0(object $object): bool
  * so the profile permissions of the legacy tab are kept. A role that already exists
  * under the new name is left alone (the slug column is unique).
  *
- * @return void
+ * @return bool false if a statement failed
  */
-function upgrade_module_3_0_0_rename_roles(): void
+function upgrade_module_3_0_0_rename_roles(): bool
 {
-    $db    = Db::getInstance();
-    $table = _DB_PREFIX_ . 'authorization_role';
+    $db     = Db::getInstance();
+    $table  = _DB_PREFIX_ . 'authorization_role';
+    $result = true;
 
     foreach (['CREATE', 'READ', 'UPDATE', 'DELETE'] as $action) {
         $old = 'ROLE_MOD_TAB_JTLCONNECTOR_' . $action;
@@ -98,8 +106,10 @@ function upgrade_module_3_0_0_rename_roles(): void
             continue;
         }
 
-        $db->execute(
+        $result = $db->execute(
             'UPDATE `' . $table . '` SET `slug` = "' . pSQL($new) . '" WHERE `slug` = "' . pSQL($old) . '"'
-        );
+        ) && $result;
     }
+
+    return $result;
 }

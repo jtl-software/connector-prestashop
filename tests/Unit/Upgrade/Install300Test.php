@@ -35,9 +35,10 @@ final class Install300Test extends TestCase
         parent::tearDown();
     }
 
-    public function testAlreadyMigratedTabIsLeftUntouched(): void
+    public function testAlreadyMigratedTabIsNotRecreatedOrDeleted(): void
     {
         \Tab::$classNames = ['AdminJtlconnector' => 12];
+        $this->useDb([]);
 
         self::assertTrue(\upgrade_module_3_0_0($this->module()));
         self::assertSame([], \Tab::$saved);
@@ -47,10 +48,32 @@ final class Install300Test extends TestCase
     public function testLeftoverLegacyTabIsDeletedWhenTheNewTabAlreadyExists(): void
     {
         \Tab::$classNames = ['AdminJtlconnector' => 12, 'jtlconnector' => 7];
+        $this->useDb([]);
 
         self::assertTrue(\upgrade_module_3_0_0($this->module()));
         self::assertSame([], \Tab::$saved);
         self::assertSame([7], \Tab::$deletedIds);
+    }
+
+    public function testInterruptedEarlierRunStillGetsItsRolesRenamed(): void
+    {
+        \Tab::$classNames = ['AdminJtlconnector' => 12];
+        $statements       = $this->useDb([]);
+
+        self::assertTrue(\upgrade_module_3_0_0($this->module()));
+
+        $updates = \array_values(\array_filter($statements(), static fn(string $sql): bool => \str_starts_with($sql, 'UPDATE')));
+        self::assertCount(4, $updates);
+        self::assertSame([12], \Tab::$initAccessCalls);
+    }
+
+    public function testFailsWhenRenamingTheRolesFails(): void
+    {
+        \Tab::$classNames = ['jtlconnector' => 7];
+        $this->useDb([], false);
+
+        self::assertFalse(\upgrade_module_3_0_0($this->module()));
+        self::assertSame([], \Tab::$initAccessCalls);
     }
 
     public function testLegacyTabIsRenamedInPlaceKeepingItsId(): void
@@ -149,26 +172,30 @@ final class Install300Test extends TestCase
      * authorization_role slugs as existing.
      *
      * @param array<int, string> $existingSlugs
+     * @param bool $executeResult result reported for every executed statement
      * @return callable(): array<int, string> returns the recorded statements
      */
-    private function useDb(array $existingSlugs): callable
+    private function useDb(array $existingSlugs, bool $executeResult = true): callable
     {
         $log = new \ArrayObject();
 
-        $db = new class ($log, $existingSlugs) extends \Db {
+        $db = new class ($log, $existingSlugs, $executeResult) extends \Db {
             /**
              * @param \ArrayObject<int, string> $log
              * @param array<int, string> $existing
              */
-            public function __construct(private \ArrayObject $log, private array $existing)
-            {
+            public function __construct(
+                private \ArrayObject $log,
+                private array $existing,
+                private bool $executeResult
+            ) {
             }
 
             public function execute(mixed $sql, bool $useCache = true): bool
             {
                 $this->log->append((string)$sql);
 
-                return true;
+                return $this->executeResult;
             }
 
             public function getValue(mixed $sql, bool $useCache = true): mixed
