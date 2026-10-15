@@ -1298,6 +1298,18 @@ if (!class_exists('SpecificPrice')) {
 if (!class_exists('StockAvailable')) {
     class StockAvailable
     {
+        /** @var array<int, int> keyed by productId */
+        public static array $mockQuantities = [];
+
+        /** @var array<int, int|bool> keyed by productId */
+        public static array $mockOutOfStock = [];
+
+        public static function resetMock(): void
+        {
+            static::$mockQuantities = [];
+            static::$mockOutOfStock = [];
+        }
+
         public static function setQuantity(
             int $productId,
             int $productAttributeId = 0,
@@ -1312,7 +1324,12 @@ if (!class_exists('StockAvailable')) {
             int $productAttributeId = 0,
             ?int $shopId = null
         ): int {
-            return 0;
+            return static::$mockQuantities[$productId] ?? 0;
+        }
+
+        public static function outOfStock(int $productId, ?int $shopId = null): int|bool
+        {
+            return static::$mockOutOfStock[$productId] ?? 0;
         }
     }
 }

@@ -4,6 +4,7 @@
 - CO-2117 - fix delivery time not set
 - CO-3382 - fix customer group prices not saved as specific prices
 - CO-3498 - fix main_category_id attribute imported as free text instead of integer
+- CO-3385 - fix send stock
 - raise minimum PHP version to 8.3 (required by jtl/connector 5.3.x)
 
 ## 2.0.3 _2026-08-18_
