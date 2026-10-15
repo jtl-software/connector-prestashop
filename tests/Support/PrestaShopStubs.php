@@ -366,6 +366,65 @@ if (!class_exists('Configuration')) {
     }
 }
 
+// --- Tab ---
+if (!class_exists('Tab')) {
+    class Tab
+    {
+        /** @var array<string, int> class_name => id_tab */
+        public static array $classNames = [];
+
+        /** @var array<int, Tab> */
+        public static array $saved = [];
+
+        public static bool $saveResult = true;
+
+        public int $id = 0;
+        public int $id_parent = 0;
+        public string $class_name = '';
+        public string $module = '';
+        public bool $active = false;
+        public int $position = -1;
+
+        /** @var array<int, string> */
+        public array $name = [];
+
+        public bool $deleted = false;
+
+        public function __construct(int $id = 0)
+        {
+            $this->id = $id;
+        }
+
+        public static function getIdFromClassName(string $className): int|false
+        {
+            return static::$classNames[$className] ?? false;
+        }
+
+        public function save(): bool
+        {
+            if (static::$saveResult) {
+                static::$saved[] = $this;
+            }
+
+            return static::$saveResult;
+        }
+
+        public function delete(): bool
+        {
+            $this->deleted = true;
+
+            return true;
+        }
+
+        public static function resetMock(): void
+        {
+            static::$classNames = [];
+            static::$saved      = [];
+            static::$saveResult = true;
+        }
+    }
+}
+
 // --- Context / Language / Shop ---
 if (!class_exists('Language')) {
     class Language
