@@ -1,9 +1,12 @@
 ## unreleased
 - CO-3664 - fix inverted delete condition in ProductController that deleted the whole base product when deleting a single variant, and silently did nothing when deleting a plain product
 - CO-3664 - fix possible SQL injection in ImageController::getPrestaImageI18n()
+
+## 2.0.3 _2026-08-18_
 - CO-2904 - fix broken linkings for categories
 - CO-3043 - fix taxrate not found
 - CO-2793 - fix base price not set
+- CO-3585 - update jtl/connector core to 5.3.2: CO-3583 store session ids hashed (SHA-256) in SqliteSessionHandler instead of in plaintext
 
 ## 2.0.2 _2025-11-02_
 - CO-2508 - Use wawi tracking lists
