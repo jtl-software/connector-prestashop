@@ -13,6 +13,10 @@ permissions:
   contents: read
   pull-requests: write
 
+# the called workflow only opens a PR and needs no cache; actionlint requires an explicit
+# cache ceiling when a reusable workflow is called on a low-trust trigger (workflow_run)
+cache-mode: none
+
 jobs:
   draft-pr:
     # Only create draft PR if Check workflow succeeded
