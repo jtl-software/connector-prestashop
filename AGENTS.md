@@ -41,6 +41,7 @@ Binaries are in `lib/bin/`, not `vendor/bin/`. PHPCS does not cover `tests/`.
 ## Conventions
 
 - **Minimum PHP is 8.3** (`composer.json`, install check in `jtlconnector.php`, CI matrix). `jtl/connector` 5.3.x uses typed class constants, which are a parse error on PHP 8.1/8.2. Do not add code or dependencies that need a lower version, and do not reintroduce PHP 8.1/8.2 compatibility workarounds.
+- **PrestaShop >= 9.0 only.** `composer.json` `replace`s all `symfony/*` packages, so the module uses the Symfony 6.4 that PrestaShop 9 ships instead of vendoring its own copies (those collided with PS9 and crashed the admin). Do not add `symfony/*` requirements; `Yaml`/`EventDispatcher` are only stubbed for tests (`tests/Support/SymfonyStubs.php`). phing cannot read `build-config.yaml` without `symfony/yaml`, so `build.sh` and the CI build script convert it to `build-config.properties` first.
 - `declare(strict_types=1)` everywhere; PHPStan must stay at level max with no errors.
 - Match the surrounding code style; run `phpcs` before finishing.
 - Add or update a unit test for behaviour changes. A regression test should fail without the fix.

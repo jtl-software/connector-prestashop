@@ -17,6 +17,7 @@ plugins/**
 viewer
 !plugins/.gitkeep
 jtl_connector_*.zip
+build-config.properties
 tmp/**
 var
 .phpunit.result.cache
