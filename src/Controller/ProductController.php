@@ -151,14 +151,12 @@ class ProductController extends ProductPriceController implements PullInterface,
     protected function createJtlProduct(PrestaProduct $prestaProduct): JtlProduct
     {
         $prestaAttributes = $prestaProduct->getAttributesGroups($this->getPrestaContextLanguageId());
-        $prestaStock      = new \StockAvailable($prestaProduct->id);
         $prestaProductId  = \is_int($prestaProduct->id)
             ? $prestaProduct->id
             : throw new \RuntimeException('Product ID is not an integer');
 
-        //we ignore this line as prestashop hasn't updated their PHPDoc yet
-        //@phpstan-ignore-next-line
-        \is_numeric($prestaStock->quantity) ? $prestaQuantity = (float)$prestaStock->quantity : $prestaQuantity = 0.0;
+        $prestaQuantity   = (float)\StockAvailable::getQuantityAvailableByProduct($prestaProductId);
+        $prestaOutOfStock = (int)\StockAvailable::outOfStock($prestaProductId);
 
         $jtlProduct = (new JtlProduct())
             ->setId(new Identity((string)$prestaProduct->id))
@@ -183,8 +181,8 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setI18ns(...$this->createJtlProductTranslations($prestaProductId))
             ->setAvailableFrom($this->createDateTime($prestaProduct->available_date))
             ->setBasePriceUnitName($prestaProduct->unity ?? '') //phpcs:ignore @phpstan-ignore-line
-            ->setConsiderStock($prestaStock->out_of_stock === 0 || $prestaStock->out_of_stock === 2)
-            ->setPermitNegativeStock($prestaStock->out_of_stock === 0)
+            ->setConsiderStock($prestaOutOfStock === 0 || $prestaOutOfStock === 2)
+            ->setPermitNegativeStock($prestaOutOfStock === 0)
             ->setIsActive(true)
             ->setIsTopProduct((bool)$prestaProduct->on_sale)
             ->setPurchasePrice((float)$prestaProduct->wholesale_price)
@@ -450,6 +448,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setDescription((string)$prestaProductI18n['description'])
             ->setShortDescription((string)$prestaProductI18n['description_short'])
             ->setMetaDescription((string)$prestaProductI18n['meta_description'])
+            ->setDeliveryStatus((string)$prestaProductI18n['delivery_in_stock'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaProductI18n['id_lang']));
     }
 
@@ -469,6 +468,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         if (!empty($prestaProduct->id_category_default)) {
             $jtlAttributes[] = (new JtlProductAttribute())
                 ->setId(new Identity(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID))
+                ->setType(JtlProductAttribute::TYPE_INT)
                 ->addI18n(
                     (new JtlTranslatableAttributeI18n())
                         ->setName(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID)
@@ -991,15 +991,18 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->reference           = $jtlProduct->getSku();
         $prestaProduct->upc                 = $jtlProduct->getUpc();
         $prestaProduct->isbn                = $jtlProduct->getIsbn();
-        $prestaProduct->id_tax_rules_group  = $this->findTaxClassId(...$jtlProduct->getTaxRates());
-        $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
-        $prestaProduct->unit_price          = $this->calculateUnitPrice($jtlProduct);
-        $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
-        $prestaProduct->active              = $jtlProduct->getIsActive();
-        $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
-        $prestaProduct->minimal_quantity    = (int)$jtlProduct->getMinimumOrderQuantity();
-        $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
-        $prestaProduct->wholesale_price     = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
+        $taxRulesGroupId                    = $this->findTaxClassId(...$jtlProduct->getTaxRates());
+        if ($taxRulesGroupId !== null) {
+            $prestaProduct->id_tax_rules_group = $taxRulesGroupId;
+        }
+        $prestaProduct->unity            = $this->createPrestaBasePrice($jtlProduct);
+        $prestaProduct->unit_price       = $this->calculateUnitPrice($jtlProduct);
+        $prestaProduct->available_date   = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
+        $prestaProduct->active           = $jtlProduct->getIsActive();
+        $prestaProduct->on_sale          = $jtlProduct->getIsTopProduct();
+        $prestaProduct->minimal_quantity = (int)$jtlProduct->getMinimumOrderQuantity();
+        $prestaProduct->mpn              = $jtlProduct->getManufacturerNumber();
+        $prestaProduct->wholesale_price  = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
 
         foreach ($translations as $key => $translation) {
             $prestaProduct->name[$key]              = $translation['name'];
@@ -1011,6 +1014,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             $prestaProduct->meta_title[$key]        = $translation['meta_title'];
         }
 
+        $this->pushDeliveryTimes($jtlProduct, $prestaProduct, $translations);
         $this->pushSpecialAttributes($jtlProduct, $prestaProduct);
 
         return $prestaProduct;
@@ -1047,6 +1051,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @return int
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttributeGroup(JtlProductVariation $jtlVariation): int
     {
@@ -1076,6 +1081,19 @@ class ProductController extends ProductPriceController implements PullInterface,
             $group->group_type = $groupType;
         }
 
+        $fallbackTranslation = \reset($groupTranslations);
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute group translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($groupTranslations[$langId])) {
+                $groupTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         foreach ($groupTranslations as $key => $translation) {
             $group->name[$key]        = $translation['name'];
@@ -1113,6 +1131,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param int                      $prestaAttributeGroupId
      * @return int
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttribute(JtlProductVariationValue $jtlValue, int $prestaAttributeGroupId): int
     {
@@ -1127,6 +1146,20 @@ class ProductController extends ProductPriceController implements PullInterface,
         $attributeId = $this->db->getValue($sql);
 
         $attributeTranslations = $this->createPrestaAttributeTranslations($jtlValue);
+
+        $fallbackTranslation = \reset($attributeTranslations);
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($attributeTranslations[$langId])) {
+                $attributeTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         $attribute                     = new \ProductAttribute($attributeId > 0 ? (int)$attributeId : null);
         $attribute->id_attribute_group = $prestaAttributeGroupId;
@@ -1224,7 +1257,10 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         if (empty($jtlTaxes)) {
-            throw new \RuntimeException('No active country found for submitted tax rates');
+            $this->logger->warning(
+                'No active country found for submitted tax rates — tax rule group will not be updated'
+            );
+            return null;
         }
 
         foreach (\Tax::getTaxes() as $tax) {
@@ -1301,6 +1337,56 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
+     * @param JtlProduct                        $jtlProduct
+     * @param PrestaProduct                     $prestaProduct
+     * @param array<int, array<string, string>> $translations
+     * @return void
+     */
+    private function pushDeliveryTimes(
+        JtlProduct $jtlProduct,
+        PrestaProduct $prestaProduct,
+        array $translations
+    ): void {
+        $hasDeliveryStatus = false;
+
+        foreach ($jtlProduct->getI18ns() as $i18n) {
+            $deliveryStatus = $i18n->getDeliveryStatus();
+            if ($deliveryStatus !== '') {
+                $hasDeliveryStatus = true;
+                break;
+            }
+        }
+
+        if ($hasDeliveryStatus) {
+            foreach ($jtlProduct->getI18ns() as $i18n) {
+                $langId         = $this->getPrestaLanguageIdFromIso(
+                    $i18n->getLanguageIso()
+                );
+                $deliveryStatus = $i18n->getDeliveryStatus();
+
+                $prestaProduct->delivery_in_stock[$langId]  = $deliveryStatus;
+                $prestaProduct->delivery_out_stock[$langId] = $deliveryStatus;
+            }
+            $prestaProduct->additional_delivery_times = 2;
+        } else {
+            $inStock  = $jtlProduct->getAdditionalHandlingTime();
+            $outStock = $jtlProduct->getSupplierDeliveryTime();
+
+            if ($inStock > 0 || $outStock > 0) {
+                foreach (\array_keys($translations) as $langId) {
+                    $prestaProduct->delivery_in_stock[$langId]  = $inStock > 0
+                        ? \sprintf('%d', $inStock)
+                        : '';
+                    $prestaProduct->delivery_out_stock[$langId] = $outStock > 0
+                        ? \sprintf('%d', $outStock)
+                        : '';
+                }
+                $prestaProduct->additional_delivery_times = 2;
+            }
+        }
+    }
+
+    /**
      * @param JtlProduct    $jtlProduct
      * @param PrestaProduct $prestaProduct
      * @return void
@@ -1349,7 +1435,10 @@ class ProductController extends ProductPriceController implements PullInterface,
                         }
                     }
                     if (!\is_int($value)) {
-                        throw new \RuntimeException('Main_category_id Attribute value must be an integer');
+                        $this->logger->warning(
+                            \sprintf('main_category_id "%s" has no synced PrestaShop endpoint — skipping', $value)
+                        );
+                        break;
                     }
                     $prestaProduct->id_category_default = $value;
                     break;
@@ -1370,11 +1459,14 @@ class ProductController extends ProductPriceController implements PullInterface,
             }
         }
 
-        $prices         = $jtlProduct->getPrices();
-        $lastPriceEntry = \end($prices);
-
-        if ($lastPriceEntry !== false) {
-            $prestaProduct->price = \round($lastPriceEntry->getItems()[0]->getNetPrice(), 6);
+        foreach ($jtlProduct->getPrices() as $priceEntry) {
+            if ($priceEntry->getCustomerGroupId()->getEndpoint() === '') {
+                $items = $priceEntry->getItems();
+                if (!empty($items)) {
+                    $prestaProduct->price = \round($items[0]->getNetPrice(), 6);
+                }
+                break;
+            }
         }
 
         $rrp = $jtlProduct->getRecommendedRetailPrice();
@@ -1431,9 +1523,9 @@ class ProductController extends ProductPriceController implements PullInterface,
         if ($endpoint !== '') {
             [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
             if (!empty($combiId)) {
-                $obj = new \Product((int)$art);
-            } else {
                 $obj = new Combination((int)$combiId);
+            } else {
+                $obj = new \Product((int)$art);
             }
 
             $obj->delete();

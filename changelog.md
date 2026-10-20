@@ -1,5 +1,14 @@
 ## unreleased
 
+## 2.1.0 _2026-10-20_
+- CO-3664 - fix inverted delete condition in ProductController that deleted the whole base product when deleting a single variant, and silently did nothing when deleting a plain product
+- CO-3664 - fix possible SQL injection in ImageController::getPrestaImageI18n()
+- CO-2117 - fix delivery time not set
+- CO-3382 - fix customer group prices not saved as specific prices
+- CO-3498 - fix main_category_id attribute imported as free text instead of integer
+- CO-3385 - fix send stock
+- raise minimum PHP version to 8.3 (required by jtl/connector 5.3.x)
+
 ## 2.0.3 _2026-08-18_
 - CO-2904 - fix broken linkings for categories
 - CO-3043 - fix taxrate not found
