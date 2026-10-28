@@ -1,11 +1,16 @@
 ## unreleased
+- CO-3684 - update jtl/connector core to 6 (includes CO-3671 authenticate before resolving the RPC method, CVE-2026-108082 ReDoS fix in symfony/http-foundation, and CO-3709 reject sessions that never passed core.connector.auth so a failed authentication can no longer be replayed as jtlauth)
+  The bundled libraries are now prefixed with `JtlConnectorPrestaVendor\` so they no longer clash with PrestaShop's own Symfony, Monolog and Doctrine versions.
+  Connector plugins in `plugins/` that type-hint `DI\Container`, `Noodlehaus\ConfigInterface` or Symfony's `EventDispatcher` have to use the prefixed class names.
+  Requires `jtl/connector ^6.0.1` (the released CO-3709 security fix). connector-core 6.0.1 is not published yet (see connector-core PR #52), so until it is, `composer install` cannot resolve the dependency and CI fails.
+- CO-3684 - compare the connector token in constant time (CO-3468)
 - CO-3664 - fix inverted delete condition in ProductController that deleted the whole base product when deleting a single variant, and silently did nothing when deleting a plain product
 - CO-3664 - fix possible SQL injection in ImageController::getPrestaImageI18n()
 - CO-2117 - fix delivery time not set
 - CO-3382 - fix customer group prices not saved as specific prices
 - CO-3498 - fix main_category_id attribute imported as free text instead of integer
 - CO-3385 - fix send stock
-- raise minimum PHP version to 8.3 (required by jtl/connector 5.3.x)
+- raise minimum PHP version to 8.3 (required by jtl/connector 6)
 
 ## 2.0.3 _2026-08-18_
 - CO-2904 - fix broken linkings for categories

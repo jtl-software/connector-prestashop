@@ -22,13 +22,13 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
 
 use Jtl\Connector\Core\Config\ConfigSchema;
 use jtl\Connector\Presta\Utils\Config;
-use Symfony\Component\Yaml\Yaml;
 
 //phpcs:ignore PSR1.Classes.ClassDeclaration.MissingNamespace
 class JTLConnector extends Module
 {
     public const
-        CONFIG_DELETE_UNKNOWN_ATTRIBUTES = 'jtlconnector_delete_unknown_attributes';
+        CONFIG_DELETE_UNKNOWN_ATTRIBUTES = 'jtlconnector_delete_unknown_attributes',
+        MINIMUM_PHP_VERSION              = '8.3';
 
     /**
      * JTLConnector constructor.
@@ -37,16 +37,15 @@ class JTLConnector extends Module
     {
         $this->name = 'jtlconnector';
         $this->tab  = 'payments_gateways';
-        try {
-            $yaml = Yaml::parseFile(__DIR__ . '/build-config.yaml');
-            if (\is_array($yaml) && isset($yaml['version']) && \is_string($yaml['version'])) {
-                $this->version = $yaml['version'];
-            } else {
-                $this->version = 'Unknown';
-            }
-        } catch (\Exception $e) {
-            $this->version = 'Unknown';
-        }
+
+        // Read without symfony/yaml: PrestaShop constructs the module whenever it lists modules, also on PHP versions
+        // the bundled libraries do not support, and loading their autoloader there would break the module manager.
+        $buildConfigFile = __DIR__ . '/build-config.yaml';
+        $buildConfig     = \is_file($buildConfigFile) ? (string)\file_get_contents($buildConfigFile) : '';
+        $this->version   = \preg_match('/^version:\s*[\'"]?([^\s\'"]+)/m', $buildConfig, $matches) === 1
+            ? $matches[1]
+            : 'Unknown';
+
         $this->author        = 'JTL Software GmbH';
         $this->need_instance = 0;
         $this->bootstrap     = true;
@@ -72,19 +71,25 @@ class JTLConnector extends Module
     }
 
     /**
+     * @return string
+     */
+    private function getPhpVersionError(): string
+    {
+        return sprintf(
+            $this->l('The Connector requires PHP %s. Your system is running PHP %s.'),
+            self::MINIMUM_PHP_VERSION,
+            PHP_VERSION
+        );
+    }
+
+    /**
      * @return bool
      * @throws PrestaShopDatabaseException
      */
     public function install(): bool
     {
-        $minimumPhpversion = '8.3';
-        if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
-            $this->_errors[] =
-                sprintf(
-                    $this->l('The Connector requires PHP %s. Your system is running PHP %s.'),
-                    $minimumPhpversion,
-                    PHP_VERSION
-                );
+        if (version_compare(PHP_VERSION, self::MINIMUM_PHP_VERSION) < 0) {
+            $this->_errors[] = $this->getPhpVersionError();
         }
 
         if (!extension_loaded('sqlite3')) {
@@ -330,7 +335,10 @@ class JTLConnector extends Module
      */
     public function getContent(): string
     {
-        require_once CONNECTOR_DIR . '/lib/autoload.php';
+        if (version_compare(PHP_VERSION, self::MINIMUM_PHP_VERSION) < 0) {
+            return $this->displayError($this->getPhpVersionError());
+        }
+        require_once __DIR__ . '/lib/autoload.php';
 
         $output = null;
 

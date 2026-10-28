@@ -17,6 +17,7 @@ use jtl\Connector\Presta\Controller\ProductController;
 use jtl\Connector\Presta\Controller\ProductStockLevelController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Auth\TokenValidator;
+use jtl\Connector\Presta\Subscriber\BlankLanguageIsoSubscriber;
 use Noodlehaus\ConfigInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -38,6 +39,7 @@ class Connector implements ConnectorInterface
     public function initialize(ConfigInterface $config, Container $container, EventDispatcher $dispatcher): void
     {
         $this->container = $container;
+        $dispatcher->addSubscriber(new BlankLanguageIsoSubscriber());
 
         $this->container->set(
             PrimaryKeyMapper::class,

@@ -12,8 +12,6 @@ use jtl\Connector\Presta\Connector;
 use jtl\Connector\Presta\Utils\Config;
 use Psr\Log\LogLevel;
 
-require_once CONNECTOR_DIR . '/lib/autoload.php';
-
 class JtlconnectorApiModuleFrontController extends ModuleFrontController
 {
     /**
@@ -26,6 +24,14 @@ class JtlconnectorApiModuleFrontController extends ModuleFrontController
      */
     public function initContent(): void
     {
+        // The bundled Connector Core 6 is parsed with PHP 8.3 syntax. Refuse early on older PHP instead of loading
+        // its autoloader and hitting a fatal parse error (install() blocks this, but the endpoint is not gated by it).
+        if (\PHP_VERSION_ID < 80300) {
+            \http_response_code(500);
+            exit('The JTL-Connector requires PHP 8.3 or higher.');
+        }
+        require_once __DIR__ . '/../../lib/autoload.php';
+
         if (session_status() === \PHP_SESSION_ACTIVE) {
             session_destroy();
         }

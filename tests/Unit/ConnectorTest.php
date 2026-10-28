@@ -6,9 +6,11 @@ namespace Tests\Unit;
 
 use Configuration;
 use DI\Container;
+use Jtl\Connector\Core\Definition\Event;
 use jtl\Connector\Presta\Auth\TokenValidator;
 use jtl\Connector\Presta\Connector;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use jtl\Connector\Presta\Subscriber\BlankLanguageIsoSubscriber;
 use Noodlehaus\ConfigInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -91,6 +93,21 @@ final class ConnectorTest extends TestCase
         Configuration::set('jtlconnector_pass', 'testtoken');
 
         $connector->initialize($config, $container, $dispatcher);
+    }
+
+    public function testInitializeRegistersBlankLanguageIsoSubscriber(): void
+    {
+        $dispatcher = new EventDispatcher();
+
+        (new Connector())->initialize(
+            $this->createMock(ConfigInterface::class),
+            $this->createMock(Container::class),
+            $dispatcher
+        );
+
+        $listeners = $dispatcher->getListeners(Event::createRpcEventName(Event::BEFORE));
+        self::assertCount(1, $listeners);
+        self::assertInstanceOf(BlankLanguageIsoSubscriber::class, $listeners[0][0]);
     }
 
     // -------------------------------------------------------------------------
