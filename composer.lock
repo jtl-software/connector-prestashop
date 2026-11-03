@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "43d7e45c7ef23666259fcdba36dc4361",
+    "content-hash": "a3c59ff8538772fc379e20a474e26c7d",
     "packages": [
         {
             "name": "doctrine/collections",
@@ -753,16 +753,16 @@
         },
         {
             "name": "jtl/connector",
-            "version": "dev-ticket/CO-3709",
+            "version": "6.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jtl-software/connector-core.git",
-                "reference": "fa4b62c5543ae212f17cf178277745c42eeba75d"
+                "reference": "7e7929c696217343e5f0f30f52f02e6b41878779"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jtl-software/connector-core/zipball/fa4b62c5543ae212f17cf178277745c42eeba75d",
-                "reference": "fa4b62c5543ae212f17cf178277745c42eeba75d",
+                "url": "https://api.github.com/repos/jtl-software/connector-core/zipball/7e7929c696217343e5f0f30f52f02e6b41878779",
+                "reference": "7e7929c696217343e5f0f30f52f02e6b41878779",
                 "shasum": ""
             },
             "require": {
@@ -803,48 +803,12 @@
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "Jtl\\Connector\\Dbc\\": "src/dbc/",
                     "Jtl\\Connector\\Core\\": "src/",
-                    "Jtl\\Connector\\MappingTables\\": "src/mapping-tables",
-                    "Jtl\\Connector\\Dbc\\": "src/dbc/"
+                    "Jtl\\Connector\\MappingTables\\": "src/mapping-tables"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Jtl\\Connector\\Core\\Test\\": "tests/src",
-                    "Jtl\\Connector\\MappingTables\\": "tests/src/mapping-tables",
-                    "Jtl\\Connector\\Dbc\\": "tests/src/dbc/"
-                }
-            },
-            "scripts": {
-                "analyze": [
-                    "@analyse"
-                ],
-                "analyse": [
-                    "@phpcs",
-                    "@phpstan"
-                ],
-                "phpcs": [
-                    "phpcs --basepath=. --extensions=php --standard=JtlConnector --report=full src tests"
-                ],
-                "phpcs:fix": [
-                    "phpcbf --basepath=. --extensions=php --standard=JtlConnector src tests"
-                ],
-                "phpcs:ci": [
-                    "phpcs --basepath=. --extensions=php --standard=JtlConnector --report=full --report-\\\\Micheh\\\\PhpCodeSniffer\\\\Report\\\\Gitlab=phpcs-quality-report.json src tests"
-                ],
-                "phpstan": [
-                    "phpstan analyse src tests --level max -c ./vendor/jtl/connector-cq/phpstan.neon"
-                ],
-                "phpstan:ci": [
-                    "phpstan analyse src tests --level max -c ./vendor/jtl/connector-cq/phpstan.neon --error-format gitlab > phpstan-quality-report.json"
-                ],
-                "tests": [
-                    "phpunit"
-                ],
-                "tests:ci": [
-                    "phpunit --log-junit phpunit.xml"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -866,10 +830,10 @@
                 "protocol"
             ],
             "support": {
-                "source": "https://github.com/jtl-software/connector-core/tree/ticket/CO-3709",
-                "issues": "https://github.com/jtl-software/connector-core/issues"
+                "issues": "https://github.com/jtl-software/connector-core/issues",
+                "source": "https://github.com/jtl-software/connector-core/tree/6.0.1"
             },
-            "time": "2026-10-28T17:07:11+00:00"
+            "time": "2026-11-03T12:29:43+00:00"
         },
         {
             "name": "laravel/serializable-closure",
@@ -4834,18 +4798,9 @@
             "time": "2025-11-17T20:03:58+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "jtl/connector",
-            "version": "dev-ticket/CO-3709",
-            "alias": "6.0.0",
-            "alias_normalized": "6.0.0.0"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "jtl/connector": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

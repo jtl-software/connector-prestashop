@@ -7,9 +7,7 @@ A PrestaShop module (`jtlconnector`) that synchronises shop data with JTL-Wawi E
 ## Commands
 
 ```bash
-# Install dependencies. jtl/connector requires `^6.0.1` (the released CO-3709 security fix). connector-core
-# 6.0.1 is not published yet (see connector-core PR #52), so composer install cannot resolve the dependency
-# and CI fails until it is released.
+# Install dependencies. jtl/connector requires `^6.0.1` (the released CO-3709 security fix).
 composer install
 
 # Code style check (PHPCS standard JtlConnector, scope: src controllers index.php jtlconnector.php)
