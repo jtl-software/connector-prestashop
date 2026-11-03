@@ -133,7 +133,7 @@ abstract class AbstractController implements LoggerAwareInterface
         $sql = (new QueryBuilder())
             ->select('id_lang')
             ->from('lang')
-            ->where("iso_code = '$languageIso'");
+            ->where("iso_code = '" . \pSQL($languageIso) . "'");
 
         /** @var array{0: array{id_lang: string|null}} $result */
         $result = $this->db->executeS($sql->build());
@@ -155,7 +155,7 @@ abstract class AbstractController implements LoggerAwareInterface
         $sql = (new QueryBuilder())
             ->select('id_country')
             ->from('country')
-            ->where("iso_code = '$languageIso'");
+            ->where("iso_code = '" . \pSQL($languageIso) . "'");
 
         /** @var array{0: array{id_country: string|null}}|array{} $result */
         $result = $this->db->executeS($sql->build());

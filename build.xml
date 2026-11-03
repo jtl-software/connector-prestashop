@@ -38,8 +38,26 @@
         </if>
     </target>
 
+    <!--
+        The release ships the production dependencies only. Fail early on a dev install of lib/ instead of deep inside
+        the scoper with a misleading error: build.sh and .github/scripts/build-zip.sh install without dev packages first.
+    -->
+    <target name="check-production-install">
+        <!-- is_file() first: phing 2 reports PHP warnings even when they are suppressed with @ -->
+        <php expression="is_file('./lib/composer/installed.json') &amp;&amp; (json_decode((string)file_get_contents('./lib/composer/installed.json'), true)['dev'] ?? true) === false ? 'production' : 'dev'"
+             returnProperty="lib.install"/>
+        <if>
+            <not>
+                <equals arg1="${lib.install}" arg2="production"/>
+            </not>
+            <then>
+                <fail message="lib/ is not a production install (dev packages, or no install at all). Run 'composer install --no-dev' before the release build, as build.sh does."/>
+            </then>
+        </if>
+    </target>
+
     <!-- Scopes src/, controllers/, upgrade/, jtlconnector.php and the production dependencies in lib/ -->
-    <target name="scope" depends="php-scoper">
+    <target name="scope" depends="check-production-install,php-scoper">
         <delete dir="${scoped.dir}"/>
         <exec executable="php" checkreturn="true" passthru="true">
             <arg value="${php-scoper.phar}"/>
@@ -80,7 +98,8 @@
             shipped class was dropped from the scoped autoloader by an over-broad exclusion. The generated composer
             files are backed up and restored so this does not leave a developer's working copy on an authoritative one.
         -->
-        <copy todir="./build/autoload-backup" overwrite="true">
+        <delete dir="./build/autoload-backup"/>
+        <copy todir="./build/autoload-backup" overwrite="true" includeemptydirs="false">
             <fileset dir="./lib/composer"/>
         </copy>
         <!--
@@ -99,7 +118,7 @@
             <arg value="./lib/composer/autoload_classmap.php"/>
             <arg value="${scoped.dir}/lib/composer/autoload_classmap.php"/>
         </exec>
-        <copy todir="./lib/composer" overwrite="true">
+        <copy todir="./lib/composer" overwrite="true" includeemptydirs="false">
             <fileset dir="./build/autoload-backup"/>
         </copy>
         <delete dir="./build/autoload-backup"/>
@@ -119,12 +138,15 @@
         <mkdir dir="./dist/jtlconnector"/>
         <mkdir dir="./dist/jtlconnector/config"/>
         <mkdir dir="./dist/jtlconnector/db"/>
-        <mkdir dir="./dist/jtlconnector/logs"/>
         <mkdir dir="./dist/jtlconnector/plugins"/>
         <mkdir dir="./dist/jtlconnector/tmp"/>
+        <mkdir dir="./dist/jtlconnector/var"/>
 
-        <delete file="./db/connector.s3db"/>
-        <touch file="./db/connector.s3db"/>
+        <!--
+            The ZIP ships an empty db/connector.s3db because JTLConnector::install() requires it to be writable. It is
+            created in dist/ directly, so a developer's working-copy file is never touched.
+        -->
+        <touch file="./dist/jtlconnector/db/connector.s3db"/>
         <copy todir="./dist/jtlconnector">
             <fileset dir="${scoped.dir}">
                 <include name="jtlconnector.php"/>
@@ -144,21 +166,26 @@
                 <include name="config/features.example.json"/>
                 <include name="config/.htaccess"/>
                 <include name="config/index.php"/>
-                <include name="db/connector.s3db"/>
                 <include name="db/.htaccess"/>
                 <include name="db/index.php"/>
-                <include name="logs/.htaccess"/>
-                <include name="logs/index.php"/>
+                <!--
+                    Every directory that holds runtime data ships a "Deny from all" .htaccess and an index.php (checked by
+                    .github/scripts/smoke-test-zip.php). The legacy logs/ dir is not shipped: install() and the 3.0.0
+                    upgrade move it to var/log.
+                -->
                 <include name="plugins/.htaccess"/>
                 <include name="plugins/index.php"/>
                 <include name="tmp/.htaccess"/>
+                <include name="tmp/index.php"/>
+                <include name="var/.htaccess"/>
+                <include name="var/index.php"/>
             </fileset>
         </copy>
         <chmod file="./dist/jtlconnector/config" mode="0777"/>
         <chmod file="./dist/jtlconnector/db" mode="0777"/>
         <chmod file="./dist/jtlconnector/db/connector.s3db" mode="0777"/>
-        <chmod file="./dist/jtlconnector/logs" mode="0777"/>
         <chmod file="./dist/jtlconnector/tmp" mode="0777"/>
+        <chmod file="./dist/jtlconnector/var" mode="0777"/>
     </target>
 
     <target name="package" depends="build">
@@ -170,6 +197,12 @@
         <zip destfile="./${zipname}${version}.zip">
             <fileset refid="zipFiles"/>
         </zip>
+        <!-- phing 2 stores every directory as 0777: keep the dist/ modes, so the code is not world-writable -->
+        <exec executable="php" checkreturn="true" passthru="true">
+            <arg value=".github/scripts/fix-zip-modes.php"/>
+            <arg value="./${zipname}${version}.zip"/>
+            <arg value="./dist"/>
+        </exec>
     </target>
 
     <target name="release" depends="package">

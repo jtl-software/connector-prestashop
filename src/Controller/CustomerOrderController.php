@@ -102,7 +102,7 @@ class CustomerOrderController extends AbstractController implements PullInterfac
         $qb    = new QueryBuilder();
         $sql   = $qb->select('COUNT(*)')
             ->from('orders')
-            ->where("reference = '$orderNumber'");
+            ->where("reference = '" . \pSQL((string)$orderNumber) . "'");
         $count = $this->db->getValue($sql);
         if ($count > 1) {
             $orderNumber = \sprintf("%s-%s", $orderNumber, $prestaOrder->id);

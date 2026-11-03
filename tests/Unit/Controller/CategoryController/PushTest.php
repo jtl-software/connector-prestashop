@@ -9,6 +9,7 @@ use Jtl\Connector\Core\Model\Category as JtlCategory;
 use Jtl\Connector\Core\Model\CategoryI18n as JtlCategoryI18n;
 use Jtl\Connector\Core\Model\Identity;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use PHPUnit\Exception as PHPUnitException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\Support\Controller\TestableCategoryController;
@@ -137,6 +138,9 @@ final class PushTest extends TestCase
 
     public function testExistingRootCategoryKeepsItsPrestaShopParent(): void
     {
+        // As in PrestaShop: the shop root is Home (id 2), itself a child of the hidden "Root" category (id 1).
+        // The distinct ids make sure the root branch keeps id_parent instead of using the shop root id.
+        Category::$mockRootCategoryId       = 2;
         Category::$mockLoadedIsRootCategory = true;
         Category::$mockLoadedIdParent       = 1;
 
@@ -166,17 +170,21 @@ final class PushTest extends TestCase
         $mapper->expects(self::never())->method('save');
         $this->controller->injectMapper($mapper);
 
-        // Caught explicitly instead of expectException(): PHPUnit skips the mock expectations
-        // above when a test ends in an expected exception.
+        // Caught explicitly instead of expectException() so that the add() count can be asserted after the throw.
+        $thrown = null;
         try {
             $this->controller->push(
                 $this->jtlCategory('', $this->engI18n('Orphan Category', 'orphan-category'))
             );
-            self::fail('Expected a RuntimeException for the missing root category');
+        } catch (PHPUnitException $e) {
+            // PHPUnit's own exceptions (e.g. a violated mock expectation) mostly extend RuntimeException: never swallow them
+            throw $e;
         } catch (RuntimeException $e) {
-            self::assertSame('Root category id not found', $e->getMessage());
+            $thrown = $e;
         }
 
+        self::assertInstanceOf(RuntimeException::class, $thrown, 'Expected a RuntimeException for the missing root category');
+        self::assertSame('Root category id not found', $thrown->getMessage());
         // The category must be rejected before anything is written to PrestaShop or mapped.
         self::assertSame(0, Category::$mockAddCalls);
     }

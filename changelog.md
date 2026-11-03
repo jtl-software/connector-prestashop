@@ -4,6 +4,14 @@
   Connector plugins in `plugins/` that type-hint `DI\Container`, `Noodlehaus\ConfigInterface` or Symfony's `EventDispatcher` have to use the prefixed class names.
   Requires `jtl/connector ^6.0.1` (the released CO-3709 security fix).
 - CO-3684 - compare the connector token in constant time (CO-3468)
+- CO-3684 - generate the connector token on install with a cryptographically secure random generator instead of the time-based `uniqid()`
+  Existing shops keep their token: set a new random password on the module's configuration page and in JTL-Wawi.
+- CO-3684 - resetting the links of one entity type (core.linker.clear) no longer deletes the links of all entity types (types sharing a link table, i.e. customers and customer groups or the image types, are still cleared together), and deleting a link without endpoint and host id no longer deletes the whole link table
+- CO-3684 - escape the values from JTL-Wawi in SQL queries: endpoint ids in the ID mapping and in the combination image link, variation and variation value names (a name with an apostrophe created another attribute group or attribute on every push), and language and country ISO codes
+- CO-3684 - escape PrestaShop's order reference when pulling orders (other modules can set any value)
+- CO-3684 - downloading the logs on the configuration page no longer leaves an empty temp file behind
+- CO-3684 - protect the var/ (sessions, logs), plugins/ and tmp/ directories against web access like config/ and db/, and move the legacy logs/ directory to var/log also when upgrading (it was only moved on install)
+- CO-3684 - the release ZIP no longer stores every directory as world-writable (0777), which applied when it was unpacked manually on the server; only config/, db/, tmp/ and var/ stay writable
 - CO-3664 - fix inverted delete condition in ProductController that deleted the whole base product when deleting a single variant, and silently did nothing when deleting a plain product
 - CO-3664 - fix possible SQL injection in ImageController::getPrestaImageI18n()
 - CO-2117 - fix delivery time not set

@@ -39,8 +39,13 @@ jobs:
         uses: reviewdog/action-shellcheck@d0b8d5fd7fad6afdb6e1b6ce1778892be4d1f427 # v1.34.1
         with:
           reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
-          path: .github/scripts
+          # everything the sparse checkout above contains: .github/ plus the root files (cone mode), i.e. build.sh and
+          # .github/scripts/*.sh. Shell scripts in another directory need that directory in sparse-checkout.
+          path: .
           pattern: '*.sh'
+          exclude: |
+            ./.git/*
+            ./lib/*
           fail_level: error
 
   # Stage 2: PHP static analysis (parallel)

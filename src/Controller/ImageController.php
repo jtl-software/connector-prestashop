@@ -444,10 +444,13 @@ class ImageController extends AbstractController implements PushInterface, PullI
         }
 
         //TODO: rewrite to not directly insert into database.
-        if (!\is_null($combiId) && $isUpdate === false) {
+        // only for a real combination id: "10" and "10_" (empty combination) are plain product images,
+        // see the cover handling above
+        if ((int)$combiId > 0 && $isUpdate === false) {
             $this->db->execute(
-                'INSERT INTO ' . \_DB_PREFIX_ . 'product_attribute_image 
-                            SET id_product_attribute=' . $combiId . ', id_image=' . $img->id
+                // $combiId comes from JTL-Wawi's endpoint id, $img->id is PrestaShop's own: integers only in SQL
+                'INSERT INTO ' . \_DB_PREFIX_ . 'product_attribute_image
+                            SET id_product_attribute=' . (int)$combiId . ', id_image=' . (int)$img->id
             );
         }
 

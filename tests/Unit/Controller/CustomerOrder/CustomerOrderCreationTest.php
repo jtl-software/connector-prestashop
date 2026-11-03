@@ -158,6 +158,27 @@ final class CustomerOrderCreationTest extends CustomerOrderControllerTestCase
         self::assertSame('REF-XYZ', $result->getOrderNumber());
     }
 
+    public function testOrderReferenceIsEscapedInTheUniquenessQuery(): void
+    {
+        $this->prepareController();
+        $queries = [];
+        $db      = $this->createMock(Db::class);
+        $db->method('getValue')
+            ->willReturnCallback(function (mixed $sql) use (&$queries): string {
+                $queries[] = (string)$sql;
+                return '1';
+            });
+        $this->controller->injectDb($db);
+
+        // PrestaShop does not validate the reference, other modules can set any value
+        $this->controller->exposeCreateJtlCustomerOrder($this->makeOrder(['reference' => "REF' OR '1'='1"]));
+
+        $referenceQueries = \array_values(\array_filter($queries, static fn(string $sql): bool => \str_contains($sql, 'reference')));
+        self::assertCount(1, $referenceQueries);
+        // the PrestaShop stub's pSQL() is addslashes()
+        self::assertStringContainsString(\addslashes("REF' OR '1'='1"), $referenceQueries[0]);
+    }
+
     public function testOrderNumberGetsSuffixWhenReferenceIsDuplicated(): void
     {
         $this->prepareController(referenceCount: '2');

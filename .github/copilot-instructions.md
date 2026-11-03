@@ -22,13 +22,17 @@ composer phpstan
 # Both static checks
 composer analyse
 
-# Build the distribution ZIP for a given version (scoped, see "Build system"; needs composer on PATH and github.com access on the first run)
+# Build the distribution ZIP for a given version (scoped, see "Build system"; needs composer on PATH and github.com access on the first run).
+# The release build needs the production dependencies only, so reinstall the dev dependencies afterwards.
+composer install --no-dev
 php ./lib/bin/phing release -Dversion=<version>
+composer install
 
 # Smoke-test a built ZIP
 php .github/scripts/smoke-test-zip.php jtl_connector_prestashop_<version>.zip
 
-# Local one-shot build (production deps, ZIP, then restore dev deps)
+# Local one-shot build of jtl_connector_prestashop_<build-config.yaml version>.zip (production deps from composer.lock,
+# ZIP, then dev deps again, also on failure; overwrites a ZIP of that name)
 ./build.sh
 ```
 
@@ -52,15 +56,15 @@ PrestaShop loads the module class `JTLConnector` from `jtlconnector.php` wheneve
 
 ### Controllers
 
-`src/Controller/` contains one controller per JTL entity (Category, Customer, CustomerOrder, DeliveryNote, GlobalData, Image, Manufacturer, Payment, Product). All extend `AbstractController`. Pull/push/delete is the standard JTL-Connector framework pattern.
+`src/Controller/` contains one controller per JTL entity (Category, Customer, CustomerOrder, DeliveryNote, GlobalData, Image, Manufacturer, Payment, Product, ProductPrice, ProductStockLevel, Specific, StatusChange). All extend `AbstractController`, `ProductController` via `ProductPriceController`. Pull/push/delete is the standard JTL-Connector framework pattern.
 
 ### ID mapping
 
-`src/Mapper/PrimaryKeyMapper.php` (implements `Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface`) maps between JTL identity types and PrestaShop primary keys. Storage is **SQLite** at `db/connector.s3db` — created on install, fixed permissions `0777`, the `sqlite3` PHP extension is required at install time. The DB file is the single source of truth for cross-system identity, so don't drop or migrate it casually.
+`src/Mapper/PrimaryKeyMapper.php` (implements `Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface`) maps between JTL identity types and PrestaShop primary keys. Storage is PrestaShop's own database: `jtl_connector_link_*` tables (`endpoint_id` primary key, `host_id`), accessed via `\Db`. There is no type column: customers and customer groups share `jtl_connector_link_customer` and all image types share `jtl_connector_link_image`, so ids of those types can collide and `clear()` of one of them clears the shared table. These tables are the single source of truth for cross-system identity, so don't drop or migrate them casually. `db/connector.s3db` holds no mappings: the release ZIP ships it empty because `install()` requires it to be writable (and the `sqlite3` PHP extension to be loaded); jtl/connector 6 keeps its SQLite session store under `var/`.
 
 ### Plugins / third-party integrations
 
-Third-party connector plugins are dropped into `plugins/` by the merchant; the release ZIP ships only `plugins/.htaccess` and `plugins/index.php`, and the directory is gitignored (`plugins/**` in `.gitignore`). jtl/connector's `Application::loadPlugins()` registers its own PSR-0 `ClassLoader` for `plugins/` and instantiates every `<Namespace>/Bootstrap.php` that implements `Jtl\Connector\Core\Plugin\PluginInterface`. The `psr-0` entry in `composer.json` only matters for the dev install: the release ZIP's autoloader is classmap-authoritative and dumped while `plugins/` is empty. In the release ZIP, plugins must reference the bundled vendor classes by their prefixed names (`JtlConnectorPrestaVendor\DI\Container`, `JtlConnectorPrestaVendor\Symfony\Component\EventDispatcher\…`, `JtlConnectorPrestaVendor\Psr\Log\…`, …); only `Jtl\Connector\*` and PrestaShop's own classes keep their names (see "Build system").
+Third-party connector plugins are dropped into `plugins/` by the merchant; the release ZIP ships only `plugins/.htaccess` and `plugins/index.php`; apart from those and `.gitkeep`, the directory is gitignored. jtl/connector's `Application::loadPlugins()` registers its own PSR-0 `ClassLoader` for `plugins/` and instantiates every `<Namespace>/Bootstrap.php` that implements `Jtl\Connector\Core\Plugin\PluginInterface`. The `psr-0` entry in `composer.json` only matters for the dev install: the release ZIP's autoloader is classmap-authoritative and dumped while `plugins/` is empty. In the release ZIP, plugins must reference the bundled vendor classes by their prefixed names (`JtlConnectorPrestaVendor\DI\Container`, `JtlConnectorPrestaVendor\Symfony\Component\EventDispatcher\…`, `JtlConnectorPrestaVendor\Psr\Log\…`, …); only `Jtl\Connector\*` and PrestaShop's own classes keep their names (see "Build system").
 
 ### Upgrade scripts
 
@@ -68,17 +72,18 @@ Third-party connector plugins are dropped into `plugins/` by the merchant; the r
 
 ### Auth
 
-`src/Auth/TokenValidator.php` implements the JTL-framework `TokenValidatorInterface`. The shared secret comes from `config/config.json` (gitignored runtime config).
+`src/Auth/TokenValidator.php` implements the JTL-framework `TokenValidatorInterface` (constant-time comparison). The shared secret is the PrestaShop configuration value `jtlconnector_pass`: generated randomly on install, editable on the module's configuration page (minimum 8 characters).
 
 ## Build system
 
 The release ZIP is produced by **phing** (`lib/bin/phing`, configured in `build.xml`):
 
 1. `composer install --no-dev` populates `lib/` with production-only deps.
-2. `phing release` (default target chain: `php-scoper` → `scope` → `build` → `package` → `release`):
+2. `phing release` (default target chain: `check-production-install` + `php-scoper` → `scope` → `build` → `package` → `release`):
+   - `check-production-install` fails the build right away if `lib/` is a dev install (step 1 was skipped).
    - `php-scoper` downloads the pinned PHP-Scoper PHAR into `build/tools/` and verifies its SHA-256.
    - `scope` prefixes `src/`, `controllers/`, `upgrade/`, `jtlconnector.php` and `lib/` (config: `scoper.inc.php`) into `build/scoped/`, then dumps a classmap-authoritative autoloader there. The Composer autoload `files` identifiers are rewritten to `JtlConnectorPrestaVendor_<md5>`; otherwise PrestaShop (or another module) loading the same package unscoped would keep the prefixed functions from being defined. Finally `.github/scripts/check-scoped-classmap.php` fails the build if any shipped class was dropped from the scoped autoloader by an over-broad finder exclusion (it compares the scoped classmap against the unscoped authoritative one, ignoring the build-only `phing`).
-   - `build` copies the scoped PHP files plus the remaining runtime files into `dist/jtlconnector/` and sets perms; `package` zips into `jtl_connector_prestashop_<version>.zip`; `release` removes the scratch dirs.
+   - `build` copies the scoped PHP files plus the remaining runtime files into `dist/jtlconnector/` and sets perms. Every directory with runtime data (`config/`, `db/`, `plugins/`, `tmp/`, `var/`) ships a `Deny from all` `.htaccess` and an `index.php`, which also reach existing installs on upgrade. The legacy `logs/` dir is not shipped; `src/Utils/LegacyLogDir.php` moves it to `var/log` on install and in `upgrade/install-3.0.0.php`. `package` zips into `jtl_connector_prestashop_<version>.zip` and sets the mode of every entry to its `dist/` mode (`.github/scripts/fix-zip-modes.php`; phing 2 stores every directory as 0777); `release` removes the scratch dirs.
 3. `build-config.yaml` provides the `version` and `zipname` properties to `build.xml`.
 
 Build prerequisites besides PHP 8.3: `composer` on `PATH` (for `dump-autoload`) and HTTPS access to github.com on the first run (PHAR download; a PHAR already in `build/tools/php-scoper-<version>.phar` is reused if its checksum matches).
@@ -87,14 +92,14 @@ Build prerequisites besides PHP 8.3: `composer` on `PATH` (for `dump-autoload`) 
 
 Code that refers to a vendor class only *by string* (e.g. `sprintf('Monolog\Formatter\%sFormatter', …)`) is invisible to the scoper: those strings are prefixed by the `$stringClassNames` list in `scoper.inc.php`, and the build fails if a listed file or string is gone or if any other string literal still starts with a prefixed namespace. So don't build vendor class names from strings in module code, and when a dependency update breaks the build there, update that list. `jtlconnector.php`'s constructor must not use bundled classes at all: PrestaShop constructs the module whenever it lists modules, also on unsupported PHP versions.
 
-CI builds the ZIP on every push (job `build-zip` in `.github/workflows/check.yaml`, via `.github/scripts/build-zip.sh`), runs `.github/scripts/smoke-test-zip.php` against it (constructs `JTLConnector` and checks that no bundled class gets loaded, sends auth/identify/features through `controllers/front/api.php`, and asserts the scoped core still rejects unauthenticated access — wrong token, no session, an unknown session id and a seeded-but-unauthenticated session, i.e. the CO-3709 fix — and does not log the plaintext session id; the few PrestaShop classes on these paths are stubbed) and uploads it as an artifact for tags.
+CI builds the ZIP on every push (job `build-zip` in `.github/workflows/check.yaml`, via `.github/scripts/build-zip.sh`), runs `.github/scripts/smoke-test-zip.php` against it and uploads it as an artifact for tags. The smoke test checks the ZIP itself (nothing world-writable except the runtime dirs and `db/connector.s3db`, a `Deny from all` `.htaccess` and an `index.php` in every runtime dir, no legacy `logs/`), constructs `JTLConnector` and checks that no bundled class gets loaded, runs `upgrade/install-3.0.0.php` on a copy with a legacy `logs/` dir, and sends auth/identify/features through `controllers/front/api.php` (`jtlauth` once in the POST body and once in the query string). It asserts the scoped core still rejects unauthenticated access — wrong token, no session, an unknown session id and a seeded-but-unauthenticated session, i.e. the CO-3709 fix. It runs that RPC sequence with a fresh install's defaults (no debug lines may be logged) and again with debug logging on (debug lines must be logged), then checks that no log contains a plaintext session id or a submitted token. The few PrestaShop classes on these paths are stubbed.
 
 ## Coding standards
 
 - `declare(strict_types=1)` everywhere
 - PHPStan at **max level**, config in `./phpstan.neon`
 - PHPCS standard `JtlConnector` (from `jtl/connector-cq` via Slevomat rules)
-- PHP `>= 8.3` per `composer.json` (required by jtl/connector 6, which uses typed class constants); CI runs on `8.3`
+- PHP `>= 8.3` per `composer.json` (required by jtl/connector 6, which uses typed class constants); CI runs on `8.3`. **Exception:** `jtlconnector.php`, `src/Utils/LegacyLogDir.php` and `upgrade/install-3.0.0.php` must stay parseable on PHP 7.1, because PrestaShop loads the module class (and runs `install()`, which reports the unsupported version) on any PHP version: no newer syntax there (e.g. `catch (\Throwable $e)` keeps its variable).
 
 ## CI/CD
 

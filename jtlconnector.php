@@ -125,23 +125,10 @@ class JTLConnector extends Module
             $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $logDir);
         }
 
-        $oldLogDir = CONNECTOR_DIR . 'logs';
-        if (\is_dir($oldLogDir)) {
-            // should not have sub dirs
-            $files = \glob($oldLogDir . '/*');
-            if (\is_array($files)) { // log dir is not empty
-                foreach ($files as $file) {
-                    if (\is_file($file)) {
-                        // move files to new log dir
-                        \copy($file, $logDir . '/' . \basename($file));
-                        // remove old files
-                        \unlink($file);
-                    }
-                }
-            }
-            // remove old log dir
-            \rmdir($oldLogDir);
-        }
+        // required directly instead of loading the bundled autoloader:
+        // install() also runs on the PHP versions it refuses
+        require_once __DIR__ . '/src/Utils/LegacyLogDir.php';
+        \jtl\Connector\Presta\Utils\LegacyLogDir::migrate(CONNECTOR_DIR);
 
         if (\count($this->_errors) != 0) {
             $this->_errors[] = '<b>' . \sprintf(
@@ -200,7 +187,8 @@ class JTLConnector extends Module
         $tab->class_name = "jtlconnector";
         $tab->save();
 
-        return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
+        // the connector token is the shared secret for JTL-Wawi: generate it from a CSPRNG (uniqid() is time-based)
+        return parent::install() && Configuration::updateValue('jtlconnector_pass', bin2hex(random_bytes(16)));
     }
 
     /**
@@ -436,8 +424,17 @@ class JTLConnector extends Module
      */
     private function downloadJTLLogs(): void
     {
-        $logDir   = CONNECTOR_DIR . '/var/log';
-        $zip_file = \tempnam(sys_get_temp_dir(), 'logs') . '.zip';
+        $logDir      = CONNECTOR_DIR . '/var/log';
+        $placeholder = (string)\tempnam(sys_get_temp_dir(), 'logs');
+        // the ZIP is written next to the empty file tempnam() creates, which reserves the name until both are removed
+        $zip_file = $placeholder . '.zip';
+        $cleanUp  = static function () use ($placeholder, $zip_file): void {
+            foreach ([$zip_file, $placeholder] as $file) {
+                if (\is_file($file)) {
+                    \unlink($file);
+                }
+            }
+        };
 
         $zip = new ZipArchive();
         $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
@@ -464,10 +461,10 @@ class JTLConnector extends Module
             header('Content-type: application/zip');
             header('Content-Disposition: attachment; filename="logs.zip"');
             readfile($zip_file);
-            // cleanup
-            unlink($zip_file);
+            $cleanUp();
             exit();
         } else {
+            $cleanUp();
             header('Content-Type: application/json; charset=UTF-8');
             header('HTTP/1.1 451 Internal Server Booboo');
             die(json_encode(['message' => 'Keine Logs Vorhanden!', 'code' => 451]));
