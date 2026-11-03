@@ -42,6 +42,13 @@ final class TokenValidatorTest extends TestCase
         self::assertFalse($validator->validate(''));
     }
 
+    public function testValidateWithPrefixOrExtensionOfTokenReturnsFalse(): void
+    {
+        $validator = new TokenValidator('my-secret-token');
+        self::assertFalse($validator->validate('my-secret'));
+        self::assertFalse($validator->validate('my-secret-token-2'));
+    }
+
     public function testValidateIsCaseSensitive(): void
     {
         $validator = new TokenValidator('Secret');

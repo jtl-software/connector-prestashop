@@ -7,10 +7,11 @@ namespace jtl\Connector\Presta\Mapper;
 use Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface;
 use Jtl\Connector\Core\Definition\IdentityType;
 use jtl\Connector\Presta\Utils\QueryBuilder;
+use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-class PrimaryKeyMapper implements PrimaryKeyMapperInterface
+class PrimaryKeyMapper implements PrimaryKeyMapperInterface, LoggerAwareInterface
 {
     /** @var array|string[] */
     protected array $tableNames = [
@@ -42,6 +43,15 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
     }
 
     /**
+     * @param LoggerInterface $logger
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
+    }
+
+    /**
      * @param int    $type
      * @param string $endpointId
      * @return int|null
@@ -58,7 +68,7 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
             $sql = $queryBuilder
                 ->select('host_id')
                 ->from($tableName)
-                ->where("endpoint_id='$endpointId'");
+                ->where("endpoint_id='" . \pSQL($endpointId) . "'");
 
             $dbResult = $this->db->getValue($sql);
 
@@ -134,9 +144,9 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
 
         return $this->db->execute(
             \sprintf(
-                'INSERT IGNORE INTO %s (endpoint_id, host_id) VALUES ("%s",%s)',
+                'INSERT IGNORE INTO %s (endpoint_id, host_id) VALUES ("%s",%d)',
                 $tableName,
-                $endpointId,
+                \pSQL($endpointId),
                 $hostId
             )
         );
@@ -163,11 +173,20 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
         $where = [];
 
         if (!empty($endpointId)) {
-            $where[] = 'endpoint_id = "' . $endpointId . '"';
+            $where[] = 'endpoint_id = "' . \pSQL($endpointId) . '"';
         }
 
         if ($hostId) {
             $where[] = 'host_id = ' . $hostId;
+        }
+
+        if ($where === []) {
+            // without an endpoint or host id the statement would delete every link of the table
+            $this->logger->warning(
+                \sprintf('Refusing to delete links of type (%s) without endpoint or host id', $type)
+            );
+
+            return false;
         }
 
         $queryBuilder = new QueryBuilder();
@@ -182,15 +201,28 @@ class PrimaryKeyMapper implements PrimaryKeyMapperInterface
     }
 
     /**
+     * Clears the links of one identity type, or of all types when $type is null. Several identity types share a
+     * table (e.g. all image types, customers and customer groups); clearing one of them clears the whole table.
+     *
      * @param int|null $type
-     * @return bool
+     * @return bool false for an identity type that has no link table
      */
     public function clear(?int $type = null): bool
     {
-        $this->logger->debug('Clearing linking tables');
+        if ($type === null) {
+            $tableNames = $this->tableNames;
+        } else {
+            $tableName = self::getTableName($type);
+            if ($tableName === null) {
+                return false;
+            }
+            $tableNames = [$tableName];
+        }
 
-        foreach ($this->tableNames as $type) {
-            $this->db->execute('TRUNCATE TABLE ' . $type);
+        $this->logger->debug(\sprintf('Clearing linking tables: %s', \implode(', ', $tableNames)));
+
+        foreach ($tableNames as $tableName) {
+            $this->db->execute('TRUNCATE TABLE ' . $tableName);
         }
 
         return true;

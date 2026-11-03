@@ -33,6 +33,22 @@ final class CountryResolutionTest extends TestCase
         self::assertSame(8, $result);
     }
 
+    public function testGetPrestaCountryIdFromIsoEscapesTheIsoCode(): void
+    {
+        $capturedSql = null;
+        $this->db->method('executeS')
+            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): array {
+                $capturedSql = (string)$sql;
+                return [['id_country' => '8']];
+            });
+
+        // the PrestaShop stub's pSQL() is addslashes()
+        $this->makeController()->exposeGetPrestaCountryId("D' OR '1'='1");
+
+        self::assertNotNull($capturedSql);
+        self::assertStringContainsString(\addslashes("D' OR '1'='1"), $capturedSql);
+    }
+
     public function testGetPrestaCountryIdFromIsoReturnsNullForEmptyResult(): void
     {
         $this->db->method('executeS')

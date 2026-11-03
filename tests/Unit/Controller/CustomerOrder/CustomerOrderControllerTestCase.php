@@ -78,7 +78,6 @@ final class TestableCustomerOrderController extends CustomerOrderController
     public function exposeSetStates(Order $order, JtlCustomerOrder $jtlOrder): void
     {
         $method = new ReflectionMethod(CustomerOrderController::class, 'setStates');
-        $method->setAccessible(true);
         $method->invoke($this, $order, $jtlOrder);
     }
 
@@ -100,7 +99,6 @@ final class TestableCustomerOrderController extends CustomerOrderController
     public function exposeAddDiscountItems(Order $order, JtlCustomerOrder $jtlOrder): void
     {
         $method = new ReflectionMethod(CustomerOrderController::class, 'addDiscountItems');
-        $method->setAccessible(true);
         $method->invoke($this, $order, $jtlOrder);
     }
 

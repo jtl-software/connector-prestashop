@@ -20,3 +20,6 @@ git config --global --add safe.directory '*'
 composer install --no-dev --no-progress --no-interaction
 
 php ./lib/bin/phing release -Dversion="$VERSION"
+
+# The ZIP ships the scoped lib/ (see scoper.inc.php), which PHPUnit and PHPStan never see: make sure it runs.
+php .github/scripts/smoke-test-zip.php "jtl_connector_prestashop_${VERSION}.zip"

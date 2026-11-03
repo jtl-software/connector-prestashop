@@ -577,7 +577,18 @@ if (!class_exists('Category')) {
         public static bool $mockAddShouldFail = false;
         public static ?int $mockAddFailId = null;
 
+        /** Applied to categories loaded by id (new Category($id)), as if read from the database. */
+        public static bool $mockLoadedIsRootCategory = false;
+        public static int $mockLoadedIdParent = 0;
+
+        /** The category the last update() call was made on. */
+        public static ?Category $mockLastUpdated = null;
+
+        /** Number of add() calls since the last resetMock(). */
+        public static int $mockAddCalls = 0;
+
         public int $id_parent = 0;
+        public bool $is_root_category = false;
         public bool $active = true;
         public int $position = 0;
         public array $name = [];
@@ -589,10 +600,15 @@ if (!class_exists('Category')) {
         public function __construct(?int $id = null)
         {
             $this->id = $id;
+            if ($id !== null) {
+                $this->is_root_category = static::$mockLoadedIsRootCategory;
+                $this->id_parent        = static::$mockLoadedIdParent;
+            }
         }
 
         public function add(bool $autoDate = true, bool $nullValues = false): bool
         {
+            static::$mockAddCalls++;
             if (static::$mockAddShouldFail) {
                 if (static::$mockAddFailId !== null) {
                     $this->id = static::$mockAddFailId;
@@ -604,6 +620,7 @@ if (!class_exists('Category')) {
 
         public function update(bool $nullValues = false): bool
         {
+            static::$mockLastUpdated = $this;
             return static::$mockUpdateResult;
         }
 
@@ -635,6 +652,10 @@ if (!class_exists('Category')) {
             static::$mockDeleteShouldThrow    = false;
             static::$mockAddShouldFail        = false;
             static::$mockAddFailId            = null;
+            static::$mockLoadedIsRootCategory = false;
+            static::$mockLoadedIdParent       = 0;
+            static::$mockLastUpdated          = null;
+            static::$mockAddCalls             = 0;
         }
     }
 }

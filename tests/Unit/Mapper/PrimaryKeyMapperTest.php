@@ -449,24 +449,28 @@ final class PrimaryKeyMapperTest extends TestCase
         self::assertStringContainsString('AND', $capturedSql);
     }
 
-    public function testDeleteWithNeitherEndpointIdNorHostIdBuildsWhereClauseWithoutConditions(): void
+    /**
+     * @return array<string, array{0: string|null, 1: int|null}>
+     */
+    public static function deleteWithoutUsableIdProvider(): array
     {
-        $capturedSql = null;
+        // the core passes empty endpoints as null, '' and '0' count as "no id" (empty()) as well
+        return [
+            'null endpoint, null host'  => [null, null],
+            'empty endpoint, null host' => ['', null],
+            "'0' endpoint, null host"   => ['0', null],
+            'null endpoint, host 0'     => [null, 0],
+        ];
+    }
 
+    #[\PHPUnit\Framework\Attributes\DataProvider('deleteWithoutUsableIdProvider')]
+    public function testDeleteWithoutUsableIdRefusesToWipeTheTable(?string $endpointId, ?int $hostId): void
+    {
         $db = $this->createDbMock();
-        $db->method('execute')
-            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): bool {
-                $capturedSql = (string)$sql;
-                return true;
-            });
+        $db->expects(self::never())->method('execute');
 
         $mapper = new TestablePrimaryKeyMapper($db);
-        $mapper->delete(IdentityType::PRODUCT, null, null);
-
-        self::assertNotNull($capturedSql);
-        // Both arrays are empty → implode produces '' → where() ignores it
-        self::assertStringNotContainsString('endpoint_id', $capturedSql);
-        self::assertStringNotContainsString('host_id', $capturedSql);
+        self::assertFalse($mapper->delete(IdentityType::PRODUCT, $endpointId, $hostId));
     }
 
     public function testDeleteWithZeroHostIdDoesNotAddHostIdCondition(): void
@@ -482,9 +486,10 @@ final class PrimaryKeyMapperTest extends TestCase
             });
 
         $mapper = new TestablePrimaryKeyMapper($db);
-        $mapper->delete(IdentityType::PRODUCT, null, 0);
+        $mapper->delete(IdentityType::PRODUCT, 'ep1', 0);
 
         self::assertNotNull($capturedSql);
+        self::assertStringContainsString('ep1', $capturedSql);
         self::assertStringNotContainsString('host_id', $capturedSql);
     }
 
@@ -524,5 +529,103 @@ final class PrimaryKeyMapperTest extends TestCase
         $mapper = new TestablePrimaryKeyMapper($db);
         // clear() always returns true regardless of db->execute() result
         self::assertTrue($mapper->clear());
+    }
+
+    public function testClearWithTypeTruncatesOnlyTheTableOfThatType(): void
+    {
+        $db = $this->createDbMock();
+        // core.linker.clear for one relation type must not wipe the links of all other types
+        $db->expects(self::once())
+            ->method('execute')
+            ->with('TRUNCATE TABLE jtl_connector_link_product')
+            ->willReturn(true);
+
+        $mapper = new TestablePrimaryKeyMapper($db);
+        self::assertTrue($mapper->clear(IdentityType::PRODUCT));
+    }
+
+    public function testClearWithImageTypeTruncatesTheSharedImageTable(): void
+    {
+        $db = $this->createDbMock();
+        $db->expects(self::once())
+            ->method('execute')
+            ->with('TRUNCATE TABLE jtl_connector_link_image')
+            ->willReturn(true);
+
+        $mapper = new TestablePrimaryKeyMapper($db);
+        self::assertTrue($mapper->clear(IdentityType::CATEGORY_IMAGE));
+    }
+
+    public function testClearWithUnknownTypeReturnsFalseAndDoesNotCallDb(): void
+    {
+        $db = $this->createDbMock();
+        $db->expects(self::never())->method('execute');
+
+        $mapper = new TestablePrimaryKeyMapper($db);
+        self::assertFalse($mapper->clear(0));
+    }
+
+    // -------------------------------------------------------------------------
+    // SQL escaping of endpoint ids (they come from JTL-Wawi requests)
+    // -------------------------------------------------------------------------
+
+    private const MALICIOUS_ENDPOINT_ID = "1' OR '1'='1\" OR \"1\"=\"1";
+
+    public function testGetHostIdEscapesTheEndpointId(): void
+    {
+        $capturedSql = null;
+
+        $db = $this->createDbMock();
+        $db->method('getValue')
+            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): bool {
+                $capturedSql = (string)$sql;
+                return false;
+            });
+
+        $mapper = new TestablePrimaryKeyMapper($db);
+        $mapper->getHostId(IdentityType::PRODUCT, self::MALICIOUS_ENDPOINT_ID);
+
+        self::assertNotNull($capturedSql);
+        // the PrestaShop stub's pSQL() is addslashes()
+        self::assertStringContainsString(\addslashes(self::MALICIOUS_ENDPOINT_ID), $capturedSql);
+        self::assertStringNotContainsString(self::MALICIOUS_ENDPOINT_ID, $capturedSql);
+    }
+
+    public function testSaveEscapesTheEndpointId(): void
+    {
+        $capturedSql = null;
+
+        $db = $this->createDbMock();
+        $db->method('execute')
+            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): bool {
+                $capturedSql = (string)$sql;
+                return true;
+            });
+
+        $mapper = new TestablePrimaryKeyMapper($db);
+        $mapper->save(IdentityType::PRODUCT, self::MALICIOUS_ENDPOINT_ID, 123);
+
+        self::assertNotNull($capturedSql);
+        self::assertStringContainsString(\addslashes(self::MALICIOUS_ENDPOINT_ID), $capturedSql);
+        self::assertStringNotContainsString(self::MALICIOUS_ENDPOINT_ID, $capturedSql);
+    }
+
+    public function testDeleteEscapesTheEndpointId(): void
+    {
+        $capturedSql = null;
+
+        $db = $this->createDbMock();
+        $db->method('execute')
+            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): bool {
+                $capturedSql = (string)$sql;
+                return true;
+            });
+
+        $mapper = new TestablePrimaryKeyMapper($db);
+        $mapper->delete(IdentityType::PRODUCT, self::MALICIOUS_ENDPOINT_ID, null);
+
+        self::assertNotNull($capturedSql);
+        self::assertStringContainsString(\addslashes(self::MALICIOUS_ENDPOINT_ID), $capturedSql);
+        self::assertStringNotContainsString(self::MALICIOUS_ENDPOINT_ID, $capturedSql);
     }
 }

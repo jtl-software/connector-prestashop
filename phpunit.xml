@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit colors="true" bootstrap="tests/bootstrap.php">
+<phpunit colors="true" bootstrap="tests/bootstrap.php"
+         failOnWarning="true" failOnNotice="true" failOnDeprecation="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnTestsThatTriggerNotices="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true">
     <testsuites>
         <testsuite name="Unit">
             <directory suffix="Test.php">./tests/Unit</directory>

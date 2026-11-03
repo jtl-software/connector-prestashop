@@ -9,6 +9,7 @@ use Jtl\Connector\Core\Model\Category as JtlCategory;
 use Jtl\Connector\Core\Model\CategoryI18n as JtlCategoryI18n;
 use Jtl\Connector\Core\Model\Identity;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use PHPUnit\Exception as PHPUnitException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\Support\Controller\TestableCategoryController;
@@ -18,7 +19,8 @@ use Tests\Support\Controller\TestableCategoryController;
  *
  * Covers: new-category insert with mapper.save, duplicate-endpoint cleanup
  * (mapper.delete + mapper.save), existing-category update via endpoint,
- * parent-endpoint remapping via mapper, and failure paths for add/update.
+ * root categories keeping their PrestaShop parent, parent-endpoint remapping
+ * via mapper, and failure paths for add/update and a missing root category.
  */
 final class PushTest extends TestCase
 {
@@ -131,6 +133,60 @@ final class PushTest extends TestCase
         );
 
         self::assertInstanceOf(JtlCategory::class, $result);
+        self::assertSame('3', $result->getParentCategoryId()->getEndpoint());
+    }
+
+    public function testExistingRootCategoryKeepsItsPrestaShopParent(): void
+    {
+        // As in PrestaShop: the shop root is Home (id 2), itself a child of the hidden "Root" category (id 1).
+        // The distinct ids make sure the root branch keeps id_parent instead of using the shop root id.
+        Category::$mockRootCategoryId       = 2;
+        Category::$mockLoadedIsRootCategory = true;
+        Category::$mockLoadedIdParent       = 1;
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $mapper->expects(self::never())->method('save');
+        $this->controller->injectMapper($mapper);
+
+        [$result] = $this->controller->push(
+            $this->jtlCategory('2', $this->engI18n('Home', 'home'))
+        );
+
+        // The PrestaShop parent of a root category has no JTL counterpart, hence host 0.
+        self::assertSame('1', $result->getParentCategoryId()->getEndpoint());
+        self::assertSame(0, $result->getParentCategoryId()->getHost());
+        self::assertNotNull(Category::$mockLastUpdated);
+        self::assertSame(2, Category::$mockLastUpdated->id);
+        self::assertSame(1, Category::$mockLastUpdated->id_parent);
+    }
+
+    public function testThrowsWhenPrestaShopRootCategoryIdIsMissing(): void
+    {
+        Category::$mockRootCategoryIdNull = true;
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $mapper->expects(self::never())->method('save');
+        $this->controller->injectMapper($mapper);
+
+        // Caught explicitly instead of expectException() so that the add() count can be asserted after the throw.
+        $thrown = null;
+        try {
+            $this->controller->push(
+                $this->jtlCategory('', $this->engI18n('Orphan Category', 'orphan-category'))
+            );
+        } catch (PHPUnitException $e) {
+            // PHPUnit's own exceptions (e.g. a violated mock expectation) mostly extend RuntimeException: never swallow them
+            throw $e;
+        } catch (RuntimeException $e) {
+            $thrown = $e;
+        }
+
+        self::assertInstanceOf(RuntimeException::class, $thrown, 'Expected a RuntimeException for the missing root category');
+        self::assertSame('Root category id not found', $thrown->getMessage());
+        // The category must be rejected before anything is written to PrestaShop or mapped.
+        self::assertSame(0, Category::$mockAddCalls);
     }
 
     public function testExistingCategoryThrowsWhenUpdateFails(): void

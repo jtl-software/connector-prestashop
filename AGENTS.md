@@ -17,13 +17,13 @@ PrestaShop module `jtlconnector` that syncs shop data with JTL-Wawi via the `jtl
 | Path | Contents |
 |---|---|
 | `jtlconnector.php` | PrestaShop module class (install/configure) |
-| `controllers/front/index.php` | HTTP entry point for JTL-Wawi RPC calls |
+| `controllers/front/api.php` | HTTP entry point for JTL-Wawi RPC calls |
 | `src/Connector.php` | Container wiring, controller registry |
 | `src/Controller/` | One controller per JTL entity, all extend `AbstractController` |
-| `src/Mapper/PrimaryKeyMapper.php` | Identity mapping, SQLite at `db/connector.s3db` — never drop or migrate casually |
+| `src/Mapper/PrimaryKeyMapper.php` | Identity mapping in PrestaShop's `jtl_connector_link_*` tables — never drop or migrate them casually |
 | `tests/Unit`, `tests/Integration` | PHPUnit tests; PrestaShop classes are stubbed in `tests/Support/PrestaShopStubs.php` |
 | `upgrade/install-<version>.php` | Version-keyed module upgrade scripts |
-| `lib/` | Composer `vendor-dir` (not `vendor/`); includes the `jtl/connector` core. Do not edit |
+| `lib/` | Composer `vendor-dir` (not `vendor/`); includes the `jtl/connector` core. Do not edit. The release ZIP ships it scoped (vendor namespaces prefixed with `JtlConnectorPrestaVendor\`, see `scoper.inc.php`), so never build vendor class names from strings |
 
 ## Commands
 
@@ -40,7 +40,7 @@ Binaries are in `lib/bin/`, not `vendor/bin/`. PHPCS does not cover `tests/`.
 
 ## Conventions
 
-- **Minimum PHP is 8.3** (`composer.json`, install check in `jtlconnector.php`, CI matrix). `jtl/connector` 5.3.x uses typed class constants, which are a parse error on PHP 8.1/8.2. Do not add code or dependencies that need a lower version, and do not reintroduce PHP 8.1/8.2 compatibility workarounds.
+- **Minimum PHP is 8.3** (`composer.json`, `MINIMUM_PHP_VERSION` checks in `jtlconnector.php`, CI matrix). `jtl/connector` 6 uses typed class constants, which are a parse error on PHP 8.1/8.2. Do not add code or dependencies that need a lower version, and do not reintroduce PHP 8.1/8.2 compatibility workarounds. **Exception:** `jtlconnector.php`, `src/Utils/LegacyLogDir.php` and `upgrade/install-3.0.0.php` must stay parseable on PHP 7.1, because PrestaShop loads the module class (and runs `install()`, which reports the unsupported version) on any PHP version: no newer syntax there (e.g. `catch (\Throwable $e)` keeps its variable).
 - `declare(strict_types=1)` everywhere; PHPStan must stay at level max with no errors.
 - Match the surrounding code style; run `phpcs` before finishing.
 - Add or update a unit test for behaviour changes. A regression test should fail without the fix.

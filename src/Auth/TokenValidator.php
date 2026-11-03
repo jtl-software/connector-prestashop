@@ -29,6 +29,6 @@ class TokenValidator implements TokenValidatorInterface
      */
     public function validate(string $token): bool
     {
-        return $this->connectorToken === $token;
+        return \hash_equals($this->connectorToken, $token);
     }
 }
