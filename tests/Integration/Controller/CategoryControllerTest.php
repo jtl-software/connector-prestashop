@@ -23,7 +23,6 @@ final class CategoryControllerTest extends TestCase
             'additional_description' => '',
             'link_rewrite' => 'kategorie-a',
             'meta_title' => 'Meta Titel',
-            'meta_keywords' => 'eins,zwei',
             'meta_description' => 'Meta Beschreibung',
         ]);
 
@@ -32,7 +31,7 @@ final class CategoryControllerTest extends TestCase
         self::assertSame('Meta Titel', $translation->getTitleTag());
         self::assertSame('Beschreibung', $translation->getDescription());
         self::assertSame('Meta Beschreibung', $translation->getMetaDescription());
-        self::assertSame('eins,zwei', $translation->getMetaKeywords());
+        self::assertSame('', $translation->getMetaKeywords(), 'PrestaShop 9 has no meta keywords');
         self::assertSame('ger', $translation->getLanguageIso());
     }
 

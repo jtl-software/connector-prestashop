@@ -38,7 +38,6 @@ final class CreateJtlManufacturerI18nsTest extends TestCase
         $manufacturer                      = new Manufacturer(1);
         $manufacturer->description[1]      = 'Desc';
         $manufacturer->meta_description[1] = 'MetaDesc';
-        $manufacturer->meta_keywords[1]    = 'kw';
         $manufacturer->meta_title[1]       = 'Title';
 
         $controller = new TestableManufacturerControllerWithRealI18ns();
@@ -47,5 +46,7 @@ final class CreateJtlManufacturerI18nsTest extends TestCase
         self::assertCount(1, $result);
         self::assertSame('eng', $result[0]->getLanguageIso());
         self::assertSame('Desc', $result[0]->getDescription());
+        // PrestaShop 9 has no meta keywords
+        self::assertSame('', $result[0]->getMetaKeywords());
     }
 }

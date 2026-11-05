@@ -712,7 +712,6 @@ if (!class_exists('Category')) {
         public array $name = [];
         public array $description = [];
         public array $meta_description = [];
-        public array $meta_keywords = [];
         public array $link_rewrite = [];
 
         public function __construct(?int $id = null)
@@ -789,7 +788,6 @@ if (!class_exists('Manufacturer')) {
         public bool $active = true;
         public array $description = [];
         public array $meta_title = [];
-        public array $meta_keywords = [];
         public array $meta_description = [];
 
         /** Result of add(); when true, add() inserts as ObjectModel::add() does. */
@@ -1300,7 +1298,6 @@ if (!class_exists('Product')) {
         public array $description_short = [];
         public array $link_rewrite = [];
         public array $meta_description = [];
-        public array $meta_keywords = [];
         public array $meta_title = [];
         public bool $active = true;
         public bool $on_sale = false;
@@ -1716,3 +1713,83 @@ if (!class_exists('ProductAttribute')) {
     }
 }
 
+
+// --- Tab (back office menu entry) ---
+if (!class_exists('Tab')) {
+    class Tab
+    {
+        /** @var array<string, int> class_name => id_tab */
+        public static array $classNames = [];
+
+        /** @var array<int, Tab> tabs saved, in order */
+        public static array $saved = [];
+
+        public static bool $saveResult = true;
+
+        /** @var array<int, int> */
+        public static array $initAccessCalls = [];
+
+        /** @var array<int, int> */
+        public static array $deletedIds = [];
+
+        /** @var array<int, string> ordered log of deletes (and of statements logged by test doubles) */
+        public static array $events = [];
+
+        public int $id = 0;
+        public int $id_parent = 0;
+        public string $class_name = '';
+        public string $module = '';
+        public bool $active = false;
+        public int $position = -1;
+
+        /** @var array<int, string> */
+        public array $name = [];
+
+        public bool $deleted = false;
+
+        public function __construct(int $id = 0)
+        {
+            $this->id = $id;
+        }
+
+        public static function getIdFromClassName(string $className): int|false
+        {
+            return static::$classNames[$className] ?? false;
+        }
+
+        public function save(): bool
+        {
+            if (static::$saveResult) {
+                static::$saved[] = $this;
+            }
+
+            return static::$saveResult;
+        }
+
+        public function delete(): bool
+        {
+            $this->deleted        = true;
+            static::$deletedIds[] = $this->id;
+            static::$events[]     = 'delete:' . $this->id;
+
+            return true;
+        }
+
+        public static function initAccess(int $idTab): bool
+        {
+            static::$initAccessCalls[] = $idTab;
+
+            return true;
+        }
+
+        public static function resetMock(): void
+        {
+            static::$classNames      = [];
+            static::$saved           = [];
+            static::$saveResult      = true;
+            static::$initAccessCalls = [];
+            static::$deletedIds      = [];
+            static::$events          = [];
+        }
+    }
+}

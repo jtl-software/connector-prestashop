@@ -1,4 +1,8 @@
 ## unreleased
+- CO-3113 - PrestaShop 9 only: 3.0.0 requires PrestaShop 9.0 or later (and PHP 8.3)
+- CO-3113 - the module's back office menu entry opened "page not found" on PrestaShop 9, which requires an admin controller for it; the 3.0.0 upgrade migrates the menu entry of earlier releases and keeps its permissions
+- CO-3113 - fix a JavaScript error on the configuration page on PrestaShop 9 (`displayFlags is not defined`)
+- CO-3113 - PrestaShop 9 removed the meta keywords of products, categories and manufacturers: the connector no longer maps them (pulling manufacturers logged PHP warnings)
 - CO-3684 - update jtl/connector core to 6 (includes CO-3671 authenticate before resolving the RPC method, CVE-2026-108082 ReDoS fix in symfony/http-foundation, and CO-3709 reject sessions that never passed core.connector.auth so a failed authentication can no longer be replayed as jtlauth)
   The bundled libraries are now prefixed with `JtlConnectorPrestaVendor\` so they no longer clash with PrestaShop's own Symfony, Monolog and Doctrine versions.
   Connector plugins in `plugins/` that type-hint `DI\Container`, `Noodlehaus\ConfigInterface` or Symfony's `EventDispatcher` have to use the prefixed class names.

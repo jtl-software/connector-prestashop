@@ -78,7 +78,6 @@ class ManufacturerController extends AbstractController implements PushInterface
                 ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($langId))
                 ->setDescription((string)$manufacturer->description[$langId])
                 ->setMetaDescription((string)$manufacturer->meta_description[$langId])
-                ->setMetaKeywords((string)$manufacturer->meta_keywords[$langId])
                 ->setTitleTag((string)$manufacturer->meta_title[$langId]);
         }
         return $jtlI18ns;
@@ -150,7 +149,6 @@ class ManufacturerController extends AbstractController implements PushInterface
             $prestaManufacturer->name                   = $jtlManufacturer->getName();
             $prestaManufacturer->description[$key]      = $translation['description'];
             $prestaManufacturer->meta_title[$key]       = $translation['meta_title'];
-            $prestaManufacturer->meta_keywords[$key]    = $translation['meta_keywords'];
             $prestaManufacturer->meta_description[$key] = $translation['meta_description'];
         }
 
@@ -171,7 +169,6 @@ class ManufacturerController extends AbstractController implements PushInterface
             $langId                                    = $languageIso;
             $translations[$langId]['description']      = $jtlManufacturerI18n->getDescription();
             $translations[$langId]['meta_title']       = $jtlManufacturerI18n->getTitleTag();
-            $translations[$langId]['meta_keywords']    = $jtlManufacturerI18n->getMetaKeywords();
             $translations[$langId]['meta_description'] = $jtlManufacturerI18n->getMetaDescription();
         }
 

@@ -9,7 +9,7 @@ declare(strict_types=1);
  *  - constructs the module class the way PrestaShop does when it lists modules, which must work without the
  *    bundled libraries (see JTLConnector::__construct()),
  *  - runs the 3.0.0 upgrade script on an install with the legacy logs/ dir (and checks it removes the manufacturer link
- *    without endpoint that 2.x saved),
+ *    without endpoint that 2.x saved and migrates the back office menu entry),
  *  - sends JTL-Wawi RPC calls through the module's front controller (controllers/front/api.php), like separate
  *    HTTP requests: with a fresh install's defaults and with developer logging, incl. the CO-3709 rejection checks,
  *    followed by a check that no log contains a session id or token.
@@ -119,6 +119,12 @@ if (($argv[1] ?? '') === '--upgrade') {
     // Runs a module upgrade script the way PrestaShop does: after the new files were extracted, with the module object.
     [, , $moduleDir, $version] = $argv;
     \define('_PS_VERSION_', '9.0.3');
+    \define('_DB_PREFIX_', 'ps_');
+
+    function pSQL(string $string): string
+    {
+        return \addslashes($string);
+    }
 
     // prints the queries an upgrade script runs, for the driver to check
     class Db
@@ -133,9 +139,44 @@ if (($argv[1] ?? '') === '--upgrade') {
             echo "SQL: $sql\n";
             return true;
         }
+
+        public function getValue(string $sql): bool
+        {
+            return false;
+        }
+    }
+
+    // the back office menu entry of a release before 3.0.0, id 7; prints what the upgrade saves
+    class Tab
+    {
+        public int $id;
+        public string $class_name = '';
+
+        public function __construct(int $id = 0)
+        {
+            $this->id = $id;
+        }
+
+        public static function getIdFromClassName(string $className): int
+        {
+            return $className === 'jtlconnector' ? 7 : 0;
+        }
+
+        public function save(): bool
+        {
+            echo "TAB: save $this->id $this->class_name\n";
+            return true;
+        }
+
+        public static function initAccess(int $idTab): bool
+        {
+            return true;
+        }
     }
 
     $module = new class ($moduleDir . '/') {
+        public string $name = 'jtlconnector';
+
         public function __construct(private string $localPath)
         {
         }
@@ -269,6 +310,14 @@ if (!\str_contains($stdout, 'SQL: DELETE FROM `jtl_connector_link_manufacturer` 
     $fail("upgrade 3.0.0 did not remove the manufacturer link without endpoint\n--- output ---\n$stdout");
 }
 echo "upgrade 3.0.0 removes the manufacturer link without endpoint: OK\n";
+// PrestaShop 9 only opens the menu entry with the admin controller of its class name (CO-3113)
+if (
+    !\str_contains($stdout, 'TAB: save 7 AdminJtlconnector')
+    || \substr_count($stdout, 'SQL: UPDATE `ps_authorization_role` SET `slug` = "ROLE_MOD_TAB_ADMINJTLCONNECTOR_') !== 4
+) {
+    $fail("upgrade 3.0.0 did not migrate the back office menu entry\n--- output ---\n$stdout");
+}
+echo "upgrade 3.0.0 migrates the back office menu entry: OK\n";
 
 /**
  * @param array<string, mixed> $params

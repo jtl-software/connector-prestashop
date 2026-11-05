@@ -130,7 +130,8 @@ final class CreatePrestaCategoryTest extends TestCase
         self::assertSame('Electronics', $result->name[1]);
         self::assertSame('Electronics description', $result->description[1]);
         self::assertSame('Electronics meta', $result->meta_description[1]);
-        self::assertSame('electronics', $result->meta_keywords[1]);
+        // PrestaShop 9 has no meta keywords
+        self::assertObjectNotHasProperty('meta_keywords', $result);
         self::assertSame('electronics', $result->link_rewrite[1]);
     }
 }
