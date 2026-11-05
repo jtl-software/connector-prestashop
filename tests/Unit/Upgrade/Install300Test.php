@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * The 3.0.0 upgrade: removal of the broken manufacturer link that 2.x saved (CO-3735) and migration of the back office
- * menu entry to the class name of the admin controller PrestaShop 9 requires (CO-3113). The move of the legacy logs/
+ * menu entry to the class name of the admin controller PrestaShop 9 requires (CO-3743). The move of the legacy logs/
  * dir is covered by LegacyLogDirTest and the ZIP smoke test.
  *
  * The upgrade script needs _PS_VERSION_ and declares global functions, so each test gets its own process.
@@ -62,7 +62,7 @@ final class Install300Test extends TestCase
         self::assertSame([7], \Tab::$initAccessCalls);
     }
 
-    // ---- back office menu entry (CO-3113)
+    // ---- back office menu entry (CO-3743)
 
     public function testLegacyTabIsRenamedInPlaceKeepingItsId(): void
     {

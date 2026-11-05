@@ -16,7 +16,7 @@ if (!defined('_PS_VERSION_')) {
  *
  * Both are best effort: they must not block the module upgrade.
  *
- * Migrates the back office menu entry (tab) to the class name "AdminJtlconnector" (CO-3113): PrestaShop 9 only opens
+ * Migrates the back office menu entry (tab) to the class name "AdminJtlconnector" (CO-3743): PrestaShop 9 only opens
  * a module's menu entry if the module ships an admin controller of that name, and the entry of earlier releases
  * ("jtlconnector") has none. Its result is the upgrade's result; all its steps are safe to repeat.
  *

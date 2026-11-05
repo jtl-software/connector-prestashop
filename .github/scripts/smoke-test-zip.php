@@ -310,7 +310,7 @@ if (!\str_contains($stdout, 'SQL: DELETE FROM `jtl_connector_link_manufacturer` 
     $fail("upgrade 3.0.0 did not remove the manufacturer link without endpoint\n--- output ---\n$stdout");
 }
 echo "upgrade 3.0.0 removes the manufacturer link without endpoint: OK\n";
-// PrestaShop 9 only opens the menu entry with the admin controller of its class name (CO-3113)
+// PrestaShop 9 only opens the menu entry with the admin controller of its class name (CO-3743)
 if (
     !\str_contains($stdout, 'TAB: save 7 AdminJtlconnector')
     || \substr_count($stdout, 'SQL: UPDATE `ps_authorization_role` SET `slug` = "ROLE_MOD_TAB_ADMINJTLCONNECTOR_') !== 4
