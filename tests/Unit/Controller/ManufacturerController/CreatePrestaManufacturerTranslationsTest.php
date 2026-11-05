@@ -39,7 +39,7 @@ final class CreatePrestaManufacturerTranslationsTest extends TestCase
         self::assertArrayHasKey(1, $result);
         self::assertSame('Manufacturer description', $result[1]['description']);
         self::assertSame('Page title', $result[1]['meta_title']);
-        self::assertSame('keyword1,keyword2', $result[1]['meta_keywords']);
+        self::assertArrayNotHasKey('meta_keywords', $result[1], 'PrestaShop 9 has no meta keywords');
         self::assertSame('Meta desc', $result[1]['meta_description']);
     }
 
@@ -86,7 +86,7 @@ final class CreatePrestaManufacturerTranslationsTest extends TestCase
 
         self::assertSame('', $result[1]['description']);
         self::assertSame('', $result[1]['meta_title']);
-        self::assertSame('', $result[1]['meta_keywords']);
+        self::assertArrayNotHasKey('meta_keywords', $result[1]);
         self::assertSame('', $result[1]['meta_description']);
     }
 }

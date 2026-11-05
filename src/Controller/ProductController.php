@@ -429,7 +429,6 @@ class ProductController extends ProductPriceController implements PullInterface,
      *     description_short: string,
      *     link_rewrite: string,
      *     meta_description: string,
-     *     meta_keywords: string,
      *     meta_title: string,
      *     name: string,
      *     available_now: string,
@@ -1089,7 +1088,6 @@ class ProductController extends ProductPriceController implements PullInterface,
             $prestaProduct->description_short[$key] = $translation['description_short'];
             $prestaProduct->link_rewrite[$key]      = $translation['link_rewrite'];
             $prestaProduct->meta_description[$key]  = $translation['meta_description'];
-            $prestaProduct->meta_keywords[$key]     = $translation['meta_keywords'];
             $prestaProduct->meta_title[$key]        = $translation['meta_title'];
         }
 
@@ -1287,7 +1285,6 @@ class ProductController extends ProductPriceController implements PullInterface,
             $translations[$langId]['description']       = $jtlProductI18n->getDescription();
             $translations[$langId]['description_short'] = $jtlProductI18n->getShortDescription();
             $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
-            $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
             $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
             $translations[$langId]['link_rewrite']      = \Tools::str2url(
                 empty($jtlProductI18n->getUrlPath())

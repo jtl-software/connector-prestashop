@@ -49,7 +49,6 @@ final class CreateJtlCategoryTranslationsTest extends TestCase
                 'name'             => 'Electronics',
                 'description'      => 'All electronics',
                 'meta_title'       => 'Electronics Title',
-                'meta_keywords'    => 'electronics,gadgets',
                 'meta_description' => 'Meta for electronics',
                 'link_rewrite'     => 'electronics',
             ],
@@ -64,7 +63,7 @@ final class CreateJtlCategoryTranslationsTest extends TestCase
         self::assertSame('Electronics Title', $result[0]->getTitleTag());
         self::assertSame('All electronics', $result[0]->getDescription());
         self::assertSame('Meta for electronics', $result[0]->getMetaDescription());
-        self::assertSame('electronics,gadgets', $result[0]->getMetaKeywords());
+        self::assertSame('', $result[0]->getMetaKeywords(), 'PrestaShop 9 has no meta keywords');
         self::assertSame('eng', $result[0]->getLanguageIso());
     }
 
@@ -77,7 +76,6 @@ final class CreateJtlCategoryTranslationsTest extends TestCase
                 'name'             => 'Shoes',
                 'description'      => 'All shoes',
                 'meta_title'       => '',
-                'meta_keywords'    => '',
                 'meta_description' => '',
             ],
             [
@@ -85,7 +83,6 @@ final class CreateJtlCategoryTranslationsTest extends TestCase
                 'name'             => 'Schuhe',
                 'description'      => 'Alle Schuhe',
                 'meta_title'       => '',
-                'meta_keywords'    => '',
                 'meta_description' => '',
             ],
         ]);

@@ -889,8 +889,6 @@
 		var module_dir = '{$smarty.const._MODULE_DIR_}';
 		var id_language = {$defaultFormLanguage|intval};
 		var languages = new Array();
-		// Multilang field setup must happen before document is ready so that calls to displayFlags() to avoid
-		// precedence conflicts with other document.ready() blocks
 		{foreach $languages as $k => $language}
 			languages[{$k}] = {
 				id_lang: {$language.id_lang|escape:'javascript'},
@@ -901,7 +899,6 @@
 		{/foreach}
 		// we need allowEmployeeFormLang var in ajax request
 		allowEmployeeFormLang = {$allowEmployeeFormLang|intval};
-		displayFlags(languages, id_language, allowEmployeeFormLang);
 
 		$(document).ready(function() {
 

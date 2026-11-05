@@ -54,7 +54,7 @@ class JTLConnector extends Module
 
         $this->displayName            = 'JTL-Connector';
         $this->description            = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
-        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '9.0', 'max' => _PS_VERSION_];
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
@@ -165,11 +165,13 @@ class JTLConnector extends Module
         $this->convertLinkingTables();
 
 
-        // remove old tab if exists
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // remove an existing tab, also one of a release before 3.0.0 (class name "jtlconnector")
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $tab            = new \Tab();
@@ -181,10 +183,12 @@ class JTLConnector extends Module
                 $tab->name[(int)$lang['id_lang']] = $name;
             }
         }
-        $tab->active     = true;
-        $tab->position   = 0;
-        $tab->module     = $this->name;
-        $tab->class_name = "jtlconnector";
+        $tab->active   = true;
+        $tab->position = 0;
+        $tab->module   = $this->name;
+        // PrestaShop 9 only opens a module's menu entry if the module ships an admin controller of that name:
+        // controllers/admin/AdminJtlconnectorController.php
+        $tab->class_name = "AdminJtlconnector";
         $tab->save();
 
         // the connector token is the shared secret for JTL-Wawi: generate it from a CSPRNG (uniqid() is time-based)
@@ -301,11 +305,13 @@ class JTLConnector extends Module
      */
     public function uninstall(): bool
     {
-
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // also the tab of a release before 3.0.0 (class name "jtlconnector") that was never migrated
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
