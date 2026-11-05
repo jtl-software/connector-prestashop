@@ -8,6 +8,8 @@ use Db;
 use Exception;
 use Order;
 use OrderCarrier;
+use Tests\Support\AfterHook;
+use ObjectModel;
 use Jtl\Connector\Core\Model\DeliveryNote;
 use Jtl\Connector\Core\Model\DeliveryNoteTrackingList;
 use Jtl\Connector\Core\Model\Identity;
@@ -406,5 +408,24 @@ final class DeliveryNoteControllerTest extends TestCase
         $this->expectExceptionMessage('Database connection lost');
 
         $controller->push($note);
+    }
+
+    public function testPushUpdatesTheOrderCarrierWithoutStackFramesThatPsEventbusCannotRead(): void
+    {
+        // CO-3735: ps_eventbus hooks into the OrderCarrier update
+        Db::setInstance($this->makeDbReturningCarrierId('7'));
+        $controller   = new TestableDeliveryNoteController();
+        $trackingList = new DeliveryNoteTrackingList();
+        $trackingList->addCode('TRACK123');
+        $trackingList->addTrackingURL('https://track.example.com/TRACK123');
+        $note = $this->makeDeliveryNote('42');
+        $note->addTrackingList($trackingList);
+        ObjectModel::$mockAfterHook = AfterHook::psEventbusErrorHandler();
+
+        try {
+            self::assertSame([$note], $controller->push($note));
+        } finally {
+            ObjectModel::resetObjectModelMock();
+        }
     }
 }

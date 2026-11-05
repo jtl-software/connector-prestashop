@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Tests\Unit\Controller\SpecificController;
 
 use FeatureValue;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\SpecificValue as JtlSpecificValue;
+use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use ObjectModel;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\Support\Controller\TestableSpecificController;
@@ -15,15 +19,22 @@ final class CreatePrestaSpecificValuesTest extends TestCase
 {
     private TestableSpecificController $controller;
 
+    private PrimaryKeyMapper&MockObject $mapper;
+
     protected function setUp(): void
     {
         FeatureValue::resetMock();
-        $this->controller = new TestableSpecificController();
+        ObjectModel::resetObjectModelMock();
+        ObjectModel::$mockNextInsertId = 21;
+        $this->controller              = new TestableSpecificController();
+        $this->mapper                  = $this->createMock(PrimaryKeyMapper::class);
+        $this->controller->injectMapper($this->mapper);
     }
 
     protected function tearDown(): void
     {
         FeatureValue::resetMock();
+        ObjectModel::resetObjectModelMock();
     }
 
     public function testCreatePrestaSpecificValuesSetsFeatureIdAndCustomFalse(): void
@@ -38,17 +49,18 @@ final class CreatePrestaSpecificValuesTest extends TestCase
         self::assertFalse($result->custom);
     }
 
-    public function testCreatePrestaSpecificValuesNewValueCallsSave(): void
+    public function testCreatePrestaSpecificValuesNewValueIsAddedAndLinked(): void
     {
-        // Endpoint '' → isNew = true → save() is called, ObjectModel stub returns true
+        // Endpoint '' → isNew = true → add(), then the value is linked right away
+        $this->mapper->expects(self::once())->method('save')->with(IdentityType::SPECIFIC_VALUE, '21', 6002);
         $prestaValue = new FeatureValue();
         $jtlValue    = new JtlSpecificValue();
-        $jtlValue->setId(new Identity('', 0));
+        $jtlValue->setId(new Identity('', 6002));
 
-        // Should not throw
         $result = $this->controller->exposeCreatePrestaSpecificValues($prestaValue, $jtlValue, '3');
 
-        self::assertInstanceOf(FeatureValue::class, $result);
+        self::assertSame(21, $result->id);
+        self::assertSame('21', $jtlValue->getId()->getEndpoint());
     }
 
     public function testCreatePrestaSpecificValuesExistingValueCallsUpdate(): void
@@ -77,9 +89,10 @@ final class CreatePrestaSpecificValuesTest extends TestCase
         $this->controller->exposeCreatePrestaSpecificValues($prestaValue, $jtlValue, '3');
     }
 
-    public function testCreatePrestaSpecificValuesNewValueThrowsWhenSaveFails(): void
+    public function testCreatePrestaSpecificValuesNewValueThrowsWhenAddFails(): void
     {
-        FeatureValue::$mockSaveResult = false;
+        FeatureValue::$mockAddResult = false;
+        $this->mapper->expects(self::never())->method('save');
 
         $prestaValue = new FeatureValue();
         $jtlValue    = new JtlSpecificValue();

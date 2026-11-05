@@ -7,6 +7,7 @@ namespace jtl\Connector\Presta\Controller;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -152,7 +153,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      */
     public function push(AbstractModel ...$jtlCustomer): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlCustomer);
+        return $this->forEachModel($jtlCustomer, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**
@@ -177,17 +178,56 @@ class CustomerController extends AbstractController implements PullInterface, Pu
             if (!$prestaCustomer->update()) {
                 throw new \Exception('Error updating address on Customer' . $jtlCustomer->getCustomerNumber());
             }
+            // The customer is linked right after it was added, so an earlier push may have failed on its address.
+            // Not for a customer deleted in PrestaShop: it has no id, or its addresses are deleted on every update.
+            if (
+                !empty($prestaCustomer->id)
+                && !$prestaCustomer->deleted
+                && !PrestaAddress::getFirstCustomerAddressId((int)$prestaCustomer->id, false)
+            ) {
+                $this->addPrestaAddress($jtlCustomer, $prestaCustomer);
+            }
 
             return $jtlCustomer;
         }
 
         $prestaCustomer = $this->createPrestaCustomer($jtlCustomer, new PrestaCustomer());
-        $prestaCustomer->add();
-        $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, $jtlCustomer->getId()->getEndpoint() === '');
-        $prestaAddress = $this->createPrestaAddress($jtlCustomer, new PrestaAddress(), $prestaCustomer);
-        $prestaAddress->add();
+        if (!$this->addPrestaObject($prestaCustomer)) {
+            // PrestaShop 9.1 and later refuse a second registered customer with the same e-mail address
+            $existingId = PrestaCustomer::customerExists($jtlCustomer->getEMail(), true);
+            $reason     = \is_int($existingId) && $existingId > 0
+                ? ': PrestaShop already has a registered customer with this e-mail address (id ' . $existingId . ')'
+                : '';
+            throw new \RuntimeException('Error adding customer ' . $jtlCustomer->getCustomerNumber() . $reason);
+        }
+        // link right away, so that the next sync updates the customer even if the rest fails
+        $jtlCustomer->getId()->setEndpoint((string)$prestaCustomer->id);
+        $this->mapper->save(
+            IdentityType::CUSTOMER,
+            $jtlCustomer->getId()->getEndpoint(),
+            $jtlCustomer->getId()->getHost()
+        );
+
+        $this->changeCustomerGroup($jtlCustomer, $prestaCustomer, true);
+        $this->addPrestaAddress($jtlCustomer, $prestaCustomer);
 
         return $jtlCustomer;
+    }
+
+    /**
+     * @param JtlCustomer    $jtlCustomer
+     * @param PrestaCustomer $prestaCustomer
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     * @throws \RuntimeException
+     */
+    private function addPrestaAddress(JtlCustomer $jtlCustomer, PrestaCustomer $prestaCustomer): void
+    {
+        $prestaAddress = $this->createPrestaAddress($jtlCustomer, new PrestaAddress(), $prestaCustomer);
+        if (!$this->addPrestaObject($prestaAddress)) {
+            throw new \RuntimeException('Error adding the address of customer ' . $jtlCustomer->getCustomerNumber());
+        }
     }
 
     /**
@@ -277,7 +317,7 @@ class CustomerController extends AbstractController implements PullInterface, Pu
      */
     public function delete(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**

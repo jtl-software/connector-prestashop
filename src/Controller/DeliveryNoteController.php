@@ -20,7 +20,7 @@ class DeliveryNoteController extends AbstractController implements PushInterface
      */
     public function push(AbstractModel ...$deliveryNote): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $deliveryNote);
+        return $this->forEachModel($deliveryNote, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**

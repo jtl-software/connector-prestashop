@@ -92,7 +92,7 @@ class ManufacturerController extends AbstractController implements PushInterface
      */
     public function push(AbstractModel ...$jtlManufacturer): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlManufacturer);
+        return $this->forEachModel($jtlManufacturer, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**
@@ -120,13 +120,14 @@ class ManufacturerController extends AbstractController implements PushInterface
         }
 
         $prestaManufacturer = $this->createPrestaManufacturer($jtlManufacturer, new PrestaManufacturer());
-        if (!$prestaManufacturer->add()) {
+        if (!$this->addPrestaObject($prestaManufacturer)) {
             throw new \RuntimeException('Error uploading manufacturer' . $jtlManufacturer->getName());
         }
+        $jtlManufacturer->getId()->setEndpoint((string)$prestaManufacturer->id);
         $this->mapper->save(
             IdentityType::MANUFACTURER,
             $jtlManufacturer->getId()->getEndpoint(),
-            (int)$prestaManufacturer->id
+            $jtlManufacturer->getId()->getHost()
         );
 
         return $jtlManufacturer;
@@ -184,7 +185,7 @@ class ManufacturerController extends AbstractController implements PushInterface
      */
     public function delete(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**

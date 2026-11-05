@@ -76,29 +76,77 @@ if (!class_exists('ObjectModel')) {
     {
         public ?int $id = null;
 
+        /** Id that add() gives an object without one, then incremented, as the INSERT does; null leaves it unset. */
+        public static ?int $mockNextInsertId = null;
+
+        /**
+         * Runs where PrestaShop runs the actionObject<Class>(Add|Update|Delete)After hooks, i.e. after the write, with
+         * the object (if any) and the event. See Tests\Support\AfterHook.
+         *
+         * @var (\Closure(ObjectModel|null, string): void)|null
+         */
+        public static ?\Closure $mockAfterHook = null;
+
+        /** Thrown by validateFieldsLang(), as PrestaShop throws for an invalid multilang value. */
+        public static ?\PrestaShopException $mockLangValidationError = null;
+
         public function __construct(?int $id = null)
         {
             $this->id = $id ?: null;
         }
 
+        public function validateFieldsLang(bool $die = true, bool $errorReturn = false): bool|string
+        {
+            if (self::$mockLangValidationError !== null) {
+                throw self::$mockLangValidationError;
+            }
+            return true;
+        }
+
         public function add(bool $autoDate = true, bool $nullValues = false): bool
         {
+            $this->mockInsert();
             return true;
         }
 
         public function update(bool $nullValues = false): bool
         {
+            static::runMockAfterHook($this, 'Update');
             return true;
         }
 
         public function delete(): bool
         {
+            static::runMockAfterHook($this, 'Delete');
             return true;
         }
 
         public function save(bool $nullValues = false, bool $autoDate = true): bool
         {
             return $this->id ? $this->update($nullValues) : $this->add(false, $nullValues);
+        }
+
+        /** The INSERT of add(): gives the object an id (see $mockNextInsertId), then runs the Add hooks. */
+        protected function mockInsert(): void
+        {
+            if (self::$mockNextInsertId !== null && !$this->id) {
+                $this->id = self::$mockNextInsertId++;
+            }
+            static::runMockAfterHook($this, 'Add');
+        }
+
+        public static function runMockAfterHook(?ObjectModel $object, string $event): void
+        {
+            if (self::$mockAfterHook !== null) {
+                (self::$mockAfterHook)($object, $event);
+            }
+        }
+
+        public static function resetObjectModelMock(): void
+        {
+            self::$mockNextInsertId        = null;
+            self::$mockAfterHook           = null;
+            self::$mockLangValidationError = null;
         }
     }
 }
@@ -500,9 +548,24 @@ if (!class_exists('Customer')) {
         public bool $active = true;
         public string $website = '';
         public string $company = '';
+        public bool $deleted = false;
 
         /** When set, ALL Customer instances return this id from the constructor. */
         public static ?int $mockIdOverride = null;
+
+        /** Ids that don't exist in the shop (any more): the constructor leaves the id null, as PrestaShop does. */
+        public static array $mockMissingIds = [];
+
+        /** Customers loaded by id are soft-deleted (deleted = 1), as with "customers may not register again". */
+        public static bool $mockLoadedDeleted = false;
+
+        /** Result of customerExists(): the id of a registered customer with the e-mail address, or false. */
+        public static int|false $mockExistingCustomerId = false;
+
+        public static function customerExists(string $email, bool $returnId = false, bool $ignoreGuest = true): bool|int
+        {
+            return $returnId ? static::$mockExistingCustomerId : static::$mockExistingCustomerId !== false;
+        }
 
         /**
          * Sequence of booleans for consecutive update() calls.
@@ -512,11 +575,29 @@ if (!class_exists('Customer')) {
 
         public function __construct(int $id = 0)
         {
-            $this->id = static::$mockIdOverride ?? ($id ?: null);
+            $this->id = static::$mockIdOverride ?? ($id && !\in_array($id, static::$mockMissingIds, true) ? $id : null);
+            if ($id) {
+                $this->deleted = static::$mockLoadedDeleted;
+            }
+        }
+
+        /** Result of add(); when true, add() inserts as ObjectModel::add() does. */
+        public static bool $mockAddResult = true;
+
+        /** Group ids passed to addGroups(), for assertions. */
+        public static array $mockAddedGroups = [];
+
+        public function add(bool $autoDate = true, bool $nullValues = false): bool
+        {
+            if (!static::$mockAddResult) {
+                return false;
+            }
+            return parent::add($autoDate, $nullValues);
         }
 
         public function update(bool $nullValues = false): bool
         {
+            static::runMockAfterHook($this, 'Update');
             if (!empty(static::$mockUpdateResults)) {
                 return (bool)\array_shift(static::$mockUpdateResults);
             }
@@ -527,10 +608,16 @@ if (!class_exists('Customer')) {
         {
             static::$mockIdOverride    = null;
             static::$mockUpdateResults = [];
+            static::$mockAddResult     = true;
+            static::$mockAddedGroups   = [];
+            static::$mockMissingIds         = [];
+            static::$mockLoadedDeleted      = false;
+            static::$mockExistingCustomerId = false;
         }
 
         public function addGroups(array $groups): void
         {
+            static::$mockAddedGroups = \array_merge(static::$mockAddedGroups, $groups);
         }
 
         public function updateGroup(array $groups): void
@@ -558,9 +645,39 @@ if (!class_exists('Address')) {
         public string $phone_mobile = '';
         public string $vat_number = '';
 
+        /** Result of getFirstCustomerAddressId(), the id of a customer's address; 0 if it has none. */
+        public static int $mockFirstCustomerAddressId = 0;
+
+        /** Result of add(); when true, add() inserts as ObjectModel::add() does. */
+        public static bool $mockAddResult = true;
+
+        /** Number of add() calls since the last resetMock(). */
+        public static int $mockAddCalls = 0;
+
         public function __construct(int $id = 0)
         {
             $this->id = $id ?: null;
+        }
+
+        public function add(bool $autoDate = true, bool $nullValues = false): bool
+        {
+            static::$mockAddCalls++;
+            if (!static::$mockAddResult) {
+                return false;
+            }
+            return parent::add($autoDate, $nullValues);
+        }
+
+        public static function getFirstCustomerAddressId(int $customerId, bool $active = true): int|false
+        {
+            return static::$mockFirstCustomerAddressId;
+        }
+
+        public static function resetMock(): void
+        {
+            static::$mockFirstCustomerAddressId = 0;
+            static::$mockAddResult              = true;
+            static::$mockAddCalls               = 0;
         }
     }
 }
@@ -616,12 +733,14 @@ if (!class_exists('Category')) {
                 }
                 return false;
             }
+            $this->mockInsert();
             return true;
         }
 
         public function update(bool $nullValues = false): bool
         {
             static::$mockLastUpdated = $this;
+            static::runMockAfterHook($this, 'Update');
             return static::$mockUpdateResult;
         }
 
@@ -630,6 +749,7 @@ if (!class_exists('Category')) {
             if (static::$mockDeleteShouldThrow) {
                 throw new \Exception('Category delete failed');
             }
+            static::runMockAfterHook($this, 'Delete');
             return true;
         }
 
@@ -672,14 +792,30 @@ if (!class_exists('Manufacturer')) {
         public array $meta_keywords = [];
         public array $meta_description = [];
 
+        /** Result of add(); when true, add() inserts as ObjectModel::add() does. */
+        public static bool $mockAddResult = true;
+
         public function __construct(?int $id = null)
         {
             $this->id = $id;
         }
 
+        public function add(bool $autoDate = true, bool $nullValues = false): bool
+        {
+            if (!static::$mockAddResult) {
+                return false;
+            }
+            return parent::add($autoDate, $nullValues);
+        }
+
         public function deleteImage(): bool
         {
             return true;
+        }
+
+        public static function resetMock(): void
+        {
+            static::$mockAddResult = true;
         }
     }
 }
@@ -947,6 +1083,8 @@ if (!class_exists('Order')) {
 
         public function setCurrentState(int $state): bool
         {
+            // PrestaShop adds an OrderHistory here
+            static::runMockAfterHook(null, 'Add');
             return true;
         }
     }
@@ -976,6 +1114,7 @@ if (!class_exists('OrderCarrier')) {
             if (static::$mockUpdateShouldThrow) {
                 throw new \Exception(static::$mockUpdateExceptionMessage ?: 'update failed');
             }
+            static::runMockAfterHook($this, 'Update');
             return static::$mockUpdateResult;
         }
 
@@ -1025,18 +1164,25 @@ if (!class_exists('Feature')) {
         public static bool $mockUpdateResult = true;
         public static bool $mockAddResult = true;
 
+        /** Ids that don't exist in the shop (any more): the constructor leaves the id null, as PrestaShop does. */
+        public static array $mockMissingIds = [];
+
         public function __construct(?int $id = null)
         {
-            $this->id = $id;
+            $this->id = \in_array($id, static::$mockMissingIds, true) ? null : $id;
         }
 
         public function update(bool $nullValues = false): bool
         {
+            static::runMockAfterHook($this, 'Update');
             return static::$mockUpdateResult;
         }
 
         public function add(bool $autoDate = true, bool $nullValues = false): bool
         {
+            if (static::$mockAddResult) {
+                $this->mockInsert();
+            }
             return static::$mockAddResult;
         }
 
@@ -1070,6 +1216,7 @@ if (!class_exists('Feature')) {
             static::$mockDeletedSelections = [];
             static::$mockUpdateResult      = true;
             static::$mockAddResult         = true;
+            static::$mockMissingIds        = [];
         }
     }
 }
@@ -1086,21 +1233,32 @@ if (!class_exists('FeatureValue')) {
         public static int $mockNextValueId = 100;
 
         public static bool $mockUpdateResult = true;
-        public static bool $mockSaveResult = true;
+        public static bool $mockAddResult = true;
+
+        /** Ids of the values update() was called on, for assertions. */
+        public static array $mockUpdatedIds = [];
+
+        /** Ids that don't exist in the shop (any more): the constructor leaves the id null, as PrestaShop does. */
+        public static array $mockMissingIds = [];
 
         public function __construct(?int $id = null)
         {
-            $this->id = $id;
+            $this->id = \in_array($id, static::$mockMissingIds, true) ? null : $id;
+        }
+
+        public function add(bool $autoDate = true, bool $nullValues = false): bool
+        {
+            if (static::$mockAddResult) {
+                $this->mockInsert();
+            }
+            return static::$mockAddResult;
         }
 
         public function update(bool $nullValues = false): bool
         {
+            static::$mockUpdatedIds[] = $this->id;
+            static::runMockAfterHook($this, 'Update');
             return static::$mockUpdateResult;
-        }
-
-        public function save(bool $nullValues = false, bool $autoDate = true): bool
-        {
-            return static::$mockSaveResult;
         }
 
         public static function addFeatureValueImport(
@@ -1117,7 +1275,9 @@ if (!class_exists('FeatureValue')) {
         {
             static::$mockNextValueId  = 100;
             static::$mockUpdateResult = true;
-            static::$mockSaveResult   = true;
+            static::$mockAddResult    = true;
+            static::$mockUpdatedIds   = [];
+            static::$mockMissingIds   = [];
         }
     }
 }
@@ -1165,9 +1325,12 @@ if (!class_exists('Product')) {
         public string $date_add = '';
         public string $date_upd = '';
 
+        /** Ids that don't exist in the shop (any more): the constructor leaves the id null, as PrestaShop does. */
+        public static array $mockMissingIds = [];
+
         public function __construct(?int $id = null)
         {
-            $this->id = $id;
+            $this->id = \in_array($id, static::$mockMissingIds, true) ? null : $id;
         }
 
         public function getTaxesRate(): float
@@ -1185,9 +1348,30 @@ if (!class_exists('Product')) {
             return true;
         }
 
+        /** Result of addAttribute(), the id of the combination it adds. */
+        public static int|false $mockAddAttributeResult = 0;
+
+        /** Result of add(); when true, add() inserts as ObjectModel::add() does. */
+        public static bool $mockAddResult = true;
+
+        public function add(bool $autoDate = true, bool $nullValues = false): bool
+        {
+            if (!static::$mockAddResult) {
+                return false;
+            }
+            return parent::add($autoDate, $nullValues);
+        }
+
+        /**
+         * addAttribute() adds a Combination itself, so the Add hooks of that combination run inside it: with a
+         * throwing after-hook, the id never reaches the caller.
+         */
         public function addAttribute(mixed ...$args): int|false
         {
-            return 0;
+            if (static::$mockAddAttributeResult !== false && static::$mockAddAttributeResult > 0) {
+                static::runMockAfterHook(null, 'Add');
+            }
+            return static::$mockAddAttributeResult;
         }
 
         public function setCarriers(array $carrierIds): void
@@ -1203,8 +1387,12 @@ if (!class_exists('Product')) {
             return true;
         }
 
+        /** @var array<int, int> ids passed to deleteAttributeCombination(), captured for assertions */
+        public static array $deletedCombinationIds = [];
+
         public function deleteAttributeCombination(int $id): bool
         {
+            static::$deletedCombinationIds[] = $id;
             return true;
         }
 
@@ -1234,13 +1422,18 @@ if (!class_exists('Product')) {
         public function delete(): bool
         {
             static::$deletedIds[] = $this->id;
+            static::runMockAfterHook($this, 'Delete');
             return true;
         }
 
         public static function resetMock(): void
         {
-            static::$mockCoverData = null;
-            static::$deletedIds    = [];
+            static::$mockCoverData          = null;
+            static::$deletedIds             = [];
+            static::$mockAddAttributeResult = 0;
+            static::$mockAddResult          = true;
+            static::$mockMissingIds         = [];
+            static::$deletedCombinationIds  = [];
         }
     }
 }
@@ -1280,6 +1473,7 @@ if (!class_exists('Combination')) {
         public function delete(): bool
         {
             static::$deletedIds[] = $this->id;
+            static::runMockAfterHook($this, 'Delete');
             return true;
         }
 
@@ -1338,6 +1532,8 @@ if (!class_exists('StockAvailable')) {
             int $quantity = 0,
             ?int $shopId = null
         ): bool {
+            // PrestaShop updates the StockAvailable object here
+            \ObjectModel::runMockAfterHook(null, 'Update');
             return true;
         }
 
@@ -1384,17 +1580,41 @@ if (!class_exists('Image')) {
 
         public static int $mockNextId = 42;
 
+        /** Ids that don't exist in the shop (any more): the constructor leaves the id null, as PrestaShop does. */
+        public static array $mockMissingIds = [];
+
         public function __construct(?int $id = null)
         {
-            $this->id = $id;
+            $this->id = \in_array($id, static::$mockMissingIds, true) ? null : $id;
+        }
+
+        /** Result of add(); when true, add() gives the image the next $mockNextId, as the INSERT does. */
+        public static bool $mockAddResult = true;
+
+        /** Result of update(). */
+        public static bool $mockUpdateResult = true;
+
+        public function update(bool $nullValues = false): bool
+        {
+            static::runMockAfterHook($this, 'Update');
+            return static::$mockUpdateResult;
+        }
+
+        public function add(bool $autoDate = true, bool $nullValues = false): bool
+        {
+            if (!static::$mockAddResult) {
+                return false;
+            }
+            if ($this->id === null) {
+                $this->id = static::$mockNextId++;
+            }
+            static::runMockAfterHook($this, 'Add');
+            return true;
         }
 
         public function save(bool $nullValues = false, bool $autoDate = true): bool
         {
-            if ($this->id === null) {
-                $this->id = static::$mockNextId++;
-            }
-            return true;
+            return $this->id ? $this->update($nullValues) : $this->add($autoDate, $nullValues);
         }
 
         public function getPathForCreation(): string
@@ -1409,7 +1629,10 @@ if (!class_exists('Image')) {
 
         public static function resetMock(): void
         {
-            static::$mockNextId = 42;
+            static::$mockNextId       = 42;
+            static::$mockAddResult    = true;
+            static::$mockUpdateResult = true;
+            static::$mockMissingIds   = [];
         }
     }
 }

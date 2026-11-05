@@ -6,6 +6,11 @@ namespace Tests\Unit\Controller;
 
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\Product as JtlProduct;
+use Tests\Support\AfterHook;
+use Psr\Log\NullLogger;
+use ObjectModel;
+use Jtl\Connector\Core\Model\ProductPriceItem as JtlProductPriceItem;
+use Jtl\Connector\Core\Model\ProductPrice as JtlProductPrice;
 use jtl\Connector\Presta\Controller\AbstractController;
 use jtl\Connector\Presta\Controller\ProductPriceController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
@@ -117,5 +122,45 @@ final class ProductPriceControllerTest extends TestCase
         $model->method('getPrices')->willReturn([]);
 
         return $model;
+    }
+
+    public function testPushSavesPricesWithoutStackFramesThatPsEventbusCannotRead(): void
+    {
+        // CO-3735: ps_eventbus hooks into SpecificPrice. A real subclass instead of the mock: PHPUnit calls stubbed
+        // methods through internal functions itself.
+        $controller = new class extends ProductPriceController {
+            public function __construct()
+            {
+                $this->db             = new \Db();
+                $this->logger         = new NullLogger();
+                $this->controllerName = 'ProductPriceController';
+            }
+
+            protected function handlePrices(
+                int $productId,
+                int $combiId,
+                int $groupId,
+                JtlProductPriceItem ...$priceItems
+            ): void {
+                (new \SpecificPrice())->add();
+            }
+
+            protected function getPrestaContextShopId(): int
+            {
+                return 1;
+            }
+        };
+        $product = (new JtlProduct())
+            ->setId(new Identity('10'))
+            ->setPrices(
+                (new JtlProductPrice())->setCustomerGroupId(new Identity('3'))->setItems(new JtlProductPriceItem())
+            );
+        ObjectModel::$mockAfterHook = AfterHook::psEventbusErrorHandler();
+
+        try {
+            self::assertSame([$product], $controller->push($product));
+        } finally {
+            ObjectModel::resetObjectModelMock();
+        }
     }
 }

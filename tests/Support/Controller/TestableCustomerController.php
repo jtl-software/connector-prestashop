@@ -9,6 +9,8 @@ use Customer;
 use Db;
 use Jtl\Connector\Core\Model\Customer as JtlCustomer;
 use jtl\Connector\Presta\Controller\CustomerController;
+use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 final class TestableCustomerController extends CustomerController
@@ -74,5 +76,15 @@ final class TestableCustomerController extends CustomerController
         Customer $presta
     ): Customer {
         return $this->createPrestaCustomer($jtl, $presta);
+    }
+
+    public function injectMapper(PrimaryKeyMapper $mapper): void
+    {
+        $this->mapper = $mapper;
+    }
+
+    public function injectLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }

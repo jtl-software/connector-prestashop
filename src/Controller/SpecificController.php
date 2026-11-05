@@ -7,6 +7,7 @@ namespace jtl\Connector\Presta\Controller;
 use Jtl\Connector\Core\Controller\DeleteInterface;
 use Jtl\Connector\Core\Controller\PullInterface;
 use Jtl\Connector\Core\Controller\PushInterface;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\QueryFilter;
@@ -204,7 +205,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
      */
     public function push(AbstractModel ...$jtlSpecific): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlSpecific);
+        return $this->forEachModel($jtlSpecific, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**
@@ -221,27 +222,57 @@ class SpecificController extends AbstractController implements PushInterface, Pu
 
         if (!$isNew) {
             $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific((int)$endpoint));
-            if (!$prestaSpecific->update()) {
-                throw new \RuntimeException('Error updating specific: ' . $jtlSpecific->getI18ns()[0]->getName());
+            if (!empty($prestaSpecific->id)) {
+                if (!$prestaSpecific->update()) {
+                    throw new \RuntimeException('Error updating specific: ' . $jtlSpecific->getI18ns()[0]->getName());
+                }
+
+                $this->pushSpecificValues($jtlSpecific, (string)$prestaSpecific->id);
+
+                return $jtlSpecific;
             }
 
-            foreach ($jtlSpecific->getValues() as $value) {
-                $this->createPrestaSpecificValues(new PrestaSpecificValue(), $value, (string)$prestaSpecific->id);
-            }
-
-            return $jtlSpecific;
+            // the linked specific was deleted in PrestaShop, with its values: drop the link and add it again
+            $this->mapper->delete(IdentityType::SPECIFIC, $endpoint, $jtlSpecific->getId()->getHost());
+            $jtlSpecific->getId()->setEndpoint('');
         }
 
         $prestaSpecific = $this->createPrestaSpecific($jtlSpecific, new PrestaSpecific());
-        if (!$prestaSpecific->add()) {
+        if (!$this->addPrestaObject($prestaSpecific)) {
             throw new \RuntimeException('Error uploading specific ' . $jtlSpecific->getI18ns()[0]->getName());
         }
+        $jtlSpecific->getId()->setEndpoint((string)$prestaSpecific->id);
+        $this->mapper->save(
+            IdentityType::SPECIFIC,
+            $jtlSpecific->getId()->getEndpoint(),
+            $jtlSpecific->getId()->getHost()
+        );
 
-        foreach ($jtlSpecific->getValues() as $value) {
-            $this->createPrestaSpecificValues(new PrestaSpecificValue(), $value, (string)$prestaSpecific->id);
-        }
+        $this->pushSpecificValues($jtlSpecific, (string)$prestaSpecific->id);
 
         return $jtlSpecific;
+    }
+
+    /**
+     * @param JtlSpecific $jtlSpecific
+     * @param string      $prestaSpecificId
+     * @return void
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
+     */
+    private function pushSpecificValues(JtlSpecific $jtlSpecific, string $prestaSpecificId): void
+    {
+        foreach ($jtlSpecific->getValues() as $value) {
+            $endpoint    = $value->getId()->getEndpoint();
+            $prestaValue = new PrestaSpecificValue($endpoint === '' ? null : (int)$endpoint);
+            if ($endpoint !== '' && empty($prestaValue->id)) {
+                // the linked value was deleted in PrestaShop: drop the link and add the value again
+                $this->mapper->delete(IdentityType::SPECIFIC_VALUE, $endpoint, $value->getId()->getHost());
+                $value->getId()->setEndpoint('');
+            }
+            // an existing value is updated on the value it is linked to
+            $this->createPrestaSpecificValues($prestaValue, $value, $prestaSpecificId);
+        }
     }
 
     /**
@@ -309,11 +340,17 @@ class SpecificController extends AbstractController implements PushInterface, Pu
             return $prestaSpecificValue;
         }
 
-        if (!$prestaSpecificValue->save()) {
+        if (!$this->addPrestaObject($prestaSpecificValue)) {
             throw new \RuntimeException(
                 'Error uploading specific value with id: ' . $jtlSpecificValue->getId()->getEndpoint()
             );
         }
+        $jtlSpecificValue->getId()->setEndpoint((string)$prestaSpecificValue->id);
+        $this->mapper->save(
+            IdentityType::SPECIFIC_VALUE,
+            $jtlSpecificValue->getId()->getEndpoint(),
+            $jtlSpecificValue->getId()->getHost()
+        );
 
         return $prestaSpecificValue;
     }
@@ -343,7 +380,7 @@ class SpecificController extends AbstractController implements PushInterface, Pu
      */
     public function delete(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**
