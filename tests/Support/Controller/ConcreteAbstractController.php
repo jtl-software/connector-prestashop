@@ -7,7 +7,10 @@ namespace Tests\Support\Controller;
 use Customer;
 use DateTimeInterface;
 use Db;
+use Jtl\Connector\Core\Model\AbstractModel;
 use jtl\Connector\Presta\Controller\AbstractController;
+use ObjectModel;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -32,5 +35,25 @@ final class ConcreteAbstractController extends AbstractController
     public function callDetermineSalutation(Customer $customer): string
     {
         return $this->determineSalutation($customer);
+    }
+
+    /**
+     * @param AbstractModel[]                        $models
+     * @param \Closure(AbstractModel): AbstractModel $handler
+     * @return AbstractModel[]
+     */
+    public function callForEachModel(array $models, \Closure $handler): array
+    {
+        return $this->forEachModel($models, $handler);
+    }
+
+    public function callAddPrestaObject(ObjectModel $object): bool
+    {
+        return $this->addPrestaObject($object);
+    }
+
+    public function injectLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }

@@ -10,6 +10,8 @@ use Jtl\Connector\Core\Model\StatusChange;
 use Db;
 use jtl\Connector\Presta\Controller\StatusChangeController;
 use Order;
+use Tests\Support\AfterHook;
+use ObjectModel;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
@@ -235,5 +237,17 @@ final class StatusChangeControllerTest extends TestCase
         [$result] = $this->controller->push($model);
         self::assertSame($model, $result);
     }
-}
 
+    public function testPushChangesTheStatusWithoutStackFramesThatPsEventbusCannotRead(): void
+    {
+        // CO-3735: PrestaShop adds an OrderHistory in setCurrentState(), and ps_eventbus hooks into it
+        ObjectModel::$mockAfterHook = AfterHook::psEventbusErrorHandler();
+        $model                      = $this->makeStatusChange('5', CustomerOrder::STATUS_CANCELLED);
+
+        try {
+            self::assertSame([$model], $this->controller->push($model));
+        } finally {
+            ObjectModel::resetObjectModelMock();
+        }
+    }
+}

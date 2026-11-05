@@ -10,6 +10,7 @@ use Jtl\Connector\Core\Model\Category as JtlCategory;
 use Jtl\Connector\Core\Model\CategoryI18n as JtlCategoryI18n;
 use jtl\Connector\Presta\Controller\CategoryController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -75,5 +76,10 @@ final class TestableCategoryController extends CategoryController
     public function injectMapper(PrimaryKeyMapper $mapper): void
     {
         $this->mapper = $mapper;
+    }
+
+    public function injectLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }

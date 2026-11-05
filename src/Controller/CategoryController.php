@@ -165,7 +165,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      */
     public function push(AbstractModel ...$jtlCategory): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlCategory);
+        return $this->forEachModel($jtlCategory, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**
@@ -207,15 +207,8 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         }
 
         $prestaCategory = $this->createPrestaCategory($jtlCategory, new PrestaCategory());
-        if (!$prestaCategory->add()) {
-            if ($prestaCategory->id) {
-                try {
-                    // explicitly delete category to prevent broken category
-                    $prestaCategory->delete();
-                } catch (\Exception) {
-                    // ignore
-                }
-            }
+        // a partly saved category is removed again, see addPrestaObject()
+        if (!$this->addPrestaObject($prestaCategory)) {
             throw new \RuntimeException('Error uploading category' . $jtlCategory->getI18ns()[0]->getName());
         }
 
@@ -347,7 +340,7 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      */
     public function delete(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**

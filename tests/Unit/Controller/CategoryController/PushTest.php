@@ -7,11 +7,15 @@ namespace Tests\Unit\Controller\CategoryController;
 use Category;
 use Jtl\Connector\Core\Model\Category as JtlCategory;
 use Jtl\Connector\Core\Model\CategoryI18n as JtlCategoryI18n;
+use Jtl\Connector\Core\Definition\IdentityType;
 use Jtl\Connector\Core\Model\Identity;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use ObjectModel;
 use PHPUnit\Exception as PHPUnitException;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Tests\Support\AfterHook;
 use Tests\Support\Controller\TestableCategoryController;
 
 /**
@@ -29,18 +33,22 @@ final class PushTest extends TestCase
     protected function setUp(): void
     {
         Category::resetMock();
-        $this->controller = new TestableCategoryController();
+        ObjectModel::resetObjectModelMock();
+        // as PrestaShop's INSERT does
+        ObjectModel::$mockNextInsertId = 501;
+        $this->controller              = new TestableCategoryController();
     }
 
     protected function tearDown(): void
     {
         Category::resetMock();
+        ObjectModel::resetObjectModelMock();
     }
 
     private function jtlCategory(string $endpointId, JtlCategoryI18n ...$i18ns): JtlCategory
     {
         return (new JtlCategory())
-            ->setId(new Identity($endpointId))
+            ->setId(new Identity($endpointId, 5001))
             ->setIsActive(true)
             ->setParentCategoryId(new Identity('3'))
             ->setI18ns(...$i18ns);
@@ -216,5 +224,107 @@ final class PushTest extends TestCase
         );
 
         self::assertSame('99', $result->getParentCategoryId()->getEndpoint());
+    }
+
+    public function testNewCategoryIsLinkedWhenPsEventbusReadsTheStackInItsHook(): void
+    {
+        // CO-3735: ps_eventbus 4.1.1 throws a TypeError for a stack frame without a file, after the INSERT
+        ObjectModel::$mockAfterHook = AfterHook::psEventbusErrorHandler();
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $mapper->expects(self::once())->method('save')->with(IdentityType::CATEGORY, '501', 5001);
+        $this->controller->injectMapper($mapper);
+
+        $jtlCategory = $this->jtlCategory('', $this->engI18n('Hooked Category', 'hooked-category'));
+
+        self::assertSame([$jtlCategory], $this->controller->push($jtlCategory));
+    }
+
+    public function testNewCategoryIsLinkedAndAWarningLoggedWhenAHookThrowsAfterTheInsert(): void
+    {
+        ObjectModel::$mockAfterHook = AfterHook::throwing(new \TypeError('ps_eventbus failed'));
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $mapper->expects(self::once())->method('save')->with(IdentityType::CATEGORY, '501', 5001);
+        $this->controller->injectMapper($mapper);
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(self::stringContains('Category 501'), self::anything());
+        $this->controller->injectLogger($logger);
+
+        $jtlCategory = $this->jtlCategory('', $this->engI18n('Hooked Category', 'hooked-category'));
+
+        self::assertSame([$jtlCategory], $this->controller->push($jtlCategory));
+    }
+
+    public function testNewCategoryIsNotLinkedWhenAddThrowsBeforeTheInsert(): void
+    {
+        ObjectModel::$mockNextInsertId = null; // the category gets no id
+        $error                         = new RuntimeException('insert failed');
+        ObjectModel::$mockAfterHook = AfterHook::throwing($error);
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $mapper->expects(self::never())->method('save');
+        $this->controller->injectMapper($mapper);
+
+        $this->expectExceptionObject($error);
+
+        $this->controller->push($this->jtlCategory('', $this->engI18n('Failing Category', 'failing-category')));
+    }
+
+    public function testNewCategoryWithAnInvalidMultilangFieldIsNeitherAddedNorLinked(): void
+    {
+        // before PrestaShop 9.1, add() would validate it only after the INSERT
+        $error                                = new \PrestaShopException('Property Category->meta_description is not valid');
+        ObjectModel::$mockLangValidationError = $error;
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $mapper->expects(self::never())->method('save');
+        $this->controller->injectMapper($mapper);
+
+        try {
+            $this->controller->push($this->jtlCategory('', $this->engI18n('Invalid Category', 'invalid-category')));
+            self::fail('Expected the validation error');
+        } catch (\PrestaShopException $e) {
+            self::assertSame($error, $e);
+        }
+
+        self::assertSame(0, Category::$mockAddCalls);
+    }
+
+    public function testExistingCategoryReportsAnErrorThrownAfterItsUpdate(): void
+    {
+        // Updates are not tolerated like adds: PrestaShop doesn't tell whether the error came before or after the
+        // UPDATE. The link exists anyway, so the next sync updates the category again instead of adding it.
+        $error                      = new RuntimeException('hook failed');
+        ObjectModel::$mockAfterHook = AfterHook::throwing($error, 'Update');
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $mapper->expects(self::never())->method('save');
+        $mapper->expects(self::never())->method('delete');
+        $this->controller->injectMapper($mapper);
+
+        $this->expectExceptionObject($error);
+
+        $this->controller->push($this->jtlCategory('5', $this->engI18n('Existing Category', 'existing-category')));
+    }
+
+    public function testUpdatesExistingCategoriesWithoutStackFramesThatPsEventbusCannotRead(): void
+    {
+        ObjectModel::$mockAfterHook = AfterHook::psEventbusErrorHandler();
+
+        $mapper = $this->createMock(PrimaryKeyMapper::class);
+        $mapper->method('getEndpointId')->willReturn(null);
+        $this->controller->injectMapper($mapper);
+
+        $jtlCategory = $this->jtlCategory('5', $this->engI18n('Existing Category', 'existing-category'));
+
+        self::assertSame([$jtlCategory], $this->controller->push($jtlCategory));
     }
 }

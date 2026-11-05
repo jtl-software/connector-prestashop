@@ -13,6 +13,7 @@ use Jtl\Connector\Core\Model\Specific;
 use Jtl\Connector\Core\Model\SpecificI18n as JtlSpecificI18n;
 use Jtl\Connector\Core\Model\SpecificValue as JtlSpecificValue;
 use Jtl\Connector\Core\Model\SpecificValueI18n as JtlSpecificValueI18n;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 final class TestableSpecificController extends SpecificController
@@ -115,5 +116,10 @@ final class TestableSpecificController extends SpecificController
         FeatureValue $prestaSpecificValue
     ): FeatureValue {
         return $this->createPrestaSpecificValueI18ns($i18n, $prestaSpecificValue);
+    }
+
+    public function injectLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }
