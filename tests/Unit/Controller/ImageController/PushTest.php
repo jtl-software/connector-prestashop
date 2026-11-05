@@ -33,8 +33,8 @@ final class PushTest extends TestCase
 
         $this->controller = new TestableImageController();
 
-        @mkdir(_PS_PROD_IMG_DIR_ . '1/', 0777, true);
-        @touch(_PS_PROD_IMG_DIR_ . '1/1.jpg');
+        @mkdir(_PS_PRODUCT_IMG_DIR_ . '1/', 0777, true);
+        @touch(_PS_PRODUCT_IMG_DIR_ . '1/1.jpg');
         @mkdir(_PS_CAT_IMG_DIR_, 0777, true);
         @touch(_PS_CAT_IMG_DIR_ . '5.jpg');
         @mkdir(_PS_MANU_IMG_DIR_, 0777, true);

@@ -12,6 +12,7 @@
 - CO-3684 - downloading the logs on the configuration page no longer leaves an empty temp file behind
 - CO-3684 - protect the var/ (sessions, logs), plugins/ and tmp/ directories against web access like config/ and db/, and move the legacy logs/ directory to var/log also when upgrading (it was only moved on install)
 - CO-3684 - the release ZIP no longer stores every directory as world-writable (0777), which applied when it was unpacked manually on the server; only config/, db/, tmp/ and var/ stay writable
+- CO-3734 - fix image pull and statistic on PrestaShop 9 (undefined constant _PS_PROD_IMG_DIR_)
 - CO-3664 - fix inverted delete condition in ProductController that deleted the whole base product when deleting a single variant, and silently did nothing when deleting a plain product
 - CO-3664 - fix possible SQL injection in ImageController::getPrestaImageI18n()
 - CO-2117 - fix delivery time not set
