@@ -54,14 +54,15 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
         $images = $this->db->executeS($sql);
 
-        $prestaImages = [];
-        $jtlImages    = [];
+        $prestaImages    = [];
+        $jtlImages       = [];
+        $productImageDir = $this->getProductImageDir();
 
         if (\is_array($images)) {
             foreach ($images as $image) {
                 $path = \Image::getImgFolderStatic($image['id_image']);
 
-                if (\file_exists(\_PS_PROD_IMG_DIR_ . $path . $image['id_image'] . '.jpg')) {
+                if (\file_exists($productImageDir . $path . $image['id_image'] . '.jpg')) {
                     $prestaImages[] = [
                         'id'           => (string)$image['id_image'],
                         'foreignKey'   => (string)$image['id_product'],
@@ -80,6 +81,18 @@ class ImageController extends AbstractController implements PushInterface, PullI
         }
 
         return $jtlImages;
+    }
+
+    /**
+     * Returns PrestaShop's product image directory. PrestaShop 8 and 9 define it as _PS_PRODUCT_IMG_DIR_ (PrestaShop
+     * 9 dropped its legacy alias). PrestaShop 1.7, up to 1.7.8.11, defines only that legacy alias, as
+     * _PS_IMG_DIR_ . 'p/' (PrestaShop 8 calls the alias "deprecated since 1.7.8.1", but 1.7.8 never had the new name).
+     *
+     * @return string
+     */
+    private function getProductImageDir(): string
+    {
+        return \defined('_PS_PRODUCT_IMG_DIR_') ? \_PS_PRODUCT_IMG_DIR_ : \_PS_IMG_DIR_ . 'p/';
     }
 
     /**
