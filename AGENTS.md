@@ -8,7 +8,7 @@ PrestaShop module `jtlconnector` that syncs shop data with JTL-Wawi via the `jtl
 
 ## Read first
 
-- [CLAUDE.md](CLAUDE.md) — mandatory Definition of Done and review process (Copilot + Claude reviewers, zero findings required). Follow it before calling any task complete.
+- [CLAUDE.md](CLAUDE.md) — Definition of Done (complete implementation; lint, type checks and tests pass). Follow it before calling any task complete.
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, entry points, build, coding standards.
 - [changelog.md](changelog.md) — every fix needs a line under `## unreleased`, format `- CO-XXXX - fix ...`.
 
