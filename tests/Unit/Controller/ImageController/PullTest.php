@@ -32,8 +32,8 @@ final class PullTest extends TestCase
 
         $this->controller = new TestableImageController();
 
-        @mkdir(_PS_PROD_IMG_DIR_ . '1/', 0777, true);
-        @touch(_PS_PROD_IMG_DIR_ . '1/1.jpg');
+        @mkdir(_PS_PRODUCT_IMG_DIR_ . '1/', 0777, true);
+        @touch(_PS_PRODUCT_IMG_DIR_ . '1/1.jpg');
         @mkdir(_PS_CAT_IMG_DIR_, 0777, true);
         @touch(_PS_CAT_IMG_DIR_ . '5.jpg');
         @mkdir(_PS_MANU_IMG_DIR_, 0777, true);
@@ -90,6 +90,39 @@ final class PullTest extends TestCase
 
         self::assertCount(1, $result);
         self::assertInstanceOf(ProductImage::class, $result[0]);
+    }
+
+    public function testPullReturnsOnlyProductImagesWhoseFileExistsInProductImageDir(): void
+    {
+        // image 1 exists in _PS_PRODUCT_IMG_DIR_ (see setUp), image 2 doesn't
+        if (is_file(_PS_PRODUCT_IMG_DIR_ . '2/2.jpg')) {
+            unlink(_PS_PRODUCT_IMG_DIR_ . '2/2.jpg');
+        }
+
+        $db = $this->createMock(Db::class);
+        $db->method('escape')->willReturnArgument(0);
+        $db->method('executeS')->willReturnOnConsecutiveCalls(
+            // getProductImages: product rows from DB
+            [
+                ['id_image' => '1', 'id_product' => '10', 'position' => '1'],
+                ['id_image' => '2', 'id_product' => '10', 'position' => '2'],
+            ],
+            // getPrestaImageI18n for image 1 only
+            [['id_lang' => 1, 'altText' => 'Alt']],
+            // getCategoryImages: no results
+            [],
+            // getManufacturerImages: no results
+            []
+        );
+        $this->controller->injectDb($db);
+
+        $result = $this->controller->pull(new QueryFilter());
+
+        self::assertCount(1, $result);
+        self::assertInstanceOf(ProductImage::class, $result[0]);
+        self::assertSame('1', $result[0]->getId()->getEndpoint());
+        self::assertSame('10', $result[0]->getForeignKey()->getEndpoint());
+        self::assertSame('http://localhost/img/p/1/1.jpg', $result[0]->getRemoteUrl());
     }
 
     public function testPullWithCategoryImageInDbReturnsCategoryImageInArray(): void

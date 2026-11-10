@@ -7,8 +7,9 @@ if (!defined('_DB_PREFIX_')) {
     define('_DB_PREFIX_', 'ps_');
 }
 
-if (!defined('_PS_PROD_IMG_DIR_')) {
-    define('_PS_PROD_IMG_DIR_', sys_get_temp_dir() . '/jtl_ps_test/prod/');
+// only the constant PrestaShop 9 defines, so code using the legacy alias it dropped fails in the tests
+if (!defined('_PS_PRODUCT_IMG_DIR_')) {
+    define('_PS_PRODUCT_IMG_DIR_', sys_get_temp_dir() . '/jtl_ps_test/prod/');
 }
 
 if (!defined('_PS_CAT_IMG_DIR_')) {
