@@ -111,7 +111,6 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      *     additional_description?: string|null,
      *     link_rewrite?: string|null,
      *     meta_title?: string|null,
-     *     meta_keywords?: string|null,
      *     meta_description?: string|null
      * } $prestaCategoryI18n
      * @return JtlCategoryI18n
@@ -124,7 +123,6 @@ class CategoryController extends AbstractController implements PullInterface, Pu
             ->setTitleTag($prestaCategoryI18n['meta_title'] ?? '')
             ->setDescription($prestaCategoryI18n['description'] ?? '')
             ->setMetaDescription($prestaCategoryI18n['meta_description'] ?? '')
-            ->setMetaKeywords($prestaCategoryI18n['meta_keywords'] ?? '')
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaCategoryI18n['id_lang']));
     }
 
@@ -244,14 +242,12 @@ class CategoryController extends AbstractController implements PullInterface, Pu
         $prestaCategory->name             = $this->ensureArray($prestaCategory->name);
         $prestaCategory->description      = $this->ensureArray($prestaCategory->description);
         $prestaCategory->meta_description = $this->ensureArray($prestaCategory->meta_description);
-        $prestaCategory->meta_keywords    = $this->ensureArray($prestaCategory->meta_keywords);
         $prestaCategory->link_rewrite     = $this->ensureArray($prestaCategory->link_rewrite);
 
         foreach ($translations as $key => $translation) {
             $prestaCategory->name[$key]             = $translation['name'];
             $prestaCategory->description[$key]      = $translation['description'];
             $prestaCategory->meta_description[$key] = $translation['metaDescription'];
-            $prestaCategory->meta_keywords[$key]    = $translation['metaKeywords'];
             $prestaCategory->link_rewrite[$key]     = $translation['url'];
         }
 
@@ -274,7 +270,6 @@ class CategoryController extends AbstractController implements PullInterface, Pu
      *     name: string,
      *     description: string,
      *     metaDescription: string,
-     *     metaKeywords: string,
      *     url: string
      *  }
      * >
@@ -301,7 +296,6 @@ class CategoryController extends AbstractController implements PullInterface, Pu
                 : throw new \RuntimeException('Name must be a string');
             $translations[$langId]['description']     = $jtlCategoryI18n->getDescription();
             $translations[$langId]['metaDescription'] = $jtlCategoryI18n->getMetaDescription();
-            $translations[$langId]['metaKeywords']    = $jtlCategoryI18n->getMetaKeywords();
             $translations[$langId]['url']             = \is_string($url)
                 ? $url
                 : throw new \RuntimeException('Url must be a string');

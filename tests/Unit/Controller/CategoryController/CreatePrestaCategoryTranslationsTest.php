@@ -54,7 +54,7 @@ final class CreatePrestaCategoryTranslationsTest extends TestCase
         self::assertSame('Schuhe', $result[1]['name']);
         self::assertSame('Alle Schuhe', $result[1]['description']);
         self::assertSame('Meta Schuhe', $result[1]['metaDescription']);
-        self::assertSame('Schuhe,Stiefel', $result[1]['metaKeywords']);
+        self::assertArrayNotHasKey('metaKeywords', $result[1], 'PrestaShop 9 has no meta keywords');
         self::assertArrayHasKey('url', $result[1]);
     }
 

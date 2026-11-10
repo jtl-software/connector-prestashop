@@ -29,7 +29,6 @@ final class CreateJtlCategoryTranslationTest extends TestCase
             'meta_title'       => 'Meta Titel',
             'description'      => 'Beschreibung',
             'meta_description' => 'Meta Beschreibung',
-            'meta_keywords'    => 'eins,zwei',
         ];
 
         $result = $this->controller->exposeCreateJtlCategoryTranslation($data);
@@ -39,7 +38,7 @@ final class CreateJtlCategoryTranslationTest extends TestCase
         self::assertSame('Meta Titel', $result->getTitleTag());
         self::assertSame('Beschreibung', $result->getDescription());
         self::assertSame('Meta Beschreibung', $result->getMetaDescription());
-        self::assertSame('eins,zwei', $result->getMetaKeywords());
+        self::assertSame('', $result->getMetaKeywords(), 'PrestaShop 9 has no meta keywords');
         self::assertSame('ger', $result->getLanguageIso());
     }
 

@@ -1,6 +1,6 @@
 ## What this project is
 
-A PrestaShop module (`jtlconnector`) that synchronises shop data with JTL-Wawi ERP via the `jtl/connector` core framework. Distributed as a ZIP for manual install in PrestaShop 1.7+.
+A PrestaShop module (`jtlconnector`) that synchronises shop data with JTL-Wawi ERP via the `jtl/connector` core framework. Distributed as a ZIP for manual install in PrestaShop 9 (3.0.0 supports PrestaShop 9.0 and later only).
 
 **Critical detail:** Composer's `vendor-dir` is `./lib/`, not `./vendor/`. Anything that normally lives at `vendor/bin/<tool>` is at `lib/bin/<tool>` here — most importantly `phing` (`lib/bin/phing`).
 
@@ -53,6 +53,7 @@ PrestaShop loads the module class `JTLConnector` from `jtlconnector.php` wheneve
 | `jtlconnector.php` | PrestaShop module class — install/uninstall/configure UI, module metadata read from `build-config.yaml`. Also defines the `CONNECTOR_DIR` constant pointing at the module install dir. |
 | `src/Connector.php` | Connector implementation: container wiring, controller registry, `TokenValidator`, `PrimaryKeyMapper` for ID mapping. |
 | `controllers/front/api.php` | PrestaShop front controller — HTTP entry point for the JTL-Wawi RPC calls. |
+| `controllers/admin/AdminJtlconnectorController.php` | Admin controller of the back office menu entry (tab class name `AdminJtlconnector`), which PrestaShop 9 requires to open it; forwards to the configuration page. `upgrade/install-3.0.0.php` migrates the menu entry of earlier releases (`jtlconnector`). |
 
 ### Controllers
 
@@ -92,7 +93,7 @@ Build prerequisites besides PHP 8.3: `composer` on `PATH` (for `dump-autoload`) 
 
 Code that refers to a vendor class only *by string* (e.g. `sprintf('Monolog\Formatter\%sFormatter', …)`) is invisible to the scoper: those strings are prefixed by the `$stringClassNames` list in `scoper.inc.php`, and the build fails if a listed file or string is gone or if any other string literal still starts with a prefixed namespace. So don't build vendor class names from strings in module code, and when a dependency update breaks the build there, update that list. `jtlconnector.php`'s constructor must not use bundled classes at all: PrestaShop constructs the module whenever it lists modules, also on unsupported PHP versions.
 
-CI builds the ZIP on every push (job `build-zip` in `.github/workflows/check.yaml`, via `.github/scripts/build-zip.sh`), runs `.github/scripts/smoke-test-zip.php` against it and uploads it as an artifact for tags. The smoke test checks the ZIP itself (nothing world-writable except the runtime dirs and `db/connector.s3db`, a `Deny from all` `.htaccess` and an `index.php` in every runtime dir, no legacy `logs/`), constructs `JTLConnector` and checks that no bundled class gets loaded, runs `upgrade/install-3.0.0.php` on a copy with a legacy `logs/` dir (and checks it removes the manufacturer link without endpoint that 2.x saved), and sends auth/identify/features through `controllers/front/api.php` (`jtlauth` once in the POST body and once in the query string). It asserts the scoped core still rejects unauthenticated access — wrong token, no session, an unknown session id and a seeded-but-unauthenticated session, i.e. the CO-3709 fix. It runs that RPC sequence with a fresh install's defaults (no debug lines may be logged) and again with debug logging on (debug lines must be logged), then checks that no log contains a plaintext session id or a submitted token. The few PrestaShop classes on these paths are stubbed.
+CI builds the ZIP on every push (job `build-zip` in `.github/workflows/check.yaml`, via `.github/scripts/build-zip.sh`), runs `.github/scripts/smoke-test-zip.php` against it and uploads it as an artifact for tags. The smoke test checks the ZIP itself (nothing world-writable except the runtime dirs and `db/connector.s3db`, a `Deny from all` `.htaccess` and an `index.php` in every runtime dir, no legacy `logs/`), constructs `JTLConnector` and checks that no bundled class gets loaded, runs `upgrade/install-3.0.0.php` on a copy with a legacy `logs/` dir (and checks it removes the manufacturer link without endpoint that 2.x saved and migrates the back office menu entry), and sends auth/identify/features through `controllers/front/api.php` (`jtlauth` once in the POST body and once in the query string). It asserts the scoped core still rejects unauthenticated access — wrong token, no session, an unknown session id and a seeded-but-unauthenticated session, i.e. the CO-3709 fix. It runs that RPC sequence with a fresh install's defaults (no debug lines may be logged) and again with debug logging on (debug lines must be logged), then checks that no log contains a plaintext session id or a submitted token. The few PrestaShop classes on these paths are stubbed.
 
 ## Coding standards
 

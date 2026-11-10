@@ -79,7 +79,8 @@ final class CreatePrestaManufacturerTest extends TestCase
         // langId 1 for 'eng'
         self::assertSame('English desc', $result->description[1]);
         self::assertSame('EN title', $result->meta_title[1]);
-        self::assertSame('en-kw', $result->meta_keywords[1]);
+        // PrestaShop 9 has no meta keywords
+        self::assertObjectNotHasProperty('meta_keywords', $result);
         self::assertSame('EN meta', $result->meta_description[1]);
     }
 

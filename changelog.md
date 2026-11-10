@@ -1,17 +1,21 @@
 ## unreleased
+- CO-3743 - PrestaShop 9 only: 3.0.0 requires PrestaShop 9.0 or later (and PHP 8.3)
+- CO-3743 - the module's back office menu entry opened "page not found" on PrestaShop 9, which requires an admin controller for it; the 3.0.0 upgrade migrates the menu entry of earlier releases and keeps its permissions
+- CO-3743 - fix a JavaScript error on the configuration page on PrestaShop 9 (`displayFlags is not defined`)
+- CO-3743 - PrestaShop 9 removed the meta keywords of products, categories and manufacturers: the connector no longer maps them (pulling manufacturers logged PHP warnings)
 - CO-3684 - update jtl/connector core to 6 (includes CO-3671 authenticate before resolving the RPC method, CVE-2026-108082 ReDoS fix in symfony/http-foundation, and CO-3709 reject sessions that never passed core.connector.auth so a failed authentication can no longer be replayed as jtlauth)
   The bundled libraries are now prefixed with `JtlConnectorPrestaVendor\` so they no longer clash with PrestaShop's own Symfony, Monolog and Doctrine versions.
   Connector plugins in `plugins/` that type-hint `DI\Container`, `Noodlehaus\ConfigInterface` or Symfony's `EventDispatcher` have to use the prefixed class names.
   Requires `jtl/connector ^6.0.1` (the released CO-3709 security fix).
 - CO-3684 - compare the connector token in constant time (CO-3468)
-- CO-3684 - generate the connector token on install with a cryptographically secure random generator instead of the time-based `uniqid()`
+- CO-3744 - generate the connector token on install with a cryptographically secure random generator instead of the time-based `uniqid()`
   Existing shops keep their token: set a new random password on the module's configuration page and in JTL-Wawi.
-- CO-3684 - resetting the links of one entity type (core.linker.clear) no longer deletes the links of all entity types (types sharing a link table, i.e. customers and customer groups or the image types, are still cleared together), and deleting a link without endpoint and host id no longer deletes the whole link table
-- CO-3684 - escape the values from JTL-Wawi in SQL queries: endpoint ids in the ID mapping and in the combination image link, variation and variation value names (a name with an apostrophe created another attribute group or attribute on every push), and language and country ISO codes
-- CO-3684 - escape PrestaShop's order reference when pulling orders (other modules can set any value)
-- CO-3684 - downloading the logs on the configuration page no longer leaves an empty temp file behind
-- CO-3684 - protect the var/ (sessions, logs), plugins/ and tmp/ directories against web access like config/ and db/, and move the legacy logs/ directory to var/log also when upgrading (it was only moved on install)
-- CO-3684 - the release ZIP no longer stores every directory as world-writable (0777), which applied when it was unpacked manually on the server; only config/, db/, tmp/ and var/ stay writable
+- CO-3747 - resetting the links of one entity type (core.linker.clear) no longer deletes the links of all entity types (types sharing a link table, i.e. customers and customer groups or the image types, are still cleared together), and deleting a link without endpoint and host id no longer deletes the whole link table
+- CO-3745 - escape the values from JTL-Wawi in SQL queries: endpoint ids in the ID mapping and in the combination image link, variation and variation value names (a name with an apostrophe created another attribute group or attribute on every push), and language and country ISO codes
+- CO-3745 - escape PrestaShop's order reference when pulling orders (other modules can set any value)
+- CO-3748 - downloading the logs on the configuration page no longer leaves an empty temp file behind
+- CO-3746 - protect the var/ (sessions, logs), plugins/ and tmp/ directories against web access like config/ and db/, and move the legacy logs/ directory to var/log also when upgrading (it was only moved on install)
+- CO-3746 - the release ZIP no longer stores every directory as world-writable (0777), which applied when it was unpacked manually on the server; only config/, db/, tmp/ and var/ stay writable
 - CO-3735 - pushes no longer fail after PrestaShop saved the object when ps_eventbus is active without a linked PrestaShop account (as on a fresh PrestaShop 9.2), which saved no link, so the next sync added the entity again
   ps_eventbus 4.1.1 throws in its hooks when the call stack contains a callback called by a PHP function (upstream bug: https://github.com/PrestaShopCorp/ps_eventbus/issues/499); the connector no longer calls its push and delete handlers that way.
   If adding an object still fails after PrestaShop saved it, e.g. in a module hooked into it, the connector links the object anyway and logs a warning. Invalid translated fields still fail the push: they are now validated before the object is added, also on PrestaShop before 9.1.
@@ -25,7 +29,7 @@
 - CO-3382 - fix customer group prices not saved as specific prices
 - CO-3498 - fix main_category_id attribute imported as free text instead of integer
 - CO-3385 - fix send stock
-- raise minimum PHP version to 8.3 (required by jtl/connector 6)
+- CO-3684 - raise minimum PHP version to 8.3 (required by jtl/connector 6)
 
 ## 2.0.3 _2026-08-18_
 - CO-2904 - fix broken linkings for categories
