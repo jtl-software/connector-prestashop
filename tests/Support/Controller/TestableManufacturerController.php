@@ -11,6 +11,7 @@ use jtl\Connector\Presta\Controller\ManufacturerController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use Language;
 use Manufacturer;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -74,5 +75,10 @@ final class TestableManufacturerController extends ManufacturerController
     public function injectMapper(PrimaryKeyMapper $mapper): void
     {
         $this->mapper = $mapper;
+    }
+
+    public function injectLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 }

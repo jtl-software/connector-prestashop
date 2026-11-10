@@ -728,7 +728,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     public function push(AbstractModel ...$jtlProduct): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushProduct($model), $jtlProduct);
+        return $this->forEachModel($jtlProduct, fn(AbstractModel $model): AbstractModel => $this->pushProduct($model));
     }
 
     /**
@@ -793,25 +793,25 @@ class ProductController extends ProductPriceController implements PullInterface,
             }
         }
 
+        // the endpoint changes only once the new product or combination was added: before, there's nothing to remove
+        $endpointBefore = $jtlProduct->getId()->getEndpoint();
+
         try {
             // create minimal product
             if ($isNew) {
                 if (empty($masterProductId)) {
                     // create empty normal product
                     $prestaProduct = new PrestaProduct();
-                    $prestaProduct->save();
+                    if (!$this->addPrestaObject($prestaProduct)) {
+                        throw new \RuntimeException('Error adding product');
+                    }
 
                     $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
+                    $this->savePushedProductLink($jtlProduct);
                 } else {
+                    // links the variant itself, right after adding its combination
                     $this->createMinPrestaVariant($jtlProduct, new PrestaProduct((int)$masterProductId));
                 }
-
-                $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-                $this->mapper->save(
-                    IdentityType::PRODUCT,
-                    $jtlProduct->getId()->getEndpoint(),
-                    $jtlProduct->getId()->getHost()
-                );
             }
 
             // update product
@@ -842,7 +842,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             return $jtlProduct;
             // done
         } catch (\Exception $e) {
-            if ($isNew) {
+            if ($isNew && $jtlProduct->getId()->getEndpoint() !== $endpointBefore) {
                 if (empty($masterProductId)) {
                     // delete partial product
                     try {
@@ -885,28 +885,107 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     protected function createMinPrestaVariant(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
     {
-        // create attribute for combination
-        $combiId = $prestaProduct->addAttribute(
-            .0,
-            $jtlProduct->getShippingWeight(),
-            .0,
-            .0,
-            [],
-            $jtlProduct->getSku(),
-            $jtlProduct->getEan(),
-            false,
-            null,
-            $jtlProduct->getUpc()
-        );
+        $combiId = $this->addPrestaCombination($jtlProduct, $prestaProduct);
+
+        // Link right away, as a new product: if the push then fails with an exception, the catch in pushProduct()
+        // removes the variant and its link again; if it dies otherwise (an \Error, a timeout), the next sync updates
+        // the variant instead of adding it again.
+        $jtlProduct->getId()->setEndpoint(Utils::joinProductEndpoint((string)$prestaProduct->id, (string)$combiId));
+        $this->savePushedProductLink($jtlProduct);
+
+        $this->createPrestaCombination($jtlProduct, $prestaProduct, $combiId);
+
+        return $prestaProduct;
+    }
+
+    /**
+     * Adds the combination of a new variant and returns its id.
+     *
+     * Product::addAttribute() adds the Combination itself, so if a module hooked into actionObjectCombinationAddAfter
+     * throws after the INSERT, the id never reaches us. It is then the one combination of the product that wasn't
+     * there before (see addPrestaObject()).
+     *
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return int
+     * @throws \PrestaShopDatabaseException
+     * @throws \RuntimeException
+     * @throws \Throwable If adding the combination fails before it was saved.
+     */
+    private function addPrestaCombination(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): int
+    {
+        $existingIds = $this->getPrestaCombinationIds((int)$prestaProduct->id);
+
+        try {
+            $combiId = $prestaProduct->addAttribute(
+                .0,
+                $jtlProduct->getShippingWeight(),
+                .0,
+                .0,
+                [],
+                $jtlProduct->getSku(),
+                $jtlProduct->getEan(),
+                false,
+                null,
+                $jtlProduct->getUpc()
+            );
+        } catch (\Throwable $error) {
+            $addedIds = \array_values(
+                \array_diff($this->getPrestaCombinationIds((int)$prestaProduct->id), $existingIds)
+            );
+            if (\count($addedIds) !== 1) {
+                throw $error;
+            }
+            $this->logSavedDespiteError('Combination', (string)$addedIds[0], $error);
+
+            return $addedIds[0];
+        }
+
         if (!$combiId) {
             throw new \RuntimeException('Error creating product combination');
         }
 
-        $this->createPrestaCombination($jtlProduct, $prestaProduct, $combiId);
+        return $combiId;
+    }
 
-        $jtlProduct->getId()->setEndpoint(Utils::joinProductEndpoint((string)$prestaProduct->id, (string)$combiId));
+    /**
+     * @param int $prestaProductId
+     * @return array<int, int>
+     * @throws \PrestaShopDatabaseException
+     */
+    private function getPrestaCombinationIds(int $prestaProductId): array
+    {
+        $sql = (new QueryBuilder())
+            ->select('id_product_attribute')
+            ->from('product_attribute')
+            ->where('id_product = ' . $prestaProductId);
 
-        return $prestaProduct;
+        // not cached: it is called again after adding a combination
+        /** @var array<int, array{id_product_attribute: numeric-string}>|false $rows */
+        $rows = $this->db->executeS($sql->build(), true, false);
+
+        $ids = [];
+        foreach ($rows ?: [] as $row) {
+            $ids[] = (int)$row['id_product_attribute'];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Saves the link of a pushed product or variant whose endpoint was just set, replacing any older link of its host.
+     *
+     * @param JtlProduct $jtlProduct
+     * @return void
+     */
+    private function savePushedProductLink(JtlProduct $jtlProduct): void
+    {
+        $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+        $this->mapper->save(
+            IdentityType::PRODUCT,
+            $jtlProduct->getId()->getEndpoint(),
+            $jtlProduct->getId()->getHost()
+        );
     }
 
     /**
@@ -1507,7 +1586,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     public function delete(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**

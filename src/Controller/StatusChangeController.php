@@ -19,7 +19,7 @@ class StatusChangeController extends AbstractController implements PushInterface
      */
     public function push(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**

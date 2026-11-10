@@ -12,6 +12,7 @@ use ImageType;
 use Jtl\Connector\Core\Model\Identity;
 use Jtl\Connector\Core\Model\ImageI18n;
 use Jtl\Connector\Core\Model\ProductImage;
+use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use PHPUnit\Framework\TestCase;
 use Product;
 use Psr\Log\LoggerInterface;
@@ -31,6 +32,8 @@ final class CreatePrestaProductImageTest extends TestCase
         Configuration::resetAll();
 
         $this->controller = new TestableImageController();
+        // a new image is linked right after its INSERT
+        $this->controller->injectMapper($this->createMock(PrimaryKeyMapper::class));
 
         @mkdir(_PS_PRODUCT_IMG_DIR_ . '1/', 0777, true);
         @touch(_PS_PRODUCT_IMG_DIR_ . '1/1.jpg');
@@ -146,8 +149,30 @@ final class CreatePrestaProductImageTest extends TestCase
         $this->controller->exposeCreatePrestaProductImage($image, '10_5 OR 1=1');
 
         self::assertNotNull($capturedSql);
+        self::assertStringContainsString('INSERT IGNORE INTO ps_product_attribute_image', $capturedSql);
         self::assertStringContainsString('id_product_attribute=5,', $capturedSql);
         self::assertStringNotContainsString('OR 1=1', $capturedSql);
+    }
+
+    public function testCreatePrestaProductImageAssignsAnUpdatedImageToItsCombination(): void
+    {
+        // a new image is linked before it is assigned, so a push that failed in between continues as an update
+        $capturedSql = null;
+        $db          = $this->createMock(Db::class);
+        $db->method('escape')->willReturnArgument(0);
+        $db->expects(self::once())->method('execute')
+            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): bool {
+                $capturedSql = (string)$sql;
+                return true;
+            });
+        $this->controller->injectDb($db);
+
+        $this->controller->exposeCreatePrestaProductImage($this->makeProductImage('99', '10', 2), '10_5');
+
+        self::assertSame(
+            'INSERT IGNORE INTO ps_product_attribute_image SET id_product_attribute=5, id_image=99',
+            \preg_replace('/\s+/', ' ', (string)$capturedSql)
+        );
     }
 
     public function testCreatePrestaProductImageWithEmptyCombinationIdInsertsNoAttributeRow(): void

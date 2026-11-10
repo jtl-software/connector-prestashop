@@ -7,6 +7,8 @@ namespace Tests\Unit\Controller;
 use Jtl\Connector\Core\Model\Product as JtlProduct;
 use jtl\Connector\Presta\Controller\ProductStockLevelController;
 use Db;
+use Tests\Support\AfterHook;
+use ObjectModel;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -140,5 +142,18 @@ final class ProductStockLevelControllerTest extends TestCase
         $result  = $this->controller->pull($product);
 
         self::assertSame(0.0, $result->getStockLevel());
+    }
+
+    public function testPushSetsTheStockWithoutStackFramesThatPsEventbusCannotRead(): void
+    {
+        // CO-3735: ps_eventbus hooks into the StockAvailable update
+        ObjectModel::$mockAfterHook = AfterHook::psEventbusErrorHandler();
+        $product                    = $this->makeProduct('5', 3.0);
+
+        try {
+            self::assertSame([$product], $this->controller->push($product));
+        } finally {
+            ObjectModel::resetObjectModelMock();
+        }
     }
 }

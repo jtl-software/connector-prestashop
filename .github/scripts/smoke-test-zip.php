@@ -8,7 +8,8 @@ declare(strict_types=1);
  * step in its own PHP process:
  *  - constructs the module class the way PrestaShop does when it lists modules, which must work without the
  *    bundled libraries (see JTLConnector::__construct()),
- *  - runs the 3.0.0 upgrade script on an install with the legacy logs/ dir,
+ *  - runs the 3.0.0 upgrade script on an install with the legacy logs/ dir (and checks it removes the manufacturer link
+ *    without endpoint that 2.x saved),
  *  - sends JTL-Wawi RPC calls through the module's front controller (controllers/front/api.php), like separate
  *    HTTP requests: with a fresh install's defaults and with developer logging, incl. the CO-3709 rejection checks,
  *    followed by a check that no log contains a session id or token.
@@ -118,6 +119,22 @@ if (($argv[1] ?? '') === '--upgrade') {
     // Runs a module upgrade script the way PrestaShop does: after the new files were extracted, with the module object.
     [, , $moduleDir, $version] = $argv;
     \define('_PS_VERSION_', '9.0.3');
+
+    // prints the queries an upgrade script runs, for the driver to check
+    class Db
+    {
+        public static function getInstance(): self
+        {
+            return new self();
+        }
+
+        public function execute(string $sql): bool
+        {
+            echo "SQL: $sql\n";
+            return true;
+        }
+    }
+
     $module = new class ($moduleDir . '/') {
         public function __construct(private string $localPath)
         {
@@ -238,7 +255,8 @@ if (!\is_array($construct) || $construct['version'] !== ($buildConfig[1] ?? null
 echo "new JTLConnector(): OK\n";
 
 // An install upgraded in place from an old version still has the unprotected legacy logs/ dir: the 3.0.0 upgrade
-// script (run from the scoped ZIP) must move it to var/log.
+// script (run from the scoped ZIP) must move it to var/log. It must also remove the manufacturer link without endpoint
+// that 2.x saved (CO-3735).
 \mkdir($moduleDir . '/logs');
 \file_put_contents($moduleDir . '/logs/legacy.log', 'legacy log');
 \file_put_contents($moduleDir . '/logs/.htaccess', 'Deny from all');
@@ -247,6 +265,10 @@ if ($exit !== 0 || $stderr !== '' || \file_exists($moduleDir . '/logs') || !\is_
     $fail("upgrade 3.0.0 did not move logs/ to var/log (exit $exit)\n--- output ---\n$stdout\n--- stderr ---\n$stderr");
 }
 echo "upgrade 3.0.0 moves the legacy logs/ dir: OK\n";
+if (!\str_contains($stdout, 'SQL: DELETE FROM `jtl_connector_link_manufacturer` WHERE `endpoint_id` = 0')) {
+    $fail("upgrade 3.0.0 did not remove the manufacturer link without endpoint\n--- output ---\n$stdout");
+}
+echo "upgrade 3.0.0 removes the manufacturer link without endpoint: OK\n";
 
 /**
  * @param array<string, mixed> $params
