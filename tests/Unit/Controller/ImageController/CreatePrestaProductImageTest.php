@@ -32,8 +32,8 @@ final class CreatePrestaProductImageTest extends TestCase
 
         $this->controller = new TestableImageController();
 
-        @mkdir(_PS_PROD_IMG_DIR_ . '1/', 0777, true);
-        @touch(_PS_PROD_IMG_DIR_ . '1/1.jpg');
+        @mkdir(_PS_PRODUCT_IMG_DIR_ . '1/', 0777, true);
+        @touch(_PS_PRODUCT_IMG_DIR_ . '1/1.jpg');
         @mkdir(_PS_CAT_IMG_DIR_, 0777, true);
         @touch(_PS_CAT_IMG_DIR_ . '5.jpg');
         @mkdir(_PS_MANU_IMG_DIR_, 0777, true);
@@ -127,6 +127,39 @@ final class CreatePrestaProductImageTest extends TestCase
         // id='10_5' → productId='10', combiId='5'
         $image = $this->makeProductImage('', '10', 2);
         $this->controller->exposeCreatePrestaProductImage($image, '10_5');
+    }
+
+    public function testCreatePrestaProductImageCastsTheCombinationIdInTheAttributeInsert(): void
+    {
+        $capturedSql = null;
+        $db          = $this->createMock(Db::class);
+        $db->method('escape')->willReturnArgument(0);
+        $db->expects(self::once())->method('execute')
+            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): bool {
+                $capturedSql = (string)$sql;
+                return true;
+            });
+        $this->controller->injectDb($db);
+
+        // the combination id is the part of JTL-Wawi's foreign key endpoint id after "_"
+        $image = $this->makeProductImage('', '10', 2);
+        $this->controller->exposeCreatePrestaProductImage($image, '10_5 OR 1=1');
+
+        self::assertNotNull($capturedSql);
+        self::assertStringContainsString('id_product_attribute=5,', $capturedSql);
+        self::assertStringNotContainsString('OR 1=1', $capturedSql);
+    }
+
+    public function testCreatePrestaProductImageWithEmptyCombinationIdInsertsNoAttributeRow(): void
+    {
+        $db = $this->createMock(Db::class);
+        $db->method('escape')->willReturnArgument(0);
+        // "10_" has an empty combination id: no product_attribute_image row with id_product_attribute=0
+        $db->expects(self::never())->method('execute');
+        $this->controller->injectDb($db);
+
+        $image = $this->makeProductImage('', '10', 2);
+        $this->controller->exposeCreatePrestaProductImage($image, '10_');
     }
 
     public function testCreatePrestaProductImageWithImageTypesRunsResizeLoop(): void

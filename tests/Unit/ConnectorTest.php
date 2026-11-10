@@ -6,9 +6,11 @@ namespace Tests\Unit;
 
 use Configuration;
 use DI\Container;
+use Jtl\Connector\Core\Definition\Event;
 use jtl\Connector\Presta\Auth\TokenValidator;
 use jtl\Connector\Presta\Connector;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use jtl\Connector\Presta\Subscriber\BlankLanguageIsoSubscriber;
 use Noodlehaus\ConfigInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -69,8 +71,8 @@ final class ConnectorTest extends TestCase
     {
         $connector = new Connector();
 
-        // build-config.yaml in the project root defines version: 2.0.3
-        self::assertSame('2.0.3', $connector->getEndpointVersion());
+        // build-config.yaml in the project root defines version: 3.0.0
+        self::assertSame('3.0.0', $connector->getEndpointVersion());
     }
 
     // -------------------------------------------------------------------------
@@ -91,6 +93,50 @@ final class ConnectorTest extends TestCase
         Configuration::set('jtlconnector_pass', 'testtoken');
 
         $connector->initialize($config, $container, $dispatcher);
+    }
+
+    public function testPrimaryKeyMapperLogsIntoTheCoreLinkerChannel(): void
+    {
+        $linkerLogger = $this->createMock(\Monolog\Logger::class);
+        // delete() without endpoint or host id refuses to wipe the table and must leave a trace in the linker log
+        $linkerLogger->expects(self::once())->method('warning');
+        $loggerService = $this->createMock(\Jtl\Connector\Core\Logger\LoggerService::class);
+        $loggerService->method('get')
+            ->with(\Jtl\Connector\Core\Logger\LoggerService::CHANNEL_LINKER)
+            ->willReturn($linkerLogger);
+
+        $container = new Container();
+        $container->set(\Jtl\Connector\Core\Logger\LoggerService::class, $loggerService);
+        (new Connector())->initialize($this->createMock(ConfigInterface::class), $container, new EventDispatcher());
+
+        $mapper = $container->get(PrimaryKeyMapper::class);
+        self::assertInstanceOf(PrimaryKeyMapper::class, $mapper);
+        self::assertFalse($mapper->delete(\Jtl\Connector\Core\Definition\IdentityType::PRODUCT, null, null));
+    }
+
+    public function testPrimaryKeyMapperWorksWithoutLoggerService(): void
+    {
+        $container = new Container();
+        (new Connector())->initialize($this->createMock(ConfigInterface::class), $container, new EventDispatcher());
+
+        $mapper = $container->get(PrimaryKeyMapper::class);
+        self::assertInstanceOf(PrimaryKeyMapper::class, $mapper);
+        self::assertFalse($mapper->delete(\Jtl\Connector\Core\Definition\IdentityType::PRODUCT, null, null));
+    }
+
+    public function testInitializeRegistersBlankLanguageIsoSubscriber(): void
+    {
+        $dispatcher = new EventDispatcher();
+
+        (new Connector())->initialize(
+            $this->createMock(ConfigInterface::class),
+            $this->createMock(Container::class),
+            $dispatcher
+        );
+
+        $listeners = $dispatcher->getListeners(Event::createRpcEventName(Event::BEFORE));
+        self::assertCount(1, $listeners);
+        self::assertInstanceOf(BlankLanguageIsoSubscriber::class, $listeners[0][0]);
     }
 
     // -------------------------------------------------------------------------

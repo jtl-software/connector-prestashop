@@ -1,50 +1,191 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="JTL-Connector-PrestaShop-Endpoint" default="release">
     <property file="./build-config.yaml"/>
-    <target name="build">
+
+    <!-- PHP-Scoper prefixes the bundled vendor code, see scoper.inc.php for why the release build needs it. -->
+    <property name="php-scoper.version" value="0.18.20"/>
+    <property name="php-scoper.sha256" value="5e35e4a89ea53b2c70a19bfa8a856e4f9080aa12eb13a5bce650bb69d08eb122"/>
+    <property name="php-scoper.phar" value="./build/tools/php-scoper-${php-scoper.version}.phar"/>
+    <property name="scoped.dir" value="./build/scoped"/>
+
+    <target name="php-scoper">
+        <if>
+            <not>
+                <available file="${php-scoper.phar}"/>
+            </not>
+            <then>
+                <!-- one level at a time, phing 2 logs a PHP error when it has to create missing parents -->
+                <mkdir dir="./build"/>
+                <mkdir dir="./build/tools"/>
+                <php function="copy">
+                    <param value="https://github.com/humbug/php-scoper/releases/download/${php-scoper.version}/php-scoper.phar"/>
+                    <param value="${php-scoper.phar}"/>
+                </php>
+            </then>
+        </if>
+        <php function="hash_file" returnProperty="php-scoper.actual-sha256">
+            <param value="sha256"/>
+            <param value="${php-scoper.phar}"/>
+        </php>
+        <if>
+            <not>
+                <equals arg1="${php-scoper.actual-sha256}" arg2="${php-scoper.sha256}"/>
+            </not>
+            <then>
+                <delete file="${php-scoper.phar}"/>
+                <fail message="SHA-256 mismatch for ${php-scoper.phar}: ${php-scoper.actual-sha256}"/>
+            </then>
+        </if>
+    </target>
+
+    <!--
+        The release ships the production dependencies only. Fail early on a dev install of lib/ instead of deep inside
+        the scoper with a misleading error: build.sh and .github/scripts/build-zip.sh install without dev packages first.
+    -->
+    <target name="check-production-install">
+        <!-- is_file() first: phing 2 reports PHP warnings even when they are suppressed with @ -->
+        <php expression="is_file('./lib/composer/installed.json') &amp;&amp; (json_decode((string)file_get_contents('./lib/composer/installed.json'), true)['dev'] ?? true) === false ? 'production' : 'dev'"
+             returnProperty="lib.install"/>
+        <if>
+            <not>
+                <equals arg1="${lib.install}" arg2="production"/>
+            </not>
+            <then>
+                <fail message="lib/ is not a production install (dev packages, or no install at all). Run 'composer install --no-dev' before the release build, as build.sh does."/>
+            </then>
+        </if>
+    </target>
+
+    <!-- Scopes src/, controllers/, upgrade/, jtlconnector.php and the production dependencies in lib/ -->
+    <target name="scope" depends="check-production-install,php-scoper">
+        <delete dir="${scoped.dir}"/>
+        <exec executable="php" checkreturn="true" passthru="true">
+            <arg value="${php-scoper.phar}"/>
+            <arg value="add-prefix"/>
+            <arg value="--config=scoper.inc.php"/>
+            <arg value="--output-dir=${scoped.dir}"/>
+            <arg value="--force"/>
+            <arg value="--no-interaction"/>
+        </exec>
+        <!-- composer.json autoloads plugins/ via PSR-0, the directory has to exist for dump-autoload -->
+        <mkdir dir="${scoped.dir}/plugins"/>
+        <exec executable="composer" checkreturn="true" passthru="true">
+            <arg value="dump-autoload"/>
+            <arg value="--working-dir=${scoped.dir}"/>
+            <arg value="--classmap-authoritative"/>
+            <arg value="--no-dev"/>
+            <arg value="--no-interaction"/>
+        </exec>
+        <!--
+            Composer only requires an autoload "files" entry if no other autoloader has registered the same
+            identifier yet, and the identifier is just md5("<package>:<path>"). PrestaShop or another module shipping
+            e.g. symfony/string or php-di unscoped would therefore keep our prefixed functions from being defined.
+        -->
+        <reflexive>
+            <fileset dir="${scoped.dir}/lib/composer">
+                <include name="autoload_files.php"/>
+                <include name="autoload_static.php"/>
+            </fileset>
+            <filterchain>
+                <replaceregexp>
+                    <regexp pattern="'([0-9a-f]{32})' =&gt;" replace="'JtlConnectorPrestaVendor_$1' =&gt;"/>
+                </replaceregexp>
+            </filterchain>
+        </reflexive>
+        <!--
+            Guard the finder exclusions in scoper.inc.php: regenerate the unscoped production autoloader as an
+            authoritative classmap (the source lib/ is not shipped, only ${scoped.dir} is) and fail the build if any
+            shipped class was dropped from the scoped autoloader by an over-broad exclusion. The generated composer
+            files are backed up and restored so this does not leave a developer's working copy on an authoritative one.
+        -->
+        <delete dir="./build/autoload-backup"/>
+        <copy todir="./build/autoload-backup" overwrite="true" includeemptydirs="false">
+            <fileset dir="./lib/composer"/>
+        </copy>
+        <!--
+            checkreturn is off and the exit codes are captured instead, so the restore below runs even when the dump or
+            the guard fails (the guard is meant to fail the build): a failed build must never leave a developer's
+            working copy on this authoritative, no-dev autoloader. The build is failed afterwards, once it is restored.
+        -->
+        <exec executable="composer" passthru="true" returnProperty="autoload.dump.result">
+            <arg value="dump-autoload"/>
+            <arg value="--classmap-authoritative"/>
+            <arg value="--no-dev"/>
+            <arg value="--no-interaction"/>
+        </exec>
+        <exec executable="php" passthru="true" returnProperty="classmap.guard.result">
+            <arg value="./.github/scripts/check-scoped-classmap.php"/>
+            <arg value="./lib/composer/autoload_classmap.php"/>
+            <arg value="${scoped.dir}/lib/composer/autoload_classmap.php"/>
+        </exec>
+        <copy todir="./lib/composer" overwrite="true" includeemptydirs="false">
+            <fileset dir="./build/autoload-backup"/>
+        </copy>
+        <delete dir="./build/autoload-backup"/>
+        <if>
+            <not><equals arg1="${autoload.dump.result}" arg2="0"/></not>
+            <then><fail message="composer dump-autoload (authoritative) failed with code ${autoload.dump.result}"/></then>
+        </if>
+        <if>
+            <not><equals arg1="${classmap.guard.result}" arg2="0"/></not>
+            <then><fail message="check-scoped-classmap.php failed with code ${classmap.guard.result}"/></then>
+        </if>
+    </target>
+
+    <target name="build" depends="scope">
         <delete dir="./dist"/>
         <mkdir dir="./dist"/>
         <mkdir dir="./dist/jtlconnector"/>
         <mkdir dir="./dist/jtlconnector/config"/>
         <mkdir dir="./dist/jtlconnector/db"/>
-        <mkdir dir="./dist/jtlconnector/logs"/>
         <mkdir dir="./dist/jtlconnector/plugins"/>
         <mkdir dir="./dist/jtlconnector/tmp"/>
+        <mkdir dir="./dist/jtlconnector/var"/>
 
-        <delete file="./db/connector.s3db"/>
-        <touch file="./db/connector.s3db"/>
+        <!--
+            The ZIP ships an empty db/connector.s3db because JTLConnector::install() requires it to be writable. It is
+            created in dist/ directly, so a developer's working-copy file is never touched.
+        -->
+        <touch file="./dist/jtlconnector/db/connector.s3db"/>
+        <copy todir="./dist/jtlconnector">
+            <fileset dir="${scoped.dir}">
+                <include name="jtlconnector.php"/>
+                <include name="controllers/"/>
+                <include name="upgrade/"/>
+                <include name="src/"/>
+                <include name="lib/"/>
+            </fileset>
+        </copy>
         <copy todir="./dist/jtlconnector">
             <fileset dir=".">
-                <include name="jtlconnector.php"/>
                 <include name="index.php"/>
                 <include name="logo.png"/>
-                <include name="controllers/"/>
                 <include name="translations/"/>
                 <include name="views/"/>
-                <include name="upgrade/"/>
                 <include name="build-config.yaml"/>
                 <include name="config/features.example.json"/>
                 <include name="config/.htaccess"/>
                 <include name="config/index.php"/>
-                <include name="config/config.json"/>
-                <include name="db/connector.s3db"/>
                 <include name="db/.htaccess"/>
                 <include name="db/index.php"/>
-                <include name="logs/.htaccess"/>
-                <include name="logs/index.php"/>
+                <!--
+                    Every directory that holds runtime data ships a "Deny from all" .htaccess and an index.php (checked by
+                    .github/scripts/smoke-test-zip.php). The legacy logs/ dir is not shipped: install() and the 3.0.0
+                    upgrade move it to var/log.
+                -->
                 <include name="plugins/.htaccess"/>
                 <include name="plugins/index.php"/>
                 <include name="tmp/.htaccess"/>
-                <include name="src/"/>
-                <include name="lib/"/>
-                <include name="build-config.yaml"/>
+                <include name="tmp/index.php"/>
+                <include name="var/.htaccess"/>
+                <include name="var/index.php"/>
             </fileset>
         </copy>
         <chmod file="./dist/jtlconnector/config" mode="0777"/>
         <chmod file="./dist/jtlconnector/db" mode="0777"/>
         <chmod file="./dist/jtlconnector/db/connector.s3db" mode="0777"/>
-        <chmod file="./dist/jtlconnector/logs" mode="0777"/>
         <chmod file="./dist/jtlconnector/tmp" mode="0777"/>
+        <chmod file="./dist/jtlconnector/var" mode="0777"/>
     </target>
 
     <target name="package" depends="build">
@@ -56,9 +197,16 @@
         <zip destfile="./${zipname}${version}.zip">
             <fileset refid="zipFiles"/>
         </zip>
+        <!-- phing 2 stores every directory as 0777: keep the dist/ modes, so the code is not world-writable -->
+        <exec executable="php" checkreturn="true" passthru="true">
+            <arg value=".github/scripts/fix-zip-modes.php"/>
+            <arg value="./${zipname}${version}.zip"/>
+            <arg value="./dist"/>
+        </exec>
     </target>
 
     <target name="release" depends="package">
         <delete dir="./dist"/>
+        <delete dir="${scoped.dir}"/>
     </target>
 </project>

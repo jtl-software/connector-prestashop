@@ -1071,7 +1071,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $sql  = (new QueryBuilder())
             ->select('id_attribute_group')
             ->from('attribute_group_lang')
-            ->where("name = '$name'");
+            ->where("name = '" . \pSQL($name) . "'");
 
         $groupId = $this->db->getValue($sql);
 
@@ -1141,7 +1141,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->select('l.id_attribute')
             ->from('attribute_lang', 'l')
             ->leftJoin('attribute', 'a', 'a.id_attribute = l.id_attribute')
-            ->where("l.name = '$name' && a.id_attribute_group = $prestaAttributeGroupId");
+            ->where("l.name = '" . \pSQL($name) . "' && a.id_attribute_group = " . (int)$prestaAttributeGroupId);
 
         $attributeId = $this->db->getValue($sql);
 

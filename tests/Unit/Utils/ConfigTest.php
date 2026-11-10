@@ -60,7 +60,6 @@ final class ConfigTest extends TestCase
         $ref = new \ReflectionClass(Config::class);
         foreach (['instance', 'data'] as $prop) {
             $p = $ref->getProperty($prop);
-            $p->setAccessible(true);
             $p->setValue(null, null);
         }
     }

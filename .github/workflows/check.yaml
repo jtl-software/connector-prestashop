@@ -39,8 +39,13 @@ jobs:
         uses: reviewdog/action-shellcheck@d0b8d5fd7fad6afdb6e1b6ce1778892be4d1f427 # v1.34.1
         with:
           reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
-          path: .github/scripts
+          # everything the sparse checkout above contains: .github/ plus the root files (cone mode), i.e. build.sh and
+          # .github/scripts/*.sh. Shell scripts in another directory need that directory in sparse-checkout.
+          path: .
           pattern: '*.sh'
+          exclude: |
+            ./.git/*
+            ./lib/*
           fail_level: error
 
   # Stage 2: PHP static analysis (parallel)
@@ -142,10 +147,12 @@ jobs:
           fi
           echo "✅ All checks passed"
 
+  # Runs on every push, so that a dependency update which breaks the scoped release build (see scoper.inc.php)
+  # fails right away instead of at release time. The ZIP is only uploaded for tags.
   build-zip:
     name: Build ZIP
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: check
     permissions:
       contents: read
@@ -158,10 +165,22 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build ZIP
-        run: bash .github/scripts/build-zip.sh "${{ github.ref_name }}"
+      # The PHP-Scoper PHAR is pinned (version + SHA-256) in build.xml and reused if already present, so cache it
+      # instead of re-downloading on every push. hashFiles(build.xml) busts the cache when the pinned version changes.
+      - name: Cache PHP-Scoper
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/tools
+          key: ${{ runner.os }}-php-scoper-${{ hashFiles('build.xml') }}
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Build ZIP
+        env:
+          # branch names can contain "/", so untagged builds are named after the commit
+          VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}
+        run: bash .github/scripts/build-zip.sh "$VERSION"
+
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: jtl_connector_prestashop_${{ github.ref_name }}
           path: jtl_connector_prestashop_${{ github.ref_name }}.zip

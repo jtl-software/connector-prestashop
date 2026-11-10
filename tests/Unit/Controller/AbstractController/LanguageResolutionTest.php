@@ -65,6 +65,22 @@ final class LanguageResolutionTest extends TestCase
         self::assertSame(2, $result);
     }
 
+    public function testGetPrestaLangIdFromIsoEscapesTheIsoCode(): void
+    {
+        $capturedSql = null;
+        $this->db->method('executeS')
+            ->willReturnCallback(function (mixed $sql) use (&$capturedSql): array {
+                $capturedSql = (string)$sql;
+                return [['id_lang' => '1']];
+            });
+
+        // a code that is not 3 letters long goes into the SQL as it is (the PrestaShop stub's pSQL() is addslashes())
+        $this->makeController()->exposeGetPrestaLangId("x' OR '1'='1");
+
+        self::assertNotNull($capturedSql);
+        self::assertStringContainsString(\addslashes("x' OR '1'='1"), $capturedSql);
+    }
+
     public function testGetPrestaLangIdFromIsoThrowsWhenIdLangIsNull(): void
     {
         $this->db->method('executeS')
