@@ -1,4 +1,6 @@
 ## unreleased
+
+## 3.0.0 _2026-11-12_
 - CO-3743 - PrestaShop 9 only: 3.0.0 requires PrestaShop 9.0 or later (and PHP 8.3)
 - CO-3743 - the module's back office menu entry opened "page not found" on PrestaShop 9, which requires an admin controller for it; the 3.0.0 upgrade migrates the menu entry of earlier releases and keeps its permissions
 - CO-3743 - fix a JavaScript error on the configuration page on PrestaShop 9 (`displayFlags is not defined`)
