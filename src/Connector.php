@@ -8,14 +8,17 @@ use Composer\InstalledVersions;
 use DI\Container;
 use Jtl\Connector\Core\Authentication\TokenValidatorInterface;
 use Jtl\Connector\Core\Connector\ConnectorInterface;
+use Jtl\Connector\Core\Logger\LoggerService;
 use Jtl\Connector\Core\Mapper\PrimaryKeyMapperInterface;
 use jtl\Connector\Presta\Controller\CategoryController;
 use jtl\Connector\Presta\Controller\CustomerController;
 use jtl\Connector\Presta\Controller\ImageController;
 use jtl\Connector\Presta\Controller\ManufacturerController;
 use jtl\Connector\Presta\Controller\ProductController;
+use jtl\Connector\Presta\Controller\ProductStockLevelController;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Auth\TokenValidator;
+use jtl\Connector\Presta\Subscriber\BlankLanguageIsoSubscriber;
 use Noodlehaus\ConfigInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -37,10 +40,25 @@ class Connector implements ConnectorInterface
     public function initialize(ConfigInterface $config, Container $container, EventDispatcher $dispatcher): void
     {
         $this->container = $container;
+        $dispatcher->addSubscriber(new BlankLanguageIsoSubscriber());
 
         $this->container->set(
             PrimaryKeyMapper::class,
-            fn(ContainerInterface $container) => new PrimaryKeyMapper()
+            static function (ContainerInterface $container): PrimaryKeyMapper {
+                $mapper = new PrimaryKeyMapper();
+                // log into the core's linker channel, like the core's IdentityLinker that calls the mapper (the core
+                // registers its LoggerService before initialize(); has() is no help, PHP-DI also reports autowirable)
+                try {
+                    $loggerService = $container->get(LoggerService::class);
+                } catch (ContainerExceptionInterface) {
+                    $loggerService = null;
+                }
+                if ($loggerService instanceof LoggerService) {
+                    $mapper->setLogger($loggerService->get(LoggerService::CHANNEL_LINKER));
+                }
+
+                return $mapper;
+            }
         );
         $this->container->set(
             TokenValidator::class,
@@ -65,6 +83,10 @@ class Connector implements ConnectorInterface
         $this->container->set(
             'Manufacturer',
             \DI\autowire(ManufacturerController::class)
+        );
+        $this->container->set(
+            'ProductStockLevel',
+            \DI\autowire(ProductStockLevelController::class)
         );
     }
 

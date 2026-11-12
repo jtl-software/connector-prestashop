@@ -22,13 +22,13 @@ if (!defined('JTL_CONNECTOR_DATABASE_COLLATION')) {
 
 use Jtl\Connector\Core\Config\ConfigSchema;
 use jtl\Connector\Presta\Utils\Config;
-use Symfony\Component\Yaml\Yaml;
 
 //phpcs:ignore PSR1.Classes.ClassDeclaration.MissingNamespace
 class JTLConnector extends Module
 {
     public const
-        CONFIG_DELETE_UNKNOWN_ATTRIBUTES = 'jtlconnector_delete_unknown_attributes';
+        CONFIG_DELETE_UNKNOWN_ATTRIBUTES = 'jtlconnector_delete_unknown_attributes',
+        MINIMUM_PHP_VERSION              = '8.3';
 
     /**
      * JTLConnector constructor.
@@ -37,16 +37,15 @@ class JTLConnector extends Module
     {
         $this->name = 'jtlconnector';
         $this->tab  = 'payments_gateways';
-        try {
-            $yaml = Yaml::parseFile(__DIR__ . '/build-config.yaml');
-            if (\is_array($yaml) && isset($yaml['version']) && \is_string($yaml['version'])) {
-                $this->version = $yaml['version'];
-            } else {
-                $this->version = 'Unknown';
-            }
-        } catch (\Exception $e) {
-            $this->version = 'Unknown';
-        }
+
+        // Read without symfony/yaml: PrestaShop constructs the module whenever it lists modules, also on PHP versions
+        // the bundled libraries do not support, and loading their autoloader there would break the module manager.
+        $buildConfigFile = __DIR__ . '/build-config.yaml';
+        $buildConfig     = \is_file($buildConfigFile) ? (string)\file_get_contents($buildConfigFile) : '';
+        $this->version   = \preg_match('/^version:\s*[\'"]?([^\s\'"]+)/m', $buildConfig, $matches) === 1
+            ? $matches[1]
+            : 'Unknown';
+
         $this->author        = 'JTL Software GmbH';
         $this->need_instance = 0;
         $this->bootstrap     = true;
@@ -55,7 +54,7 @@ class JTLConnector extends Module
 
         $this->displayName            = 'JTL-Connector';
         $this->description            = $this->l('This module enables a connection between PrestaShop and JTL Wawi.');
-        $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '9.0', 'max' => _PS_VERSION_];
         $this->module_key             = '488cd335118c56baab7259d5459cf3a3';
     }
 
@@ -72,19 +71,25 @@ class JTLConnector extends Module
     }
 
     /**
+     * @return string
+     */
+    private function getPhpVersionError(): string
+    {
+        return sprintf(
+            $this->l('The Connector requires PHP %s. Your system is running PHP %s.'),
+            self::MINIMUM_PHP_VERSION,
+            PHP_VERSION
+        );
+    }
+
+    /**
      * @return bool
      * @throws PrestaShopDatabaseException
      */
     public function install(): bool
     {
-        $minimumPhpversion = '8.0';
-        if (version_compare(PHP_VERSION, $minimumPhpversion) < 0) {
-            $this->_errors[] =
-                sprintf(
-                    $this->l('The Connector requires PHP %s. Your system is running PHP %s.'),
-                    $minimumPhpversion,
-                    PHP_VERSION
-                );
+        if (version_compare(PHP_VERSION, self::MINIMUM_PHP_VERSION) < 0) {
+            $this->_errors[] = $this->getPhpVersionError();
         }
 
         if (!extension_loaded('sqlite3')) {
@@ -120,23 +125,10 @@ class JTLConnector extends Module
             $this->_errors[] = sprintf($this->l('The directory "%s" must be writable.'), $logDir);
         }
 
-        $oldLogDir = CONNECTOR_DIR . 'logs';
-        if (\is_dir($oldLogDir)) {
-            // should not have sub dirs
-            $files = \glob($oldLogDir . '/*');
-            if (\is_array($files)) { // log dir is not empty
-                foreach ($files as $file) {
-                    if (\is_file($file)) {
-                        // move files to new log dir
-                        \copy($file, $logDir . '/' . \basename($file));
-                        // remove old files
-                        \unlink($file);
-                    }
-                }
-            }
-            // remove old log dir
-            \rmdir($oldLogDir);
-        }
+        // required directly instead of loading the bundled autoloader:
+        // install() also runs on the PHP versions it refuses
+        require_once __DIR__ . '/src/Utils/LegacyLogDir.php';
+        \jtl\Connector\Presta\Utils\LegacyLogDir::migrate(CONNECTOR_DIR);
 
         if (\count($this->_errors) != 0) {
             $this->_errors[] = '<b>' . \sprintf(
@@ -173,11 +165,13 @@ class JTLConnector extends Module
         $this->convertLinkingTables();
 
 
-        // remove old tab if exists
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // remove an existing tab, also one of a release before 3.0.0 (class name "jtlconnector")
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $tab            = new \Tab();
@@ -189,13 +183,16 @@ class JTLConnector extends Module
                 $tab->name[(int)$lang['id_lang']] = $name;
             }
         }
-        $tab->active     = true;
-        $tab->position   = 0;
-        $tab->module     = $this->name;
-        $tab->class_name = "jtlconnector";
+        $tab->active   = true;
+        $tab->position = 0;
+        $tab->module   = $this->name;
+        // PrestaShop 9 only opens a module's menu entry if the module ships an admin controller of that name:
+        // controllers/admin/AdminJtlconnectorController.php
+        $tab->class_name = "AdminJtlconnector";
         $tab->save();
 
-        return parent::install() && Configuration::updateValue('jtlconnector_pass', uniqid());
+        // the connector token is the shared secret for JTL-Wawi: generate it from a CSPRNG (uniqid() is time-based)
+        return parent::install() && Configuration::updateValue('jtlconnector_pass', bin2hex(random_bytes(16)));
     }
 
     /**
@@ -308,11 +305,13 @@ class JTLConnector extends Module
      */
     public function uninstall(): bool
     {
-
-        $id_tab = (int)Tab::getIdFromClassName('jtlconnector');
-        if ($id_tab) {
-            $tab = new Tab($id_tab);
-            $tab->delete();
+        // also the tab of a release before 3.0.0 (class name "jtlconnector") that was never migrated
+        foreach (['AdminJtlconnector', 'jtlconnector'] as $tabClassName) {
+            $id_tab = (int)Tab::getIdFromClassName($tabClassName);
+            if ($id_tab) {
+                $tab = new Tab($id_tab);
+                $tab->delete();
+            }
         }
 
         $meta = \Meta::getMetaByPage('module-jtlconnector-api', 1);
@@ -330,7 +329,10 @@ class JTLConnector extends Module
      */
     public function getContent(): string
     {
-        require_once CONNECTOR_DIR . '/lib/autoload.php';
+        if (version_compare(PHP_VERSION, self::MINIMUM_PHP_VERSION) < 0) {
+            return $this->displayError($this->getPhpVersionError());
+        }
+        require_once __DIR__ . '/lib/autoload.php';
 
         $output = null;
 
@@ -428,8 +430,17 @@ class JTLConnector extends Module
      */
     private function downloadJTLLogs(): void
     {
-        $logDir   = CONNECTOR_DIR . '/var/log';
-        $zip_file = \tempnam(sys_get_temp_dir(), 'logs') . '.zip';
+        $logDir      = CONNECTOR_DIR . '/var/log';
+        $placeholder = (string)\tempnam(sys_get_temp_dir(), 'logs');
+        // the ZIP is written next to the empty file tempnam() creates, which reserves the name until both are removed
+        $zip_file = $placeholder . '.zip';
+        $cleanUp  = static function () use ($placeholder, $zip_file): void {
+            foreach ([$zip_file, $placeholder] as $file) {
+                if (\is_file($file)) {
+                    \unlink($file);
+                }
+            }
+        };
 
         $zip = new ZipArchive();
         $zip->open($zip_file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
@@ -456,10 +467,10 @@ class JTLConnector extends Module
             header('Content-type: application/zip');
             header('Content-Disposition: attachment; filename="logs.zip"');
             readfile($zip_file);
-            // cleanup
-            unlink($zip_file);
+            $cleanUp();
             exit();
         } else {
+            $cleanUp();
             header('Content-Type: application/json; charset=UTF-8');
             header('HTTP/1.1 451 Internal Server Booboo');
             die(json_encode(['message' => 'Keine Logs Vorhanden!', 'code' => 451]));

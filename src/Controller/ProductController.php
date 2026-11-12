@@ -151,14 +151,12 @@ class ProductController extends ProductPriceController implements PullInterface,
     protected function createJtlProduct(PrestaProduct $prestaProduct): JtlProduct
     {
         $prestaAttributes = $prestaProduct->getAttributesGroups($this->getPrestaContextLanguageId());
-        $prestaStock      = new \StockAvailable($prestaProduct->id);
         $prestaProductId  = \is_int($prestaProduct->id)
             ? $prestaProduct->id
             : throw new \RuntimeException('Product ID is not an integer');
 
-        //we ignore this line as prestashop hasn't updated their PHPDoc yet
-        //@phpstan-ignore-next-line
-        \is_numeric($prestaStock->quantity) ? $prestaQuantity = (float)$prestaStock->quantity : $prestaQuantity = 0.0;
+        $prestaQuantity   = (float)\StockAvailable::getQuantityAvailableByProduct($prestaProductId);
+        $prestaOutOfStock = (int)\StockAvailable::outOfStock($prestaProductId);
 
         $jtlProduct = (new JtlProduct())
             ->setId(new Identity((string)$prestaProduct->id))
@@ -183,8 +181,8 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setI18ns(...$this->createJtlProductTranslations($prestaProductId))
             ->setAvailableFrom($this->createDateTime($prestaProduct->available_date))
             ->setBasePriceUnitName($prestaProduct->unity ?? '') //phpcs:ignore @phpstan-ignore-line
-            ->setConsiderStock($prestaStock->out_of_stock === 0 || $prestaStock->out_of_stock === 2)
-            ->setPermitNegativeStock($prestaStock->out_of_stock === 0)
+            ->setConsiderStock($prestaOutOfStock === 0 || $prestaOutOfStock === 2)
+            ->setPermitNegativeStock($prestaOutOfStock === 0)
             ->setIsActive(true)
             ->setIsTopProduct((bool)$prestaProduct->on_sale)
             ->setPurchasePrice((float)$prestaProduct->wholesale_price)
@@ -431,7 +429,6 @@ class ProductController extends ProductPriceController implements PullInterface,
      *     description_short: string,
      *     link_rewrite: string,
      *     meta_description: string,
-     *     meta_keywords: string,
      *     meta_title: string,
      *     name: string,
      *     available_now: string,
@@ -450,6 +447,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->setDescription((string)$prestaProductI18n['description'])
             ->setShortDescription((string)$prestaProductI18n['description_short'])
             ->setMetaDescription((string)$prestaProductI18n['meta_description'])
+            ->setDeliveryStatus((string)$prestaProductI18n['delivery_in_stock'])
             ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($prestaProductI18n['id_lang']));
     }
 
@@ -469,6 +467,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         if (!empty($prestaProduct->id_category_default)) {
             $jtlAttributes[] = (new JtlProductAttribute())
                 ->setId(new Identity(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID))
+                ->setType(JtlProductAttribute::TYPE_INT)
                 ->addI18n(
                     (new JtlTranslatableAttributeI18n())
                         ->setName(self::JTL_ATTRIBUTE_MAIN_CATEGORY_ID)
@@ -728,7 +727,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     public function push(AbstractModel ...$jtlProduct): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushProduct($model), $jtlProduct);
+        return $this->forEachModel($jtlProduct, fn(AbstractModel $model): AbstractModel => $this->pushProduct($model));
     }
 
     /**
@@ -793,25 +792,25 @@ class ProductController extends ProductPriceController implements PullInterface,
             }
         }
 
+        // the endpoint changes only once the new product or combination was added: before, there's nothing to remove
+        $endpointBefore = $jtlProduct->getId()->getEndpoint();
+
         try {
             // create minimal product
             if ($isNew) {
                 if (empty($masterProductId)) {
                     // create empty normal product
                     $prestaProduct = new PrestaProduct();
-                    $prestaProduct->save();
+                    if (!$this->addPrestaObject($prestaProduct)) {
+                        throw new \RuntimeException('Error adding product');
+                    }
 
                     $jtlProduct->getId()->setEndpoint((string)$prestaProduct->id);
+                    $this->savePushedProductLink($jtlProduct);
                 } else {
+                    // links the variant itself, right after adding its combination
                     $this->createMinPrestaVariant($jtlProduct, new PrestaProduct((int)$masterProductId));
                 }
-
-                $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
-                $this->mapper->save(
-                    IdentityType::PRODUCT,
-                    $jtlProduct->getId()->getEndpoint(),
-                    $jtlProduct->getId()->getHost()
-                );
             }
 
             // update product
@@ -842,7 +841,7 @@ class ProductController extends ProductPriceController implements PullInterface,
             return $jtlProduct;
             // done
         } catch (\Exception $e) {
-            if ($isNew) {
+            if ($isNew && $jtlProduct->getId()->getEndpoint() !== $endpointBefore) {
                 if (empty($masterProductId)) {
                     // delete partial product
                     try {
@@ -885,28 +884,107 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     protected function createMinPrestaVariant(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): PrestaProduct
     {
-        // create attribute for combination
-        $combiId = $prestaProduct->addAttribute(
-            .0,
-            $jtlProduct->getShippingWeight(),
-            .0,
-            .0,
-            [],
-            $jtlProduct->getSku(),
-            $jtlProduct->getEan(),
-            false,
-            null,
-            $jtlProduct->getUpc()
-        );
+        $combiId = $this->addPrestaCombination($jtlProduct, $prestaProduct);
+
+        // Link right away, as a new product: if the push then fails with an exception, the catch in pushProduct()
+        // removes the variant and its link again; if it dies otherwise (an \Error, a timeout), the next sync updates
+        // the variant instead of adding it again.
+        $jtlProduct->getId()->setEndpoint(Utils::joinProductEndpoint((string)$prestaProduct->id, (string)$combiId));
+        $this->savePushedProductLink($jtlProduct);
+
+        $this->createPrestaCombination($jtlProduct, $prestaProduct, $combiId);
+
+        return $prestaProduct;
+    }
+
+    /**
+     * Adds the combination of a new variant and returns its id.
+     *
+     * Product::addAttribute() adds the Combination itself, so if a module hooked into actionObjectCombinationAddAfter
+     * throws after the INSERT, the id never reaches us. It is then the one combination of the product that wasn't
+     * there before (see addPrestaObject()).
+     *
+     * @param JtlProduct    $jtlProduct
+     * @param PrestaProduct $prestaProduct
+     * @return int
+     * @throws \PrestaShopDatabaseException
+     * @throws \RuntimeException
+     * @throws \Throwable If adding the combination fails before it was saved.
+     */
+    private function addPrestaCombination(JtlProduct $jtlProduct, PrestaProduct $prestaProduct): int
+    {
+        $existingIds = $this->getPrestaCombinationIds((int)$prestaProduct->id);
+
+        try {
+            $combiId = $prestaProduct->addAttribute(
+                .0,
+                $jtlProduct->getShippingWeight(),
+                .0,
+                .0,
+                [],
+                $jtlProduct->getSku(),
+                $jtlProduct->getEan(),
+                false,
+                null,
+                $jtlProduct->getUpc()
+            );
+        } catch (\Throwable $error) {
+            $addedIds = \array_values(
+                \array_diff($this->getPrestaCombinationIds((int)$prestaProduct->id), $existingIds)
+            );
+            if (\count($addedIds) !== 1) {
+                throw $error;
+            }
+            $this->logSavedDespiteError('Combination', (string)$addedIds[0], $error);
+
+            return $addedIds[0];
+        }
+
         if (!$combiId) {
             throw new \RuntimeException('Error creating product combination');
         }
 
-        $this->createPrestaCombination($jtlProduct, $prestaProduct, $combiId);
+        return $combiId;
+    }
 
-        $jtlProduct->getId()->setEndpoint(Utils::joinProductEndpoint((string)$prestaProduct->id, (string)$combiId));
+    /**
+     * @param int $prestaProductId
+     * @return array<int, int>
+     * @throws \PrestaShopDatabaseException
+     */
+    private function getPrestaCombinationIds(int $prestaProductId): array
+    {
+        $sql = (new QueryBuilder())
+            ->select('id_product_attribute')
+            ->from('product_attribute')
+            ->where('id_product = ' . $prestaProductId);
 
-        return $prestaProduct;
+        // not cached: it is called again after adding a combination
+        /** @var array<int, array{id_product_attribute: numeric-string}>|false $rows */
+        $rows = $this->db->executeS($sql->build(), true, false);
+
+        $ids = [];
+        foreach ($rows ?: [] as $row) {
+            $ids[] = (int)$row['id_product_attribute'];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Saves the link of a pushed product or variant whose endpoint was just set, replacing any older link of its host.
+     *
+     * @param JtlProduct $jtlProduct
+     * @return void
+     */
+    private function savePushedProductLink(JtlProduct $jtlProduct): void
+    {
+        $this->mapper->delete(IdentityType::PRODUCT, null, $jtlProduct->getId()->getHost());
+        $this->mapper->save(
+            IdentityType::PRODUCT,
+            $jtlProduct->getId()->getEndpoint(),
+            $jtlProduct->getId()->getHost()
+        );
     }
 
     /**
@@ -991,15 +1069,18 @@ class ProductController extends ProductPriceController implements PullInterface,
         $prestaProduct->reference           = $jtlProduct->getSku();
         $prestaProduct->upc                 = $jtlProduct->getUpc();
         $prestaProduct->isbn                = $jtlProduct->getIsbn();
-        $prestaProduct->id_tax_rules_group  = $this->findTaxClassId(...$jtlProduct->getTaxRates());
-        $prestaProduct->unity               = $this->createPrestaBasePrice($jtlProduct);
-        $prestaProduct->unit_price          = $this->calculateUnitPrice($jtlProduct);
-        $prestaProduct->available_date      = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
-        $prestaProduct->active              = $jtlProduct->getIsActive();
-        $prestaProduct->on_sale             = $jtlProduct->getIsTopProduct();
-        $prestaProduct->minimal_quantity    = (int)$jtlProduct->getMinimumOrderQuantity();
-        $prestaProduct->mpn                 = $jtlProduct->getManufacturerNumber();
-        $prestaProduct->wholesale_price     = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
+        $taxRulesGroupId                    = $this->findTaxClassId(...$jtlProduct->getTaxRates());
+        if ($taxRulesGroupId !== null) {
+            $prestaProduct->id_tax_rules_group = $taxRulesGroupId;
+        }
+        $prestaProduct->unity            = $this->createPrestaBasePrice($jtlProduct);
+        $prestaProduct->unit_price       = $this->calculateUnitPrice($jtlProduct);
+        $prestaProduct->available_date   = $jtlProduct->getAvailableFrom()?->format('Y-m-d H:i:s') ?? '';
+        $prestaProduct->active           = $jtlProduct->getIsActive();
+        $prestaProduct->on_sale          = $jtlProduct->getIsTopProduct();
+        $prestaProduct->minimal_quantity = (int)$jtlProduct->getMinimumOrderQuantity();
+        $prestaProduct->mpn              = $jtlProduct->getManufacturerNumber();
+        $prestaProduct->wholesale_price  = \max(\round($jtlProduct->getPurchasePrice(), 4), .0);
 
         foreach ($translations as $key => $translation) {
             $prestaProduct->name[$key]              = $translation['name'];
@@ -1007,10 +1088,10 @@ class ProductController extends ProductPriceController implements PullInterface,
             $prestaProduct->description_short[$key] = $translation['description_short'];
             $prestaProduct->link_rewrite[$key]      = $translation['link_rewrite'];
             $prestaProduct->meta_description[$key]  = $translation['meta_description'];
-            $prestaProduct->meta_keywords[$key]     = $translation['meta_keywords'];
             $prestaProduct->meta_title[$key]        = $translation['meta_title'];
         }
 
+        $this->pushDeliveryTimes($jtlProduct, $prestaProduct, $translations);
         $this->pushSpecialAttributes($jtlProduct, $prestaProduct);
 
         return $prestaProduct;
@@ -1047,6 +1128,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @return int
      * @throws \PrestaShopDatabaseException
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttributeGroup(JtlProductVariation $jtlVariation): int
     {
@@ -1066,7 +1148,7 @@ class ProductController extends ProductPriceController implements PullInterface,
         $sql  = (new QueryBuilder())
             ->select('id_attribute_group')
             ->from('attribute_group_lang')
-            ->where("name = '$name'");
+            ->where("name = '" . \pSQL($name) . "'");
 
         $groupId = $this->db->getValue($sql);
 
@@ -1076,6 +1158,19 @@ class ProductController extends ProductPriceController implements PullInterface,
             $group->group_type = $groupType;
         }
 
+        $fallbackTranslation = \reset($groupTranslations);
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute group translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($groupTranslations[$langId])) {
+                $groupTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         foreach ($groupTranslations as $key => $translation) {
             $group->name[$key]        = $translation['name'];
@@ -1113,6 +1208,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      * @param int                      $prestaAttributeGroupId
      * @return int
      * @throws \PrestaShopException
+     * @throws \RuntimeException
      */
     protected function createPrestaAttribute(JtlProductVariationValue $jtlValue, int $prestaAttributeGroupId): int
     {
@@ -1122,11 +1218,25 @@ class ProductController extends ProductPriceController implements PullInterface,
             ->select('l.id_attribute')
             ->from('attribute_lang', 'l')
             ->leftJoin('attribute', 'a', 'a.id_attribute = l.id_attribute')
-            ->where("l.name = '$name' && a.id_attribute_group = $prestaAttributeGroupId");
+            ->where("l.name = '" . \pSQL($name) . "' && a.id_attribute_group = " . (int)$prestaAttributeGroupId);
 
         $attributeId = $this->db->getValue($sql);
 
         $attributeTranslations = $this->createPrestaAttributeTranslations($jtlValue);
+
+        $fallbackTranslation = \reset($attributeTranslations);
+        if ($fallbackTranslation === false) {
+            throw new \RuntimeException('No attribute translations found');
+        }
+
+        /** @var array<int, array<string, int|string>> $languages */
+        $languages = \Language::getLanguages(true);
+        foreach ($languages as $lang) {
+            $langId = (int)$lang['id_lang'];
+            if (!isset($attributeTranslations[$langId])) {
+                $attributeTranslations[$langId] = $fallbackTranslation;
+            }
+        }
 
         $attribute                     = new \ProductAttribute($attributeId > 0 ? (int)$attributeId : null);
         $attribute->id_attribute_group = $prestaAttributeGroupId;
@@ -1175,7 +1285,6 @@ class ProductController extends ProductPriceController implements PullInterface,
             $translations[$langId]['description']       = $jtlProductI18n->getDescription();
             $translations[$langId]['description_short'] = $jtlProductI18n->getShortDescription();
             $translations[$langId]['meta_description']  = $jtlProductI18n->getMetaDescription();
-            $translations[$langId]['meta_keywords']     = $jtlProductI18n->getMetaKeywords();
             $translations[$langId]['meta_title']        = $jtlProductI18n->getTitleTag();
             $translations[$langId]['link_rewrite']      = \Tools::str2url(
                 empty($jtlProductI18n->getUrlPath())
@@ -1224,7 +1333,10 @@ class ProductController extends ProductPriceController implements PullInterface,
         }
 
         if (empty($jtlTaxes)) {
-            throw new \RuntimeException('No active country found for submitted tax rates');
+            $this->logger->warning(
+                'No active country found for submitted tax rates — tax rule group will not be updated'
+            );
+            return null;
         }
 
         foreach (\Tax::getTaxes() as $tax) {
@@ -1301,6 +1413,56 @@ class ProductController extends ProductPriceController implements PullInterface,
     }
 
     /**
+     * @param JtlProduct                        $jtlProduct
+     * @param PrestaProduct                     $prestaProduct
+     * @param array<int, array<string, string>> $translations
+     * @return void
+     */
+    private function pushDeliveryTimes(
+        JtlProduct $jtlProduct,
+        PrestaProduct $prestaProduct,
+        array $translations
+    ): void {
+        $hasDeliveryStatus = false;
+
+        foreach ($jtlProduct->getI18ns() as $i18n) {
+            $deliveryStatus = $i18n->getDeliveryStatus();
+            if ($deliveryStatus !== '') {
+                $hasDeliveryStatus = true;
+                break;
+            }
+        }
+
+        if ($hasDeliveryStatus) {
+            foreach ($jtlProduct->getI18ns() as $i18n) {
+                $langId         = $this->getPrestaLanguageIdFromIso(
+                    $i18n->getLanguageIso()
+                );
+                $deliveryStatus = $i18n->getDeliveryStatus();
+
+                $prestaProduct->delivery_in_stock[$langId]  = $deliveryStatus;
+                $prestaProduct->delivery_out_stock[$langId] = $deliveryStatus;
+            }
+            $prestaProduct->additional_delivery_times = 2;
+        } else {
+            $inStock  = $jtlProduct->getAdditionalHandlingTime();
+            $outStock = $jtlProduct->getSupplierDeliveryTime();
+
+            if ($inStock > 0 || $outStock > 0) {
+                foreach (\array_keys($translations) as $langId) {
+                    $prestaProduct->delivery_in_stock[$langId]  = $inStock > 0
+                        ? \sprintf('%d', $inStock)
+                        : '';
+                    $prestaProduct->delivery_out_stock[$langId] = $outStock > 0
+                        ? \sprintf('%d', $outStock)
+                        : '';
+                }
+                $prestaProduct->additional_delivery_times = 2;
+            }
+        }
+    }
+
+    /**
      * @param JtlProduct    $jtlProduct
      * @param PrestaProduct $prestaProduct
      * @return void
@@ -1349,7 +1511,10 @@ class ProductController extends ProductPriceController implements PullInterface,
                         }
                     }
                     if (!\is_int($value)) {
-                        throw new \RuntimeException('Main_category_id Attribute value must be an integer');
+                        $this->logger->warning(
+                            \sprintf('main_category_id "%s" has no synced PrestaShop endpoint — skipping', $value)
+                        );
+                        break;
                     }
                     $prestaProduct->id_category_default = $value;
                     break;
@@ -1370,11 +1535,14 @@ class ProductController extends ProductPriceController implements PullInterface,
             }
         }
 
-        $prices         = $jtlProduct->getPrices();
-        $lastPriceEntry = \end($prices);
-
-        if ($lastPriceEntry !== false) {
-            $prestaProduct->price = \round($lastPriceEntry->getItems()[0]->getNetPrice(), 6);
+        foreach ($jtlProduct->getPrices() as $priceEntry) {
+            if ($priceEntry->getCustomerGroupId()->getEndpoint() === '') {
+                $items = $priceEntry->getItems();
+                if (!empty($items)) {
+                    $prestaProduct->price = \round($items[0]->getNetPrice(), 6);
+                }
+                break;
+            }
         }
 
         $rrp = $jtlProduct->getRecommendedRetailPrice();
@@ -1415,7 +1583,7 @@ class ProductController extends ProductPriceController implements PullInterface,
      */
     public function delete(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**
@@ -1431,9 +1599,9 @@ class ProductController extends ProductPriceController implements PullInterface,
         if ($endpoint !== '') {
             [$art, $combiId] = Utils::explodeProductEndpoint($endpoint, 0);
             if (!empty($combiId)) {
-                $obj = new \Product((int)$art);
-            } else {
                 $obj = new Combination((int)$combiId);
+            } else {
+                $obj = new \Product((int)$art);
             }
 
             $obj->delete();

@@ -2,8 +2,6 @@
 
 //phpcs:ignoreFile PSR1.Files.SideEffects.FoundWithSymbols
 
-use jtl\Connector\Linker\IdentityLinker;
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }

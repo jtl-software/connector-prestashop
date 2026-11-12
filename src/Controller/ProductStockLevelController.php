@@ -17,7 +17,7 @@ class ProductStockLevelController extends AbstractController implements PushInte
      */
     public function push(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**
@@ -36,6 +36,32 @@ class ProductStockLevelController extends AbstractController implements PushInte
             }
             if (!empty($productId)) {
                 \StockAvailable::setQuantity((int) $productId, (int) $combiId, (int) $model->getStockLevel());
+            }
+        }
+
+        return $model;
+    }
+
+    /**
+     * @param AbstractModel $model
+     * @return AbstractModel
+     */
+    public function pull(AbstractModel $model): AbstractModel
+    {
+        /** @var JtlProduct $model */
+        $endpoint = $model->getId()->getEndpoint();
+
+        if (!empty($endpoint)) {
+            [$productId, $combiId] = Utils::explodeProductEndpoint($endpoint);
+            if (empty($combiId)) {
+                $combiId = 0;
+            }
+            if (!empty($productId)) {
+                $quantity = (int) \StockAvailable::getQuantityAvailableByProduct(
+                    (int) $productId,
+                    (int) $combiId
+                );
+                $model->setStockLevel($quantity);
             }
         }
 

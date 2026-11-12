@@ -1,18 +1,24 @@
 name: Auto draft PR
 
 on:
-  push:
+  workflow_run:
+    workflows: [Check]
+    types: [completed]
     branches-ignore:
       - master
+      - main
       - '**/gh-readonly-queue/**'
-    tags-ignore:
-      - '**'
 
 permissions:
   contents: read
   pull-requests: write
-  issues: write
+
+# the called workflow only opens a PR and needs no cache; actionlint requires an explicit
+# cache ceiling when a reusable workflow is called on a low-trust trigger (workflow_run)
+cache-mode: none
 
 jobs:
   draft-pr:
+    # Only create draft PR if Check workflow succeeded
+    if: github.event.workflow_run.conclusion == 'success'
     uses: jtl-software/actions/.github/workflows/auto-draft-pr.yaml@940b9882024f22a83826729324e8a8df9390ecdc # v1.0.0

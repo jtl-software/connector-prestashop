@@ -54,14 +54,15 @@ class ImageController extends AbstractController implements PushInterface, PullI
 
         $images = $this->db->executeS($sql);
 
-        $prestaImages = [];
-        $jtlImages    = [];
+        $prestaImages    = [];
+        $jtlImages       = [];
+        $productImageDir = $this->getProductImageDir();
 
         if (\is_array($images)) {
             foreach ($images as $image) {
                 $path = \Image::getImgFolderStatic($image['id_image']);
 
-                if (\file_exists(\_PS_PROD_IMG_DIR_ . $path . $image['id_image'] . '.jpg')) {
+                if (\file_exists($productImageDir . $path . $image['id_image'] . '.jpg')) {
                     $prestaImages[] = [
                         'id'           => (string)$image['id_image'],
                         'foreignKey'   => (string)$image['id_product'],
@@ -80,6 +81,18 @@ class ImageController extends AbstractController implements PushInterface, PullI
         }
 
         return $jtlImages;
+    }
+
+    /**
+     * Returns PrestaShop's product image directory. PrestaShop 8 and 9 define it as _PS_PRODUCT_IMG_DIR_ (PrestaShop
+     * 9 dropped its legacy alias). PrestaShop 1.7, up to 1.7.8.11, defines only that legacy alias, as
+     * _PS_IMG_DIR_ . 'p/' (PrestaShop 8 calls the alias "deprecated since 1.7.8.1", but 1.7.8 never had the new name).
+     *
+     * @return string
+     */
+    private function getProductImageDir(): string
+    {
+        return \defined('_PS_PRODUCT_IMG_DIR_') ? \_PS_PRODUCT_IMG_DIR_ : \_PS_IMG_DIR_ . 'p/';
     }
 
     /**
@@ -228,8 +241,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
     {
         $queryBuilder = new QueryBuilder();
         $id           = \is_numeric(\substr($image->getId()->getEndpoint(), 0, 1))
-            ? $image->getId()->getEndpoint()
-            : \substr($image->getId()->getEndpoint(), 1);
+            ? (int)$image->getId()->getEndpoint()
+            : (int)\substr($image->getId()->getEndpoint(), 1);
 
         $sql = $queryBuilder
             ->select('il.id_lang, il.legend as altText')
@@ -255,7 +268,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
      */
     public function push(AbstractModel ...$jtlImage): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlImage);
+        return $this->forEachModel($jtlImage, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**
@@ -289,8 +302,8 @@ class ImageController extends AbstractController implements PushInterface, PullI
                     $identityType = IdentityType::MANUFACTURER_IMAGE;
                     break;
                 case 'product':
+                    // links a new image itself, right after adding it
                     $this->createPrestaProductImage($jtlImage, $id);
-                    $identityType = IdentityType::PRODUCT_IMAGE;
                     break;
             }
 
@@ -426,7 +439,23 @@ class ImageController extends AbstractController implements PushInterface, PullI
             }
         }
 
-        $img->save();
+        if (!empty($img->id)) {
+            if (!$img->update()) {
+                throw new \RuntimeException('Error updating product image ' . $img->id);
+            }
+        } else {
+            if ($isUpdate) {
+                // the linked image was deleted in PrestaShop: drop its link, it is added and linked again below
+                // (by endpoint and host: all image types share one link table)
+                $this->mapper->delete(IdentityType::PRODUCT_IMAGE, $identity->getEndpoint(), $identity->getHost());
+            }
+            if (!$this->addPrestaObject($img)) {
+                throw new \RuntimeException('Error adding product image for product ' . $productId);
+            }
+            // link right away, so that the next sync updates the image even if writing its files fails
+            $identity->setEndpoint((string)$img->id);
+            $this->mapper->save(IdentityType::PRODUCT_IMAGE, $identity->getEndpoint(), $identity->getHost());
+        }
 
         $new_path = $img->getPathForCreation();
         \ImageManager::resize($jtlImage->getFilename(), $new_path . '.jpg');
@@ -444,10 +473,14 @@ class ImageController extends AbstractController implements PushInterface, PullI
         }
 
         //TODO: rewrite to not directly insert into database.
-        if (!\is_null($combiId) && $isUpdate === false) {
+        // only for a real combination id: "10" and "10_" (empty combination) are plain product images,
+        // see the cover handling above. Updates too (IGNORE: the row may exist): a new image is linked before this,
+        // so if the push failed in between, the next sync is an update that has to assign the image after all.
+        if ((int)$combiId > 0) {
             $this->db->execute(
-                'INSERT INTO ' . \_DB_PREFIX_ . 'product_attribute_image 
-                            SET id_product_attribute=' . $combiId . ', id_image=' . $img->id
+                // $combiId comes from JTL-Wawi's endpoint id, $img->id is PrestaShop's own: integers only in SQL
+                'INSERT IGNORE INTO ' . \_DB_PREFIX_ . 'product_attribute_image
+                            SET id_product_attribute=' . (int)$combiId . ', id_image=' . (int)$img->id
             );
         }
 
@@ -477,7 +510,7 @@ class ImageController extends AbstractController implements PushInterface, PullI
      */
     public function delete(AbstractModel ...$jtlImage): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $jtlImage);
+        return $this->forEachModel($jtlImage, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**

@@ -78,7 +78,6 @@ class ManufacturerController extends AbstractController implements PushInterface
                 ->setLanguageIso($this->getJtlLanguageIsoFromLanguageId($langId))
                 ->setDescription((string)$manufacturer->description[$langId])
                 ->setMetaDescription((string)$manufacturer->meta_description[$langId])
-                ->setMetaKeywords((string)$manufacturer->meta_keywords[$langId])
                 ->setTitleTag((string)$manufacturer->meta_title[$langId]);
         }
         return $jtlI18ns;
@@ -92,7 +91,7 @@ class ManufacturerController extends AbstractController implements PushInterface
      */
     public function push(AbstractModel ...$jtlManufacturer): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->pushOne($model), $jtlManufacturer);
+        return $this->forEachModel($jtlManufacturer, fn(AbstractModel $model): AbstractModel => $this->pushOne($model));
     }
 
     /**
@@ -120,13 +119,14 @@ class ManufacturerController extends AbstractController implements PushInterface
         }
 
         $prestaManufacturer = $this->createPrestaManufacturer($jtlManufacturer, new PrestaManufacturer());
-        if (!$prestaManufacturer->add()) {
+        if (!$this->addPrestaObject($prestaManufacturer)) {
             throw new \RuntimeException('Error uploading manufacturer' . $jtlManufacturer->getName());
         }
+        $jtlManufacturer->getId()->setEndpoint((string)$prestaManufacturer->id);
         $this->mapper->save(
             IdentityType::MANUFACTURER,
             $jtlManufacturer->getId()->getEndpoint(),
-            (int)$prestaManufacturer->id
+            $jtlManufacturer->getId()->getHost()
         );
 
         return $jtlManufacturer;
@@ -149,7 +149,6 @@ class ManufacturerController extends AbstractController implements PushInterface
             $prestaManufacturer->name                   = $jtlManufacturer->getName();
             $prestaManufacturer->description[$key]      = $translation['description'];
             $prestaManufacturer->meta_title[$key]       = $translation['meta_title'];
-            $prestaManufacturer->meta_keywords[$key]    = $translation['meta_keywords'];
             $prestaManufacturer->meta_description[$key] = $translation['meta_description'];
         }
 
@@ -170,7 +169,6 @@ class ManufacturerController extends AbstractController implements PushInterface
             $langId                                    = $languageIso;
             $translations[$langId]['description']      = $jtlManufacturerI18n->getDescription();
             $translations[$langId]['meta_title']       = $jtlManufacturerI18n->getTitleTag();
-            $translations[$langId]['meta_keywords']    = $jtlManufacturerI18n->getMetaKeywords();
             $translations[$langId]['meta_description'] = $jtlManufacturerI18n->getMetaDescription();
         }
 
@@ -184,7 +182,7 @@ class ManufacturerController extends AbstractController implements PushInterface
      */
     public function delete(AbstractModel ...$model): array
     {
-        return \array_map(fn(AbstractModel $model): AbstractModel => $this->deleteOne($model), $model);
+        return $this->forEachModel($model, fn(AbstractModel $model): AbstractModel => $this->deleteOne($model));
     }
 
     /**

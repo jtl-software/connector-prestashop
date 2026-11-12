@@ -1,0 +1,181 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use Configuration;
+use DI\Container;
+use Jtl\Connector\Core\Definition\Event;
+use jtl\Connector\Presta\Auth\TokenValidator;
+use jtl\Connector\Presta\Connector;
+use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
+use jtl\Connector\Presta\Subscriber\BlankLanguageIsoSubscriber;
+use Noodlehaus\ConfigInterface;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+/**
+ * Exposes the protected $container property for injection without calling initialize().
+ */
+final class TestableConnector extends Connector
+{
+    public function injectContainer(ContainerInterface $container): void
+    {
+        $this->container = $container;
+    }
+}
+
+final class ConnectorTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        Configuration::resetAll();
+    }
+
+    // -------------------------------------------------------------------------
+    // getControllerNamespace
+    // -------------------------------------------------------------------------
+
+    public function testGetControllerNamespaceReturnsExpectedNamespace(): void
+    {
+        $connector = new Connector();
+
+        self::assertSame('jtl\Connector\Presta\Controller', $connector->getControllerNamespace());
+    }
+
+    // -------------------------------------------------------------------------
+    // getPlatformVersion / getPlatformName
+    // -------------------------------------------------------------------------
+
+    public function testGetPlatformVersionReturnsOne(): void
+    {
+        $connector = new Connector();
+
+        self::assertSame('1', $connector->getPlatformVersion());
+    }
+
+    public function testGetPlatformNameReturnsPrestashop(): void
+    {
+        $connector = new Connector();
+
+        self::assertSame('Prestashop', $connector->getPlatformName());
+    }
+
+    // -------------------------------------------------------------------------
+    // getEndpointVersion
+    // -------------------------------------------------------------------------
+
+    public function testGetEndpointVersionReturnsVersionFromBuildConfigYaml(): void
+    {
+        $connector = new Connector();
+
+        // build-config.yaml in the project root defines version: 3.0.0
+        self::assertSame('3.0.0', $connector->getEndpointVersion());
+    }
+
+    // -------------------------------------------------------------------------
+    // initialize
+    // -------------------------------------------------------------------------
+
+    public function testInitializeRegistersAllContainerBindings(): void
+    {
+        $connector  = new Connector();
+        $container  = $this->createMock(Container::class);
+        $config     = $this->createMock(ConfigInterface::class);
+        $dispatcher = new EventDispatcher();
+
+        // Expect exactly 8 set() calls:
+        // PrimaryKeyMapper, TokenValidator, Product, Category, Image, Customer, Manufacturer, ProductStockLevel
+        $container->expects(self::exactly(8))->method('set');
+
+        Configuration::set('jtlconnector_pass', 'testtoken');
+
+        $connector->initialize($config, $container, $dispatcher);
+    }
+
+    public function testPrimaryKeyMapperLogsIntoTheCoreLinkerChannel(): void
+    {
+        $linkerLogger = $this->createMock(\Monolog\Logger::class);
+        // delete() without endpoint or host id refuses to wipe the table and must leave a trace in the linker log
+        $linkerLogger->expects(self::once())->method('warning');
+        $loggerService = $this->createMock(\Jtl\Connector\Core\Logger\LoggerService::class);
+        $loggerService->method('get')
+            ->with(\Jtl\Connector\Core\Logger\LoggerService::CHANNEL_LINKER)
+            ->willReturn($linkerLogger);
+
+        $container = new Container();
+        $container->set(\Jtl\Connector\Core\Logger\LoggerService::class, $loggerService);
+        (new Connector())->initialize($this->createMock(ConfigInterface::class), $container, new EventDispatcher());
+
+        $mapper = $container->get(PrimaryKeyMapper::class);
+        self::assertInstanceOf(PrimaryKeyMapper::class, $mapper);
+        self::assertFalse($mapper->delete(\Jtl\Connector\Core\Definition\IdentityType::PRODUCT, null, null));
+    }
+
+    public function testPrimaryKeyMapperWorksWithoutLoggerService(): void
+    {
+        $container = new Container();
+        (new Connector())->initialize($this->createMock(ConfigInterface::class), $container, new EventDispatcher());
+
+        $mapper = $container->get(PrimaryKeyMapper::class);
+        self::assertInstanceOf(PrimaryKeyMapper::class, $mapper);
+        self::assertFalse($mapper->delete(\Jtl\Connector\Core\Definition\IdentityType::PRODUCT, null, null));
+    }
+
+    public function testInitializeRegistersBlankLanguageIsoSubscriber(): void
+    {
+        $dispatcher = new EventDispatcher();
+
+        (new Connector())->initialize(
+            $this->createMock(ConfigInterface::class),
+            $this->createMock(Container::class),
+            $dispatcher
+        );
+
+        $listeners = $dispatcher->getListeners(Event::createRpcEventName(Event::BEFORE));
+        self::assertCount(1, $listeners);
+        self::assertInstanceOf(BlankLanguageIsoSubscriber::class, $listeners[0][0]);
+    }
+
+    // -------------------------------------------------------------------------
+    // getPrimaryKeyMapper
+    // -------------------------------------------------------------------------
+
+    public function testGetPrimaryKeyMapperReturnsMappedInstanceFromContainer(): void
+    {
+        $connector = new TestableConnector();
+        $mapper    = $this->createMock(PrimaryKeyMapper::class);
+
+        $container = $this->createMock(ContainerInterface::class);
+        $container
+            ->method('get')
+            ->with(PrimaryKeyMapper::class)
+            ->willReturn($mapper);
+
+        $connector->injectContainer($container);
+
+        self::assertSame($mapper, $connector->getPrimaryKeyMapper());
+    }
+
+    // -------------------------------------------------------------------------
+    // getTokenValidator
+    // -------------------------------------------------------------------------
+
+    public function testGetTokenValidatorReturnsValidatorInstanceFromContainer(): void
+    {
+        $connector = new TestableConnector();
+        $validator = $this->createMock(TokenValidator::class);
+
+        $container = $this->createMock(ContainerInterface::class);
+        $container
+            ->method('get')
+            ->with(TokenValidator::class)
+            ->willReturn($validator);
+
+        $connector->injectContainer($container);
+
+        self::assertSame($validator, $connector->getTokenValidator());
+    }
+}

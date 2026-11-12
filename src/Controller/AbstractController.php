@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace jtl\Connector\Presta\Controller;
 
 use DI\Container;
+use Jtl\Connector\Core\Model\AbstractModel;
 use Jtl\Connector\Core\Model\QueryFilter;
 use jtl\Connector\Presta\Mapper\PrimaryKeyMapper;
 use jtl\Connector\Presta\Utils\QueryBuilder;
@@ -62,26 +63,147 @@ abstract class AbstractController implements LoggerAwareInterface
     }
 
     /**
+     * Calls $handler for each model, in a plain loop, and returns the results.
+     *
+     * Not array_map(): the stack frame of a callback that an internal PHP function calls has no file and line.
+     * Modules hooked into PrestaShop's actionObject*After hooks can trip over such a frame after PrestaShop saved the
+     * object: ps_eventbus 4.1.1 (shipped with PrestaShop 9.2) reads the file of every frame in its error handler,
+     * which runs when the shop isn't linked to a PrestaShop account, and throws a TypeError.
+     *
+     * @param AbstractModel[] $models
+     * @param \Closure        $handler Called with each model, returns the model to respond with.
+     * @phpstan-param \Closure(AbstractModel): AbstractModel $handler
+     * @return AbstractModel[]
+     */
+    protected function forEachModel(array $models, \Closure $handler): array
+    {
+        $results = [];
+        foreach ($models as $model) {
+            $results[] = $handler($model);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Adds a new PrestaShop object and returns whether it was added, i.e. is in the database with an id.
+     *
+     * PrestaShop runs the actionObject*AddAfter hooks after the INSERT, so a module hooked there can throw although
+     * the object was saved. Failing the push then would leave the object without a link, and the next sync would add
+     * it again. So once the object has an id, such an error is logged as a warning and the object counts as added.
+     * PrestaShop may not have finished it then, e.g. Category::add() assigns the customer groups after the hooks.
+     *
+     * The multilang fields are validated first: before 9.1, PrestaShop validates them only after the INSERT, and an
+     * invalid value must fail the push instead of leaving a half-saved object that counts as added.
+     *
+     * If add() returns false although the object got an id, PrestaShop saved it only in part (e.g. without its _shop
+     * or _lang rows). It is removed again, so that no unlinked object stays behind and the next sync adds it anew.
+     *
+     * @param \ObjectModel $object a new object, without an id
+     * @return bool
+     * @throws \PrestaShopException If a multilang field is invalid.
+     * @throws \Throwable If adding the object fails before it got an id.
+     */
+    protected function addPrestaObject(\ObjectModel $object): bool
+    {
+        $isNew = empty($object->id);
+        $object->validateFieldsLang();
+
+        try {
+            $added = $object->add();
+        } catch (\Throwable $error) {
+            if (!$isNew || empty($object->id)) {
+                throw $error;
+            }
+            $this->logSavedDespiteError(\get_class($object), (string)$object->id, $error);
+
+            return true;
+        }
+
+        if (!$added && $isNew && !empty($object->id)) {
+            try {
+                $object->delete();
+            } catch (\Throwable $error) {
+                $this->logger->warning(
+                    \sprintf(
+                        'Could not remove the partly saved %s %s: %s: %s',
+                        \get_class($object),
+                        (string)$object->id,
+                        \get_class($error),
+                        $error->getMessage()
+                    ),
+                    ['exception' => $error]
+                );
+            }
+
+            return false;
+        }
+
+        return $added && !empty($object->id);
+    }
+
+    /**
+     * @param string     $objectType
+     * @param string     $id
+     * @param \Throwable $error
+     * @return void
+     */
+    protected function logSavedDespiteError(string $objectType, string $id, \Throwable $error): void
+    {
+        $this->logger->warning(
+            \sprintf(
+                'PrestaShop saved %s %s, but an error occurred afterwards, e.g. in a module hooked into it: %s: %s.'
+                . ' The connector links it anyway; check it in the PrestaShop back office.',
+                $objectType,
+                $id,
+                \get_class($error),
+                $error->getMessage()
+            ),
+            ['exception' => $error]
+        );
+    }
+
+    /**
      * @param numeric-string|int $langId
      * @return string
      * @throws PrestaShopDatabaseException
+     * @throws \RuntimeException
      */
     protected function getJtlLanguageIsoFromLanguageId(string|int $langId): string
     {
         $sql = (new QueryBuilder())
-            ->select('language_code')
+            ->select('language_code, iso_code')
             ->from('lang')
             ->where("id_lang = $langId");
 
-        /** @var array{0: array{language_code: string}} $result */
+        /** @var array<int, array{language_code: string, iso_code: string}> $result */
         $result = $this->db->executeS($sql->build());
 
-        $code = $result[0]['language_code'];
+        if (empty($result)) {
+            throw new \RuntimeException(
+                \sprintf('Language with id "%s" not found in PrestaShop', $langId)
+            );
+        }
+
+        $code = $result[0]['language_code'] ?: $result[0]['iso_code'];
         $code = \explode('-', $code)[0];
 
-        $linguaConverter = Service::createFromISO_639_1($code);
+        if (\trim($code) === '') {
+            throw new \RuntimeException(
+                \sprintf('Language with id "%s" has no language code configured in PrestaShop', $langId)
+            );
+        }
 
-        return $linguaConverter->toISO_639_2b();
+        try {
+            $linguaConverter = Service::createFromISO_639_1($code);
+            return $linguaConverter->toISO_639_2b();
+        } catch (\Exception $e) {
+            throw new \RuntimeException(
+                \sprintf('Unsupported ISO 639-1 language code "%s" for lang id "%s"', $code, $langId),
+                0,
+                $e
+            );
+        }
     }
 
     /**
@@ -93,15 +215,27 @@ abstract class AbstractController implements LoggerAwareInterface
      */
     protected function getPrestaLanguageIdFromIso(string $languageIso): int
     {
+        $languageIso = \trim($languageIso);
+        if ($languageIso === '') {
+            throw new \RuntimeException('Empty language ISO code provided');
+        }
         if (\strlen($languageIso) === 3) {
-            $linguaConverter = Service::createFromISO_639_2b($languageIso);
-            $languageIso     = $linguaConverter->toISO_639_1();
+            try {
+                $linguaConverter = Service::createFromISO_639_2b($languageIso);
+                $languageIso     = $linguaConverter->toISO_639_1();
+            } catch (\Exception $e) {
+                throw new \RuntimeException(
+                    \sprintf('Unsupported ISO 639-2b language code: "%s"', $languageIso),
+                    0,
+                    $e
+                );
+            }
         }
 
         $sql = (new QueryBuilder())
             ->select('id_lang')
             ->from('lang')
-            ->where("iso_code = '$languageIso'");
+            ->where("iso_code = '" . \pSQL($languageIso) . "'");
 
         /** @var array{0: array{id_lang: string|null}} $result */
         $result = $this->db->executeS($sql->build());
@@ -123,7 +257,7 @@ abstract class AbstractController implements LoggerAwareInterface
         $sql = (new QueryBuilder())
             ->select('id_country')
             ->from('country')
-            ->where("iso_code = '$languageIso'");
+            ->where("iso_code = '" . \pSQL($languageIso) . "'");
 
         /** @var array{0: array{id_country: string|null}}|array{} $result */
         $result = $this->db->executeS($sql->build());
